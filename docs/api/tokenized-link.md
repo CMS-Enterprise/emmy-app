@@ -105,7 +105,7 @@ curl \
 
 ### **Sample curl command for sandbox on Demo:**
 
-Note: If you encounter issues, please check [the current client agency config](https://github.com/DSACMS/iv-cbv-payroll/blob/main/app/config/client-agency-config.yml) to ensure the required `agency_partner_metadata`  is up to date for the agency corresponding to your `api_token` .
+Note: If you encounter issues, please check [the current client agency config](https://github.com/CMS-Enterprise/emmy-app/blob/main/app/config/client-agency-config.yml) to ensure the required `agency_partner_metadata`  is up to date for the agency corresponding to your `api_token` .
 
 ```
 curl \
