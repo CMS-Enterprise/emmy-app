@@ -18,16 +18,28 @@
   "info": {
     "title": "Emmy Platform API Documentation",
     "version": "v1",
-    "description": "Integrate your agency's systems with the Emmy platform. This reference currently\ncovers the Tokenized Link API (v1 and v2) for creating personalized reporting links and the\n`CeActivityReport` model for outbound community engagement reports. Find the CE\nreport and its activity types under Models, including self-attested employment,\nvalidated payroll, and education. This model describes data Emmy sends to an\nagency, not an endpoint hosted by Emmy.\nExamples use synthetic applicant data and nonfunctional tokens.\n\nObject schemas allow additional properties for forward compatibility. Integrations\nshould tolerate unknown response fields so new fields can be added without breaking\nexisting clients. Required fields and documented field types still apply.\n\n\u003c!-- Remove this link-check exception after the first reviewed deployment. --\u003e\n\u003c!-- markdown-link-check-disable-next-line --\u003e\n[Download the official OpenAPI JSON](https://DSACMS.github.io/iv-cbv-payroll/openapi.json).\nThe JSON and this reference are generated together from executable API tests.\n\n## API environments\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Dev | https://verify-demo.navapbc.cloud | Develop and test integrations. |\n| Demo | https://demo.reportmyincome.org | Demonstrate and evaluate the platform. |\n\nUse HTTPS for every request and the API key issued for the selected environment.\nYour production hostname and credentials are provided during agency onboarding.\n\n## API keys and authentication\n\nContact [emmy@cms.hhs.gov](mailto:emmy@cms.hhs.gov) to request an agency API key\nfor each environment. The Tokenized Link API uses a 32-character secret API key.\nKeep it on your server, never in browser code or public repositories.\n\nEach key identifies an agency and its configured metadata and invitation settings.\nSending a `client_agency_id` cannot select another agency. Include these headers:\n\n```http\nAuthorization: Bearer API_KEY\nContent-Type: application/json\n```\n\nA missing or invalid key returns `401 Unauthorized` with the plain-text body\n`HTTP Token: Access denied.` and a `WWW-Authenticate` header. If a key is\ncompromised, contact emmy@cms.hhs.gov to have it replaced."
+    "description": "# Introduction\n\nIntegrate your agency's systems with the Emmy platform. This reference currently\ncovers the Tokenized Link API (v1 and v2) for creating personalized reporting links and the\nCE Activity Report webhook for outbound community engagement reports. Find the\nwebhook under **Receiving data from the Emmy Platform**, including its JSON\nrequest example, signing headers, expected response, and signed cURL sample.\nIts component models include self-attested employment, validated payroll, and education.\nYour agency hosts this receiver.\nExamples use synthetic applicant data and nonfunctional tokens.\n\nObject schemas allow additional properties for forward compatibility. Integrations\nshould tolerate unknown response fields so new fields can be added without breaking\nexisting clients. Required fields and documented field types still apply.\n\n\u003c!-- Remove this link-check exception after the first reviewed deployment. --\u003e\n\u003c!-- markdown-link-check-disable-next-line --\u003e\n[Download the official OpenAPI JSON](https://DSACMS.github.io/iv-cbv-payroll/openapi.json).\nThe JSON and this reference are generated together from executable API tests.\n\n## API environments\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Production | https://emmy.cms.gov | Run live integrations with your agency's highest environment. |\n| UAT | https://uat.emmy.cms.gov | Perform integration testing with your agency's second-highest environment, for example UAT. |\n| Production Sandbox | https://sandbox.emmy.cms.gov | Develop and test integrations with your agency's lowest environment, for example SIT. |\n\n**Legacy environments support Emmy Income only.**\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Dev (Legacy) | https://verify-demo.navapbc.cloud | Develop and test Emmy Income integrations. |\n| Demo (Legacy) | https://demo.reportmyincome.org | Demonstrate and evaluate Emmy Income. |\n\nThese URLs host the invitation API. Report webhooks use your agency's configured\nreceiver URL instead.\n\nUse the API key issued for the selected environment. Credentials are provided\nduring agency onboarding.\n\n## Networking\n\nUse the following IP addresses when configuring your agency's firewall\nallowlists. Incoming and outgoing are from Emmy's perspective:\n\n- **Incoming IP addresses** are the destination addresses for requests from your\n  agency to Emmy, such as invitation API requests.\n- **Outgoing IP addresses** are the source addresses for requests from Emmy to\n  your agency, such as report and document webhooks.\n\nAll traffic uses **HTTPS with TLS 1.2 or later over TCP port 443**.\nContinue to use the environment's hostname for API requests; the IP addresses\nbelow are for network configuration.\n\n| Environment | Incoming IP addresses | Outgoing IP addresses |\n| :-- | :-- | :-- |\n| Production | `18.213.216.33`, `44.211.14.94`, `52.20.193.29` | `3.215.248.116`, `52.73.87.18`, `54.209.184.111` |\n| UAT | `18.235.177.44`, `52.205.81.42`, `52.6.231.243` | `35.171.156.207`, `3.223.173.67`, `34.197.38.57` |\n| Production Sandbox | `100.26.93.171`, `35.169.122.224`, `44.213.152.175` | `98.91.6.41`, `32.193.216.192`, `32.194.27.148` |\n\n## API keys and authentication\n\nContact [emmy@cms.hhs.gov](mailto:emmy@cms.hhs.gov) to request an agency API key\nfor each environment. The Tokenized Link API uses a 32-character secret API key.\nKeep it on your server, never in browser code or public repositories.\n\nFor invitation requests, each key identifies an agency and its configured metadata and invitation settings.\nSending a `client_agency_id` cannot select another agency. Include these headers:\n\n```http\nAuthorization: Bearer API_KEY\nContent-Type: application/json\n```\n\nA missing or invalid key returns `401 Unauthorized` with the plain-text body\n`HTTP Token: Access denied.` and a `WWW-Authenticate` header. If a key is\ncompromised, contact emmy@cms.hhs.gov to have it replaced.\n\nOutbound report webhooks use HMAC signing headers instead of Bearer\nauthentication. See **Receiving data from the Emmy Platform** for verification\ndetails and an example delivery to your agency."
   },
   "servers": [
     {
+      "url": "https://emmy.cms.gov",
+      "description": "Production"
+    },
+    {
+      "url": "https://uat.emmy.cms.gov",
+      "description": "UAT"
+    },
+    {
+      "url": "https://sandbox.emmy.cms.gov",
+      "description": "Production Sandbox"
+    },
+    {
       "url": "https://verify-demo.navapbc.cloud",
-      "description": "Dev environment"
+      "description": "Dev (Legacy) — Emmy Income only"
     },
     {
       "url": "https://demo.reportmyincome.org",
-      "description": "Demo environment"
+      "description": "Demo (Legacy) — Emmy Income only"
     }
   ],
   "externalDocs": {
@@ -38,120 +50,57 @@
     {
       "name": "Invitations",
       "description": "Generate links for an applicant to begin reporting."
+    },
+    {
+      "name": "Overview",
+      "description": "Your agency can receive data from Emmy through webhooks as an alternative to\nSFTP, email, or S3 delivery. With webhook delivery, Emmy sends HTTP POST requests\nto HTTPS endpoints hosted by your agency, so the received data can be added to\nthe correct applicant case.\n\nDepending on your integration, your agency can receive:\n\n- **Income Reports (JSON):** structured income and payroll data.\n- **CE Activity Reports (JSON):** community engagement activities, including\n  employment, education, community service, and work programs.\n- **Documents:** income report PDFs and supporting activity documents, sent as\n  raw file bytes with their MIME type.\n\nArrange the delivery methods, receiver URLs, and any additional headers with\nthe Emmy team during onboarding. Your receiver verifies each request's\nsignature, processes the report or document, and returns an HTTP response.\nThe sections below describe the delivery flow, shared signing and retry\nbehavior, and the payloads your endpoints receive."
+    },
+    {
+      "name": "Report delivery flow",
+      "description": "Emmy sends a completed report to your agency's receiver, which verifies the\nrequest signature, saves the report, and returns an HTTP response.\n\n![Report delivery between Emmy and the agency system](api-flow.png)\n\nThe diagram shows the income report flow. The CE Activity Report uses your\nagency's configured CE receiver URL, illustrated in this reference as\n`/api/v1/income-report`, but might be better named for CE as\n`/api/v1/ce-report`."
+    },
+    {
+      "name": "Webhook signatures",
+      "description": "Emmy signs outbound webhook requests with your agency's API key. Verify the\nsignature before processing the report. This signing scheme is shared by the\nCE Activity Report, Income Report JSON, and PDF document deliveries.\n\n## Signing headers\n\n| Header | Description |\n| :-- | :-- |\n| `X-IVAAS-Timestamp` | Unix timestamp the request was signed at. |\n| `X-IVAAS-Signature` | HMAC-SHA512 hexdigest of `\"\u003ctimestamp\u003e:\u003crequest body\u003e\"`, keyed with the agency's API key. |\n| `X-IVAAS-Confirmation-Code` | The report's confirmation code. Sent with CE Activity Reports and document deliveries; omitted from Income Report JSON POSTs. |\n\nIncome Report JSON POSTs include `confirmation_code` in the JSON body but do not\nsend the `X-IVAAS-Confirmation-Code` header. They still include\n`X-IVAAS-Timestamp` and `X-IVAAS-Signature`.\n\nAny additional headers the agency requires (for example an API gateway key) can be configured per-agency and are sent verbatim.\n\nSign the exact bytes sent, including any trailing\nnewline; reformatting JSON after signing changes the signature.\n\n\n## Verifying a signature\n\nCompute an HMAC-SHA512 hex digest of the timestamp, a colon, and the exact raw\nrequest body, using your agency's API key. Compare it with `X-IVAAS-Signature`\nusing a constant-time comparison. Use the `X-IVAAS-Timestamp` header as sent;\ndo not parse and reserialize the JSON before checking the signature.\n\n## cURL example\n\nSave the request payload shown in the OpenAPI reference as `ce-activity-report.json`.\nSet `AGENCY_API_KEY` and `AGENCY_REPORT_URL` for your test receiver before running\nthis command. It simulates Emmy sending a report to your agency and requires\nBash, cURL, OpenSSL, and jq.\n\n```bash\nset -euo pipefail\n: \"${AGENCY_API_KEY:?Set AGENCY_API_KEY to your test agency API key}\"\nAGENCY_REPORT_URL=\"${AGENCY_REPORT_URL:-https://agency.example.org/api/v1/ce-activity-report}\"\nREPORT_FILE=\"${REPORT_FILE:-ce-activity-report.json}\"\n\ntimestamp=$(date +%s)\nconfirmation_code=$(jq -er '.confirmation_code' \"$REPORT_FILE\")\nsignature=$(\n  { printf '%s:' \"$timestamp\"; cat \"$REPORT_FILE\"; } |\n    openssl dgst -sha512 -hmac \"$AGENCY_API_KEY\" | awk '{print $NF}'\n)\n\ncurl --request POST \"$AGENCY_REPORT_URL\" \\\n  --header 'Content-Type: application/json' \\\n  --header \"X-IVAAS-Timestamp: $timestamp\" \\\n  --header \"X-IVAAS-Signature: $signature\" \\\n  --header \"X-IVAAS-Confirmation-Code: $confirmation_code\" \\\n  --data-binary \"@$REPORT_FILE\"\n```\n\nAdd any agency-specific gateway headers configured during onboarding. The agency\nAPI key is used for signing; this webhook does not use the invitation API's\n`Authorization: Bearer` header."
+    },
+    {
+      "name": "Retry logic",
+      "description": "After a failed income report or activity delivery, Emmy retries up to five additional times. The waits\nbetween attempts are 5 minutes, 10 minutes, 30 minutes, 1 hour, and 4 hours.\n\nFor combined income JSON and PDF delivery, a PDF retry does not resend the JSON\nreport when JSON delivery has already succeeded. If the final attempt fails, the job remains failed for investigation by\nthe Emmy team in partnership with your agency's technical team."
+    },
+    {
+      "name": "CE Activity Reports",
+      "description": "Emmy sends completed reports to your agency's systems so they can be added to\nthe applicant's case. Your agency hosts the receiving endpoint and arranges its\nURL and any additional headers during onboarding.\n\nThe CE Activity Report webhook below delivers JSON, including income and payroll\ndata. Its request body describes what your agency receives; its response describes\nwhat your endpoint should return to Emmy. The example agency hostname is a\nplaceholder. Use your own receiver URL when testing delivery."
+    },
+    {
+      "name": "Income Reports (JSON)",
+      "description": "Contact the Emmy Team to request documentation about the Income Report API.\n\nIncome Report JSON POSTs include `confirmation_code` in the JSON body, but do\nnot send the `X-IVAAS-Confirmation-Code` header. The `X-IVAAS-Timestamp` and\n`X-IVAAS-Signature` headers are included for signature verification."
+    },
+    {
+      "name": "Documents",
+      "description": "This API lets your agency receive documents from the Emmy platform, including\nincome report PDFs and supporting activity documents.\nIt is an alternative to other file delivery methods, such as SFTP, S3, or shared\nemail. Your agency hosts the receiving endpoint and ensures that documents are\nadded to the correct case in its eligibility management system.\n\nFor agencies that also receive income data through the Income Report JSON API,\nEmmy sends the PDF after the JSON delivery succeeds."
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Emmy API",
+      "tags": [
+        "Invitations"
+      ]
+    },
+    {
+      "name": "Receiving data from the Emmy Platform",
+      "tags": [
+        "Overview",
+        "Report delivery flow",
+        "Webhook signatures",
+        "Retry logic",
+        "CE Activity Reports",
+        "Income Reports (JSON)",
+        "Documents"
+      ]
     }
   ],
   "paths": {
-    "/api/v2/community-engagement/invitations": {
-      "post": {
-        "summary": "Create community engagement reporting links",
-        "tags": [
-          "Invitations"
-        ],
-        "operationId": "createCommunityEngagementInvitation",
-        "description": "Create a community engagement invitation. Set unpaid_work_only to true to limit employment reporting to unpaid work; null, false, and omission leave employment unrestricted.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Invitations created",
-            "content": {
-              "application/json": {
-                "examples": {
-                  "community_engagement": {
-                    "summary": "Community engagement invitation",
-                    "value": {
-                      "tokenized_url": "https://verify-demo.navapbc.cloud/en/start/IncomeExampleToken",
-                      "token": "IncomeExampleToken",
-                      "expiration_date": "2026-10-07T23:59:59.999-04:00",
-                      "language": "en",
-                      "agency_partner_metadata": {
-                        "individual_id": "EXAMPLE-123",
-                        "first_name": "Jane",
-                        "last_name": "Doe",
-                        "date_of_birth": "1990-01-15"
-                      },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/ActivityExampleToken"
-                    }
-                  },
-                  "unpaid_work_only": {
-                    "summary": "Community engagement with unpaid work only",
-                    "value": {
-                      "tokenized_url": "https://verify-demo.navapbc.cloud/en/start/IncomeExampleToken",
-                      "token": "IncomeExampleToken",
-                      "expiration_date": "2026-10-07T23:59:59.999-04:00",
-                      "language": "en",
-                      "agency_partner_metadata": {
-                        "individual_id": "EXAMPLE-123",
-                        "first_name": "Jane",
-                        "last_name": "Doe",
-                        "date_of_birth": "1990-01-15"
-                      },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/ActivityExampleToken"
-                    }
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/CommunityEngagementInvitationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid unpaid-work restriction or invitation fields",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InvitationErrors"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommunityEngagementInvitationRequest"
-              },
-              "examples": {
-                "community_engagement": {
-                  "summary": "Community engagement invitation",
-                  "value": {
-                    "language": "en",
-                    "verification_range": "last_complete_month",
-                    "agency_partner_metadata": {
-                      "individual_id": "EXAMPLE-123",
-                      "first_name": "Jane",
-                      "last_name": "Doe",
-                      "date_of_birth": "1990-01-15"
-                    }
-                  }
-                },
-                "unpaid_work_only": {
-                  "summary": "Community engagement with unpaid work only",
-                  "value": {
-                    "language": "en",
-                    "verification_range": "last_complete_month",
-                    "agency_partner_metadata": {
-                      "individual_id": "EXAMPLE-123",
-                      "first_name": "Jane",
-                      "last_name": "Doe",
-                      "date_of_birth": "1990-01-15"
-                    },
-                    "unpaid_work_only": true
-                  }
-                }
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
     "/api/v1/invitations": {
       "post": {
         "summary": "Create a Tokenized Link to Emmy Income",
@@ -328,6 +277,85 @@
         }
       }
     },
+    "/api/v1/{flow_type}/invitations/{token}": {
+      "parameters": [
+        {
+          "name": "flow_type",
+          "in": "path",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "income",
+              "community-engagement"
+            ]
+          },
+          "description": "Selects which invitation type the token belongs to.",
+          "required": true
+        },
+        {
+          "name": "token",
+          "in": "path",
+          "schema": {
+            "type": "string"
+          },
+          "description": "The invitation's auth token, from tokenized_url or activity_tokenized_url.",
+          "required": true
+        }
+      ],
+      "delete": {
+        "summary": "Expire a Tokenized Link",
+        "tags": [
+          "Invitations"
+        ],
+        "operationId": "expireInvitation",
+        "description": "Use `DELETE /api/v1/income/invitations/{token}` to expire an income link, or\n`DELETE /api/v1/community-engagement/invitations/{token}` to expire a community\nengagement link. The API key must belong to the agency that created the link.\nThe operation is idempotent: repeat calls for a manually expired link also\nreturn `200`. Unknown tokens, tokens belonging to another agency, and unknown\nflow types return `404`. The legacy `DELETE /api/v1/invitations/{token}` route\ncontinues to expire income links.\n\n### Example\n\nRequest:\n\n```http\nDELETE /api/v1/income/invitations/IncomeExampleToken HTTP/1.1\nHost: verify-demo.navapbc.cloud\nAuthorization: Bearer API_KEY\n```\n\nResponse (`200 OK`):\n\n```json\n{\n  \"tokenized_url\": \"https://verify-demo.navapbc.cloud/en/start/IncomeExampleToken\"\n}\n```\n\nUse the same request shape with `/api/v1/community-engagement/invitations/{token}`\nto expire a community engagement link instead. Calling this again for the same\ntoken (even after it's already expired) still returns `200`; an unknown token,\na token created by another agency, or an unrecognized `flow_type` segment\nreturns `404` with an empty body.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation expired",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "expire_income": {
+                    "summary": "Expire an income invitation",
+                    "value": {
+                      "tokenized_url": "https://verify-demo.navapbc.cloud/en/start/IncomeExampleToken"
+                    }
+                  },
+                  "expire_community_engagement": {
+                    "summary": "Expire a community engagement invitation",
+                    "value": {
+                      "tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/GWGLuxm5um"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ExpireInvitationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key (plain text, not JSON)",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown token, mismatched agency, or unrecognized flow type",
+            "content": {}
+          }
+        }
+      }
+    },
     "/api/v2/{invitation_type}/invitations": {
       "parameters": [
         {
@@ -345,7 +373,7 @@
         }
       ],
       "post": {
-        "summary": "Create a Tokenized Link to Emmy Community Engagement",
+        "summary": "Create a Tokenized Link to Emmy Community Engagement or Emmy Employment",
         "tags": [
           "Invitations"
         ],
@@ -375,7 +403,7 @@
                         "first_name": "Jane",
                         "last_name": "Doe"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/6udhfAqASe"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/r9sYoQhrBR"
                     }
                   },
                   "community_engagement": {
@@ -391,7 +419,23 @@
                         "last_name": "Doe",
                         "date_of_birth": "01/15/1990"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/WFHfhvMpYu"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/ywxJ8sUZEt"
+                    }
+                  },
+                  "louisiana_community_engagement": {
+                    "summary": "Community engagement invitation (Louisiana agency)",
+                    "value": {
+                      "tokenized_url": "https://verify-demo.navapbc.cloud/en/start/IncomeExampleToken",
+                      "token": "IncomeExampleToken",
+                      "expiration_date": "2026-12-07T23:59:59.999-05:00",
+                      "language": "en",
+                      "agency_partner_metadata": {
+                        "individual_id": "INDIVIDUAL-123",
+                        "first_name": "Jane",
+                        "last_name": "Doe",
+                        "date_of_birth": "01/15/1990"
+                      },
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/SgW3kuiCJi"
                     }
                   }
                 },
@@ -423,6 +467,17 @@
             "content": {
               "application/json": {
                 "examples": {
+                  "louisiana_missing_date_of_birth": {
+                    "summary": "Missing Louisiana CE date of birth",
+                    "value": {
+                      "errors": [
+                        {
+                          "field": "date_of_birth",
+                          "message": "date_of_birth is required"
+                        }
+                      ]
+                    }
+                  },
                   "missing_name": {
                     "summary": "Missing applicant name",
                     "value": {
@@ -457,9 +512,7 @@
                     "agency_partner_metadata": {
                       "individual_id": "INDIVIDUAL-123",
                       "first_name": "Jane",
-                      "last_name": "Doe",
-                      "case_number": "EXAMPLE-123",
-                      "date_of_birth": "01/15/1990"
+                      "last_name": "Doe"
                     }
                   }
                 },
@@ -472,7 +525,19 @@
                       "individual_id": "INDIVIDUAL-123",
                       "first_name": "Jane",
                       "last_name": "Doe",
-                      "case_number": "EXAMPLE-123",
+                      "date_of_birth": "01/15/1990"
+                    }
+                  }
+                },
+                "louisiana_community_engagement": {
+                  "summary": "Community engagement invitation (Louisiana agency)",
+                  "value": {
+                    "language": "en",
+                    "verification_range": "last_complete_month",
+                    "agency_partner_metadata": {
+                      "individual_id": "INDIVIDUAL-123",
+                      "first_name": "Jane",
+                      "last_name": "Doe",
                       "date_of_birth": "01/15/1990"
                     }
                   }
@@ -481,6 +546,587 @@
             }
           },
           "required": true
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "/api/v1/ce-activity-report": {
+      "post": {
+        "tags": [
+          "CE Activity Reports"
+        ],
+        "operationId": "receiveCeActivityReport",
+        "summary": "Receive a CE Activity Report (JSON)",
+        "description": "## Overview\n\nEmmy sends completed reports to your agency's systems so they can be added to\nthe applicant's case. Your agency hosts the receiving endpoint and arranges its\nURL and any additional headers during onboarding.\n\nThe CE Activity Report webhook below delivers JSON, including income and payroll\ndata. Its request body describes what your agency receives; its response describes\nwhat your endpoint should return to Emmy. The example agency hostname is a\nplaceholder. Use your own receiver URL when testing delivery.\n\n## Model\n\nThis document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nThe webhook currently uses the agency's V1 metadata field set, matching the V1\nincome invitation schema, with `null` for unavailable values. Dates of birth\nare serialized as `YYYY-MM-DD`, rather than echoed from the invitation request.\n\n**V2 limitation:** CE webhooks do not yet echo the V2 invitation metadata field\nset. In particular, `individual_id` is omitted. Louisiana webhooks contain\n`case_number`, `date_of_birth`, and `doc_id`; they omit the V2 `first_name` and\n`last_name` fields as well.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.\n\n## Transmission\n\nEmmy sends a completed CE Activity Report as an HTTP `POST` to an endpoint\nhosted by your agency. This is an outbound webhook, not an endpoint on Emmy's\nDev or Demo servers.\n\n### POST /api/v1/ce-activity-report\n\nThis API endpoint is built by the agency and receives one CE activity report record. The endpoint URL can be whatever the agency desires, however, it must include a version number to allow for easy upgrades in the future.\n\nThe complete `CeActivityReport` model is published in the generated\nOpenAPI reference, along with component models for the report,\nreview period, documents, activity types, and payroll details. Find the webhook\nunder **Receiving data from the Emmy Platform**. The request example\ncomes from the tested serializer and includes community service, work programs,\nlinked payroll, self-employment, unpaid work, and all three education variants.\n\n### Request signatures\n\nSee [Webhook signatures](#tag/webhook-signatures) for signing headers,\nverification guidance, and a signed cURL example for testing your receiver.\n\n## Response\n\nThe agency should respond with `200` and a payload containing:\n\n```json\n{\n  \"status\": \"received\",\n  \"confirmation_code\": \"SANDBOX123\",\n  \"received_at\": \"2026-08-11T14:00:05Z\",\n  \"schema_version_received\": \"1.0.0\"\n}\n```\n\nEmmy currently checks the HTTP status and does not validate this response body.\n\n## Request body\n\nThe request body uses the `CeActivityReport` OpenAPI model. Expand its properties\nand linked models in the reference for field descriptions, required and nullable\nfields, monthly reporting rules, and the employment and education variants.\nThe generated request example shows a complete report with all activity types.\n\n# **Design Principles**\n\n| Design | Description |\n| :-- | :-- |\n| Tolerant Reader | Systems should accept payloads that contain unknown or extra fields without rejecting them. Only a minimal set of fields are truly required. |\n| Additive-only schema evolution | New fields can be added to the spec at any time without breaking existing integrations. Fields are only removed in major version releases. |\n| Soft required fields | Fields that should be present but may not always be available from upstream providers are not marked as required, and denote `null` as an acceptable value. |",
+        "servers": [
+          {
+            "url": "https://agency.example.org",
+            "description": "Agency system (replace with your receiver URL)"
+          }
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-IVAAS-Timestamp",
+            "in": "header",
+            "required": true,
+            "description": "Unix timestamp used when signing the request.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            }
+          },
+          {
+            "name": "X-IVAAS-Signature",
+            "in": "header",
+            "required": true,
+            "description": "HMAC-SHA512 hexdigest of `\"\u003ctimestamp\u003e:\u003crequest body\u003e\"`, keyed with the agency API key.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{128}$"
+            }
+          },
+          {
+            "name": "X-IVAAS-Confirmation-Code",
+            "in": "header",
+            "required": true,
+            "description": "The confirmation_code from the request body.",
+            "schema": {
+              "type": "string",
+              "example": "SANDBOX123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CeActivityReport"
+              },
+              "examples": {
+                "mixed_report": {
+                  "summary": "Community service, work programs, mixed employment, and education",
+                  "value": {
+                    "schema_version": "1.0.0",
+                    "confirmation_code": "SANDBOX123",
+                    "completed_at": "2025-04-11T14:00:00Z",
+                    "agency_partner_metadata": {
+                      "first_name": "Jane",
+                      "middle_name": "A",
+                      "last_name": "Doe",
+                      "case_number": "CASE-2026-00987",
+                      "date_of_birth": "1990-04-15"
+                    },
+                    "ce_report": {
+                      "report_variant": "community_engagement",
+                      "review_period": {
+                        "start_month": "2025-02",
+                        "end_month": "2025-03"
+                      },
+                      "documents": [
+                        {
+                          "document_id": "DOC-5",
+                          "document_name": "SANDBOX123_work_programs_wioa_participation_letter.pdf",
+                          "file_type": "pdf"
+                        },
+                        {
+                          "document_id": "DOC-6",
+                          "document_name": "SANDBOX123_education_transcript.pdf",
+                          "file_type": "pdf"
+                        },
+                        {
+                          "document_id": "DOC-4",
+                          "document_name": "SANDBOX123_employment_income_statement.pdf",
+                          "file_type": "pdf"
+                        }
+                      ],
+                      "activities": {
+                        "community_service": {
+                          "2025-02": [
+                            {
+                              "type": "community_service",
+                              "organization_name": "Local Food Bank",
+                              "street_address": "1 Main St",
+                              "street_address_line_2": null,
+                              "city": "New Orleans",
+                              "state": "LA",
+                              "zip_code": "70112",
+                              "coordinator_name": "Jane Smith",
+                              "coordinator_email": "jane@example.org",
+                              "coordinator_phone_number": "5045551234",
+                              "additional_comments": null,
+                              "month": "2025-02",
+                              "hours": 40.0,
+                              "data_source": "self_attested",
+                              "document_ids": []
+                            }
+                          ],
+                          "2025-03": [
+                            {
+                              "type": "community_service",
+                              "organization_name": "Local Food Bank",
+                              "street_address": "1 Main St",
+                              "street_address_line_2": null,
+                              "city": "New Orleans",
+                              "state": "LA",
+                              "zip_code": "70112",
+                              "coordinator_name": "Jane Smith",
+                              "coordinator_email": "jane@example.org",
+                              "coordinator_phone_number": "5045551234",
+                              "additional_comments": null,
+                              "month": "2025-03",
+                              "hours": 40.0,
+                              "data_source": "self_attested",
+                              "document_ids": []
+                            }
+                          ]
+                        },
+                        "work_program": {
+                          "2025-02": [
+                            {
+                              "type": "work_program",
+                              "organization_name": "Goodwill",
+                              "program_name": "WIOA",
+                              "street_address": "123 Main St",
+                              "street_address_line_2": null,
+                              "city": "Baton Rouge",
+                              "state": "LA",
+                              "zip_code": "70802",
+                              "contact_name": "Casey Doe",
+                              "contact_email": "casey@example.org",
+                              "contact_phone_number": "5045555678",
+                              "additional_comments": null,
+                              "month": "2025-02",
+                              "hours": 20.0,
+                              "data_source": "self_attested",
+                              "document_ids": [
+                                "DOC-5"
+                              ]
+                            }
+                          ],
+                          "2025-03": [
+                            {
+                              "type": "work_program",
+                              "organization_name": "Goodwill",
+                              "program_name": "WIOA",
+                              "street_address": "123 Main St",
+                              "street_address_line_2": null,
+                              "city": "Baton Rouge",
+                              "state": "LA",
+                              "zip_code": "70802",
+                              "contact_name": "Casey Doe",
+                              "contact_email": "casey@example.org",
+                              "contact_phone_number": "5045555678",
+                              "additional_comments": null,
+                              "month": "2025-03",
+                              "hours": 20.0,
+                              "data_source": "self_attested",
+                              "document_ids": [
+                                "DOC-5"
+                              ]
+                            }
+                          ]
+                        },
+                        "employment": {
+                          "2025-03": [
+                            {
+                              "employer_name": "Side Gig LLC",
+                              "is_self_employed": true,
+                              "street_address": "942 W Harlan Ave",
+                              "street_address_line_2": null,
+                              "city": "Gainesville",
+                              "state": "FL",
+                              "zip_code": "32611",
+                              "contact_name": null,
+                              "contact_email": null,
+                              "contact_phone_number": null,
+                              "type": "employment",
+                              "month": "2025-03",
+                              "hours": 12.75,
+                              "data_source": "self_attested",
+                              "document_ids": [
+                                "DOC-4"
+                              ],
+                              "additional_comments": null,
+                              "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
+                              "employment_type": null,
+                              "gross_income": 123.45
+                            },
+                            {
+                              "employer_name": "Work For Free LLC",
+                              "is_self_employed": false,
+                              "street_address": "942 W Harlan Ave",
+                              "street_address_line_2": null,
+                              "city": "Gainesville",
+                              "state": "FL",
+                              "zip_code": "32611",
+                              "contact_name": "Donny Spears",
+                              "contact_email": "donny@gainesvillewrecking.com",
+                              "contact_phone_number": "(415) 344-8009",
+                              "type": "employment",
+                              "month": "2025-03",
+                              "hours": 20.0,
+                              "data_source": "self_attested",
+                              "document_ids": [],
+                              "additional_comments": null,
+                              "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
+                              "employment_type": null,
+                              "gross_income": 0.0
+                            },
+                            {
+                              "applicant_full_name": "Cool Guy",
+                              "applicant_ssn": "XXX-XX-1234",
+                              "applicant_extra_comments": null,
+                              "employer_name": "Cool Company",
+                              "employer_phone": "604-555-1234",
+                              "employer_address": "1234 Main St Vancouver BC V5K 0A1",
+                              "employment_status": "inactive",
+                              "employment_type": null,
+                              "employment_start_date": "2014-01-01",
+                              "employment_end_date": "2014-01-02",
+                              "pay_frequency": "variable",
+                              "compensation_amount": 100,
+                              "compensation_unit": "hourly",
+                              "paystubs": [
+                                {
+                                  "pay_date": "2025-03-01",
+                                  "pay_period_start": "2025-02-15",
+                                  "pay_period_end": "2025-02-28",
+                                  "pay_gross": 12345,
+                                  "gross_pay_list": [],
+                                  "pay_gross_ytd": 12345,
+                                  "pay_net": 12345,
+                                  "hours_paid": 12.0,
+                                  "deductions": []
+                                }
+                              ],
+                              "type": "employment",
+                              "month": "2025-03",
+                              "data_source": "validated",
+                              "document_ids": []
+                            }
+                          ]
+                        },
+                        "education": {
+                          "2025-02": [
+                            {
+                              "type": "education",
+                              "education_type": "high_school_ged",
+                              "month": "2025-02",
+                              "document_ids": [],
+                              "additional_comments": null,
+                              "school_name": "Example Community College",
+                              "street_address": null,
+                              "street_address_line_2": null,
+                              "city": null,
+                              "state": null,
+                              "zip_code": null,
+                              "contact_name": null,
+                              "contact_title": null,
+                              "contact_email": "registrar@example.org",
+                              "contact_phone_number": null,
+                              "hours": 3.5,
+                              "data_source": "self_attested",
+                              "enrollment_status": "less_than_half_time",
+                              "credit_hours": 3.5,
+                              "term": {
+                                "start_month": "2025-01",
+                                "end_month": "2025-03"
+                              }
+                            },
+                            {
+                              "type": "education",
+                              "education_type": "college_or_university",
+                              "month": "2025-02",
+                              "document_ids": [],
+                              "additional_comments": null,
+                              "data_source": "verified",
+                              "school_name": "Example University",
+                              "enrollment_status": "full_time",
+                              "credit_hours": null,
+                              "term": {
+                                "start_month": "2025-02",
+                                "end_month": "2025-03"
+                              }
+                            },
+                            {
+                              "type": "education",
+                              "education_type": "trade_or_technical",
+                              "month": "2025-02",
+                              "document_ids": [
+                                "DOC-6"
+                              ],
+                              "additional_comments": null,
+                              "school_name": "Example Technical College",
+                              "street_address": null,
+                              "street_address_line_2": null,
+                              "city": null,
+                              "state": null,
+                              "zip_code": null,
+                              "contact_name": null,
+                              "contact_title": null,
+                              "contact_email": null,
+                              "contact_phone_number": null,
+                              "hours": 3.25,
+                              "data_source": "verified_enrollment_only",
+                              "enrollment_status": "less_than_half_time",
+                              "credit_hours": 3.25,
+                              "term": {
+                                "start_month": "2025-02",
+                                "end_month": "2025-03"
+                              }
+                            },
+                            {
+                              "type": "education",
+                              "education_type": "trade_or_technical",
+                              "month": "2025-02",
+                              "document_ids": [
+                                "DOC-6"
+                              ],
+                              "additional_comments": null,
+                              "school_name": "Example State University",
+                              "street_address": null,
+                              "street_address_line_2": null,
+                              "city": null,
+                              "state": null,
+                              "zip_code": null,
+                              "contact_name": null,
+                              "contact_title": null,
+                              "contact_email": null,
+                              "contact_phone_number": null,
+                              "hours": null,
+                              "data_source": "verified_enrollment_only",
+                              "enrollment_status": "half_time",
+                              "credit_hours": null,
+                              "term": {
+                                "start_month": "2025-02",
+                                "end_month": "2025-02"
+                              }
+                            }
+                          ],
+                          "2025-03": [
+                            {
+                              "type": "education",
+                              "education_type": "high_school_ged",
+                              "month": "2025-03",
+                              "document_ids": [],
+                              "additional_comments": null,
+                              "school_name": "Example Community College",
+                              "street_address": null,
+                              "street_address_line_2": null,
+                              "city": null,
+                              "state": null,
+                              "zip_code": null,
+                              "contact_name": null,
+                              "contact_title": null,
+                              "contact_email": "registrar@example.org",
+                              "contact_phone_number": null,
+                              "hours": 3.5,
+                              "data_source": "self_attested",
+                              "enrollment_status": "less_than_half_time",
+                              "credit_hours": 3.5,
+                              "term": {
+                                "start_month": "2025-01",
+                                "end_month": "2025-03"
+                              }
+                            },
+                            {
+                              "type": "education",
+                              "education_type": "college_or_university",
+                              "month": "2025-03",
+                              "document_ids": [],
+                              "additional_comments": null,
+                              "data_source": "verified",
+                              "school_name": "Example University",
+                              "enrollment_status": "full_time",
+                              "credit_hours": null,
+                              "term": {
+                                "start_month": "2025-02",
+                                "end_month": "2025-03"
+                              }
+                            },
+                            {
+                              "type": "education",
+                              "education_type": "trade_or_technical",
+                              "month": "2025-03",
+                              "document_ids": [
+                                "DOC-6"
+                              ],
+                              "additional_comments": null,
+                              "school_name": "Example Technical College",
+                              "street_address": null,
+                              "street_address_line_2": null,
+                              "city": null,
+                              "state": null,
+                              "zip_code": null,
+                              "contact_name": null,
+                              "contact_title": null,
+                              "contact_email": null,
+                              "contact_phone_number": null,
+                              "hours": 3.25,
+                              "data_source": "verified_enrollment_only",
+                              "enrollment_status": "less_than_half_time",
+                              "credit_hours": 3.25,
+                              "term": {
+                                "start_month": "2025-02",
+                                "end_month": "2025-03"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The agency should respond with `200` and a payload containing:\n\n```json\n{\n  \"status\": \"received\",\n  \"confirmation_code\": \"SANDBOX123\",\n  \"received_at\": \"2026-08-11T14:00:05Z\",\n  \"schema_version_received\": \"1.0.0\"\n}\n```\n\nEmmy currently checks the HTTP status and does not validate this response body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "confirmation_code": {
+                      "type": "string"
+                    },
+                    "received_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "schema_version_received": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "examples": {
+                  "received": {
+                    "value": {
+                      "status": "received",
+                      "confirmation_code": "SANDBOX123",
+                      "received_at": "2026-08-11T14:00:05Z",
+                      "schema_version_received": "1.0.0"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "operationId": "receiveDocument",
+        "summary": "Receive a Document",
+        "description": "The endpoint receives one document per HTTP POST request. `/api/v1/documents` is a\nsuggested path; your agency can choose another path that includes a version\nnumber. Arrange the receiver URL during onboarding and accept requests only\nover HTTPS.\n\nUse the shared [Webhook signatures](#tag/webhook-signatures)\nguidance for signing headers, signature verification, and any additional\nagency-specific headers. Verify the signature against the exact document bytes\nreceived in the request body.",
+        "servers": [
+          {
+            "url": "https://agency.example.org",
+            "description": "Agency system (replace with your receiver URL)"
+          }
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": true,
+            "description": "MIME type of the document. Any MIME type is supported; income report PDFs use\n`application/pdf`.",
+            "schema": {
+              "type": "string",
+              "example": "application/pdf"
+            }
+          },
+          {
+            "name": "Content-Length",
+            "in": "header",
+            "required": true,
+            "description": "Size of the document in bytes.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "Content-Disposition",
+            "in": "header",
+            "required": false,
+            "description": "Sent with supporting activity documents as `attachment; filename=\"\u003cfilename\u003e\"`\nto identify the transmitted file's name. Not sent with income report PDFs.",
+            "schema": {
+              "type": "string",
+              "example": "attachment; filename=\"SANDBOX123_community_service_time_sheet.pdf\""
+            }
+          },
+          {
+            "name": "X-IVAAS-Document-Id",
+            "in": "header",
+            "required": false,
+            "description": "Sent with supporting activity documents to identify the document, matching its\n`document_id` in the CE Activity Report. For example, `DOC-123`. Not sent with\nincome report PDFs.",
+            "schema": {
+              "type": "string",
+              "example": "DOC-123"
+            }
+          },
+          {
+            "name": "X-IVAAS-Timestamp",
+            "in": "header",
+            "required": true,
+            "description": "Unix timestamp used when signing the request.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            }
+          },
+          {
+            "name": "X-IVAAS-Signature",
+            "in": "header",
+            "required": true,
+            "description": "HMAC-SHA512 hexdigest of `\"\u003ctimestamp\u003e:\u003crequest body\u003e\"`, keyed with the agency API key.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{128}$"
+            }
+          },
+          {
+            "name": "X-IVAAS-Confirmation-Code",
+            "in": "header",
+            "required": true,
+            "description": "Confirmation code of the submitted report.",
+            "schema": {
+              "type": "string",
+              "example": "SANDBOX123"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The document is sent as raw bytes in the request body, without a JSON or multipart\nwrapper. Any MIME type is supported; `Content-Type` identifies the document\nformat, such as `application/pdf`, `image/jpeg`, or `application/octet-stream`.",
+          "content": {
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Return `200 OK` when the document has been successfully received by your agency's\nsystem. Emmy uses the HTTP status to determine delivery success and does not\nvalidate the response body. The transmitter accepts any `2xx` success status;\nother statuses cause delivery to fail and trigger a retry. See [Retry logic](#tag/retry-logic).\n\n| HTTP status | Meaning | Emmy action |\n| :-- | :-- | :-- |\n| `200 OK` | The document was successfully received. | Mark delivery successful. |\n| `401 Unauthorized` | Signature verification failed. | Retry delivery. |\n| `500 Internal Server Error` | The receiving system could not process the request. | Retry delivery. |\n\nUse appropriate error statuses, such as `400 Bad Request`, `404 Not Found`,\n`408 Request Timeout`, `413 Content Too Large`, `429 Too Many Requests`, or\n`502 Bad Gateway`, to help diagnose failed deliveries."
+          }
         }
       }
     }
@@ -497,7 +1143,7 @@
       "AgencyPartnerMetadata": {
         "type": "object",
         "additionalProperties": true,
-        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the agency associated with your API key. Sandbox and Louisiana have\nseparate field sets; do not combine them. Some agency schemas overlap, so\nmatching a schema alone does not identify the agency.\n\nUnrecognized fields and `individual_id` are ignored by this V1 endpoint.\nThe response contains all accepted fields for the agency, with `null` for\nomitted values. Values are echoed as supplied, including date strings.\nSupply dates of birth as `MM/DD/YYYY`.",
+        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields are\nignored.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields are ignored, and omitted optional fields\nare not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
         "anyOf": [
           {
             "$ref": "#/components/schemas/AgencyMetadataSandbox"
@@ -519,7 +1165,7 @@
       "AgencyPartnerMetadataV2": {
         "type": "object",
         "additionalProperties": true,
-        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the agency associated with your API key. Sandbox and Louisiana have\nseparate field sets; do not combine them. Some agency schemas overlap, so\nmatching a schema alone does not identify the agency.\n\nUnrecognized fields and `individual_id` are ignored by this V1 endpoint.\nThe response contains all accepted fields for the agency, with `null` for\nomitted values. Values are echoed as supplied, including date strings.\nSupply dates of birth as `MM/DD/YYYY`.",
+        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields are\nignored.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields are ignored, and omitted optional fields\nare not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
         "anyOf": [
           {
             "$ref": "#/components/schemas/AgencyMetadataV2SandboxCommunityEngagement"
@@ -604,7 +1250,7 @@
       },
       "InvitationResponse": {
         "type": "object",
-        "description": "Direct the applicant to `tokenized_url` to report income. Its `expiration_date`\nis the end of the day in `America/New_York` after the agency's configured\nvalidity period (14 days for the sandbox). Request a new invitation when a\nlink expires.",
+        "description": "Direct the applicant to `tokenized_url` to report income. Its `expiration_date`\nis the end of the day in `America/New_York` after the agency's configured\nvalidity period (14 days for the sandbox). Request a new invitation when a\nlink expires.\n\n`agency_partner_metadata` uses the same agency-specific fields as the request.\nThe response includes all accepted V1 fields, with `null` for omitted values,\nand echoes supplied values, including date strings. Unrecognized fields are\nignored.",
         "required": [
           "tokenized_url",
           "expiration_date",
@@ -637,7 +1283,7 @@
       },
       "InvitationResponseV2": {
         "type": "object",
-        "description": "Direct the applicant to `tokenized_url` to complete income verification, and\nto `activity_tokenized_url` to complete the corresponding activity flow.\nTreat both tokens as opaque.",
+        "description": "Direct the applicant to `tokenized_url` to complete income verification, and\nto `activity_tokenized_url` to complete the corresponding activity flow.\nTreat both tokens as opaque.\n\n`agency_partner_metadata` echoes the accepted fields supplied in the request,\nusing the same agency and invitation-type schema, including `individual_id`.\nUnrecognized fields are ignored; omitted optional fields are not added to the\nresponse. Date strings are echoed as supplied.",
         "required": [
           "tokenized_url",
           "expiration_date",
@@ -674,6 +1320,20 @@
           },
           "agency_partner_metadata": {
             "$ref": "#/components/schemas/AgencyPartnerMetadataV2"
+          }
+        }
+      },
+      "ExpireInvitationResponse": {
+        "type": "object",
+        "required": [
+          "tokenized_url"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "tokenized_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The expired invitation's reporting link, returned for reference. Do not resend this link to the applicant."
           }
         }
       },
@@ -804,10 +1464,7 @@
             "example": "Doe"
           },
           "date_of_birth": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "example": "01/15/1990",
             "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
           }
@@ -916,10 +1573,7 @@
             "example": "Doe"
           },
           "date_of_birth": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "example": "01/15/1990",
             "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
           }
@@ -1015,10 +1669,7 @@
             "example": "Doe"
           },
           "date_of_birth": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "example": "01/15/1990",
             "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
           }
@@ -1106,10 +1757,7 @@
             "example": "Doe"
           },
           "date_of_birth": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "example": "01/15/1990",
             "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
           }
@@ -1189,10 +1837,7 @@
             "example": "Doe"
           },
           "date_of_birth": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "example": "01/15/1990",
             "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
           }
@@ -1356,22 +2001,25 @@
           "schema_version": {
             "type": "string",
             "pattern": "^\\d+\\.\\d+\\.\\d+$",
-            "example": "1.0.0"
+            "example": "1.0.0",
+            "description": "Semantic version of the CE compliance specification this payload conforms to."
           },
           "confirmation_code": {
             "type": "string",
-            "description": "Confirmation code shared with the applicant."
+            "description": "Unique code assigned when the report was completed, shared with the applicant and used to debug report processing errors."
           },
           "completed_at": {
             "type": "string",
             "format": "date-time",
-            "description": "UTC time the applicant completed the report."
+            "description": "UTC time the applicant completed the report, in ISO 8601 format."
           },
           "agency_partner_metadata": {
-            "$ref": "#/components/schemas/AgencyPartnerMetadata"
+            "$ref": "#/components/schemas/AgencyPartnerMetadata",
+            "description": "Agency-specific fields used to associate the report with the correct case, as agreed in the integration plan and shared with the Income Report API. Examples include case_number (string), date_of_birth (date string), and doc_id (string); which fields are required depends on the agency."
           },
           "ce_report": {
-            "$ref": "#/components/schemas/CeReport"
+            "$ref": "#/components/schemas/CeReport",
+            "description": "Community engagement report containing the review period, supporting document metadata, and activities."
           }
         },
         "required": [
@@ -1381,7 +2029,7 @@
           "agency_partner_metadata",
           "ce_report"
         ],
-        "description": "This document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.",
+        "description": "This document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nThe webhook currently uses the agency's V1 metadata field set, matching the V1\nincome invitation schema, with `null` for unavailable values. Dates of birth\nare serialized as `YYYY-MM-DD`, rather than echoed from the invitation request.\n\n**V2 limitation:** CE webhooks do not yet echo the V2 invitation metadata field\nset. In particular, `individual_id` is omitted. Louisiana webhooks contain\n`case_number`, `date_of_birth`, and `doc_id`; they omit the V2 `first_name` and\n`last_name` fields as well.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.",
         "example": {
           "schema_version": "1.0.0",
           "confirmation_code": "SANDBOX123",
@@ -1525,7 +2173,7 @@
                     ],
                     "additional_comments": null,
                     "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
-                    "employment_type": "self_employed",
+                    "employment_type": null,
                     "gross_income": 123.45
                   },
                   {
@@ -1546,7 +2194,7 @@
                     "document_ids": [],
                     "additional_comments": null,
                     "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
-                    "employment_type": "unpaid",
+                    "employment_type": null,
                     "gross_income": 0.0
                   },
                   {
@@ -1557,7 +2205,7 @@
                     "employer_phone": "604-555-1234",
                     "employer_address": "1234 Main St Vancouver BC V5K 0A1",
                     "employment_status": "inactive",
-                    "employment_type": "gig",
+                    "employment_type": null,
                     "employment_start_date": "2014-01-01",
                     "employment_end_date": "2014-01-02",
                     "pay_frequency": "variable",
@@ -1763,19 +2411,23 @@
             "enum": [
               "employment",
               "community_engagement"
-            ]
+            ],
+            "description": "Reporting flow used to complete this report."
           },
           "review_period": {
-            "$ref": "#/components/schemas/CeReviewPeriod"
+            "$ref": "#/components/schemas/CeReviewPeriod",
+            "description": "Full date range covered by this CE compliance determination, expressed as inclusive calendar months."
           },
           "documents": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CeDocument"
-            }
+            },
+            "description": "All supporting documents uploaded for the activities in this report. The files are transmitted separately by the document transmission integration; this array describes what to expect."
           },
           "activities": {
-            "$ref": "#/components/schemas/CeActivities"
+            "$ref": "#/components/schemas/CeActivities",
+            "description": "Activities grouped first by type, then by reporting month in YYYY-MM format."
           }
         },
         "required": [
@@ -1783,7 +2435,8 @@
           "review_period",
           "documents",
           "activities"
-        ]
+        ],
+        "description": "The report's review period, supporting documents, and reported activities."
       },
       "CeReviewPeriod": {
         "type": "object",
@@ -1792,12 +2445,12 @@
           "start_month": {
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}$",
-            "description": "Calendar month as YYYY-MM."
+            "description": "First calendar month of the review period, inclusive, in YYYY-MM format."
           },
           "end_month": {
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}$",
-            "description": "Calendar month as YYYY-MM."
+            "description": "Last calendar month of the review period, inclusive, in YYYY-MM format."
           }
         },
         "required": [
@@ -1812,7 +2465,7 @@
         "properties": {
           "document_id": {
             "type": "string",
-            "description": "Attachment identifier referenced by an activity's document_ids."
+            "description": "Identifier based on the Emmy Active Storage attachment ID, referenced by an activity's document_ids."
           },
           "document_name": {
             "type": "string",
@@ -1827,7 +2480,8 @@
           "document_id",
           "document_name",
           "file_type"
-        ]
+        ],
+        "description": "Metadata for a supporting document. The document itself is transmitted separately."
       },
       "CeActivities": {
         "type": "object",
@@ -1891,7 +2545,8 @@
           "work_program",
           "employment",
           "education"
-        ]
+        ],
+        "description": "Keys are activity types, each containing a map of YYYY-MM months to activity arrays. Months with no reported activity are omitted; an activity type with no activities is an empty object. Activities spanning several months appear under each applicable month."
       },
       "CeActivity": {
         "type": "object",
@@ -1904,12 +2559,13 @@
               "work_program",
               "employment",
               "education"
-            ]
+            ],
+            "description": "Activity type, matching the enclosing activity-type key."
           },
           "month": {
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}$",
-            "description": "Calendar month as YYYY-MM."
+            "description": "Calendar month this activity applies to in YYYY-MM format; repeats the enclosing month key."
           },
           "data_source": {
             "type": "string",
@@ -1918,13 +2574,15 @@
               "validated",
               "verified",
               "verified_enrollment_only"
-            ]
+            ],
+            "description": "Origin of the activity data: self_attested for manually reported activities, validated for linked Argyle or Pinwheel payroll, verified for NSC enrollment, or verified_enrollment_only for NSC enrollment with self-attested credits."
           },
           "document_ids": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Supporting document_id values from the report's documents array. Empty for linked payroll; self-attested documents are referenced from their own activities."
           }
         },
         "required": [
@@ -1932,7 +2590,8 @@
           "month",
           "data_source",
           "document_ids"
-        ]
+        ],
+        "description": "Fields shared by all activity entries in the enclosing reporting month."
       },
       "CeCommunityServiceActivity": {
         "allOf": [
@@ -1947,42 +2606,48 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Street address of the organization, employer, or school."
               },
               "street_address_line_2": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Additional street address information, such as an apartment or suite."
               },
               "city": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "City of the organization, employer, or school."
               },
               "state": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "State of the organization, employer, or school."
               },
               "zip_code": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "ZIP code of the organization, employer, or school."
               },
               "hours": {
                 "type": "number",
                 "minimum": 0,
-                "description": "Hours reported for this month; may be zero."
+                "description": "Decimal hours (10,2) reported for this activity in the enclosing month; may be zero. Education variants use academic credit hours instead."
               },
               "additional_comments": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "type": {
                 "type": "string",
@@ -2000,25 +2665,29 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Full, official name of the community service organization."
               },
               "coordinator_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Coordinator or supervisor the applicant worked most closely with."
               },
               "coordinator_email": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Email address of the coordinator or supervisor."
               },
               "coordinator_phone_number": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Phone number of the coordinator or supervisor."
               }
             },
             "required": [
@@ -2040,60 +2709,69 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Street address of the organization, employer, or school."
               },
               "street_address_line_2": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Additional street address information, such as an apartment or suite."
               },
               "city": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "City of the organization, employer, or school."
               },
               "state": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "State of the organization, employer, or school."
               },
               "zip_code": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "ZIP code of the organization, employer, or school."
               },
               "hours": {
                 "type": "number",
                 "minimum": 0,
-                "description": "Hours reported for this month; may be zero."
+                "description": "Decimal hours (10,2) reported for this activity in the enclosing month; may be zero. Education variants use academic credit hours instead."
               },
               "additional_comments": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "contact_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Name of the contact at the work program, employer, or school."
               },
               "contact_email": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Email address of the contact at the work program, employer, or school."
               },
               "contact_phone_number": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Phone number of the contact at the work program, employer, or school."
               },
               "type": {
                 "type": "string",
@@ -2111,13 +2789,15 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Organization or provider running the work or training program."
               },
               "program_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Full name of the work program."
               }
             },
             "required": [
@@ -2127,7 +2807,7 @@
         ]
       },
       "CeEmploymentActivity": {
-        "description": "One employer's activity in the enclosing month, either self-attested or validated payroll data.",
+        "description": "One employer's activity in the enclosing month, either self-attested or validated payroll data. Employment follows the September 4 specification's JSON examples: has_other_jobs and income_summary are omitted, while the CE envelope and review_period are preserved.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/CeSelfAttestedEmploymentActivity"
@@ -2157,60 +2837,69 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Street address of the organization, employer, or school."
               },
               "street_address_line_2": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Additional street address information, such as an apartment or suite."
               },
               "city": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "City of the organization, employer, or school."
               },
               "state": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "State of the organization, employer, or school."
               },
               "zip_code": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "ZIP code of the organization, employer, or school."
               },
               "hours": {
                 "type": "number",
                 "minimum": 0,
-                "description": "Hours reported for this month; may be zero."
+                "description": "Decimal hours (10,2) reported for this activity in the enclosing month; may be zero. Education variants use academic credit hours instead."
               },
               "additional_comments": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "contact_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Name of the contact at the work program, employer, or school."
               },
               "contact_email": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Email address of the contact at the work program, employer, or school."
               },
               "contact_phone_number": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Phone number of the contact at the work program, employer, or school."
               },
               "type": {
                 "type": "string",
@@ -2225,7 +2914,8 @@
                 ]
               },
               "employer_name": {
-                "type": "string"
+                "type": "string",
+                "description": "Name of the employer or business."
               },
               "employer_address": {
                 "type": [
@@ -2235,17 +2925,12 @@
                 "description": "Combined address, also supplied as individual address fields."
               },
               "employment_type": {
-                "type": "string",
-                "enum": [
-                  "w2",
-                  "self_employed",
-                  "unpaid"
-                ],
-                "description": "Paid work, paid self-employment, or unpaid/in-kind work."
+                "type": "null",
+                "description": "Always null for self-attested employment. Populated only for Argyle-sourced employment."
               },
               "is_self_employed": {
                 "type": "boolean",
-                "description": "Employer contact fields are null when true."
+                "description": "Whether the applicant marked the work as self-employment. Employer contact fields are null when true."
               },
               "gross_income": {
                 "type": "number",
@@ -2261,7 +2946,8 @@
               "gross_income"
             ]
           }
-        ]
+        ],
+        "description": "Published self-attested work appears once per reported month, including months with zero hours or income. Draft activities are excluded. Includes address components, applicant comments, monthly hours, and supporting document IDs. Employer contact details are null for self-employment."
       },
       "CeValidatedEmploymentActivity": {
         "allOf": [
@@ -2289,7 +2975,8 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Applicant's full name from the payroll provider."
               },
               "applicant_ssn": {
                 "type": [
@@ -2303,25 +2990,29 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Applicant's comments about this employment."
               },
               "employer_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Employer name from the payroll provider."
               },
               "employer_phone": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Employer phone number from the payroll provider."
               },
               "employer_address": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Employer address from the payroll provider."
               },
               "employment_status": {
                 "type": [
@@ -2333,7 +3024,8 @@
                   "inactive",
                   "terminated",
                   null
-                ]
+                ],
+                "description": "Employment status reported by the payroll provider."
               },
               "employment_type": {
                 "type": [
@@ -2344,21 +3036,24 @@
                   "w2",
                   "gig",
                   null
-                ]
+                ],
+                "description": "Argyle employment classification: w2 for W-2 work or gig for gig work; null for Pinwheel or when unavailable."
               },
               "employment_start_date": {
                 "type": [
                   "string",
                   "null"
                 ],
-                "format": "date"
+                "format": "date",
+                "description": "Employment start date reported by the payroll provider."
               },
               "employment_end_date": {
                 "type": [
                   "string",
                   "null"
                 ],
-                "format": "date"
+                "format": "date",
+                "description": "Employment end date reported by the payroll provider."
               },
               "pay_frequency": {
                 "type": [
@@ -2374,14 +3069,15 @@
                   "quarterly",
                   "variable",
                   null
-                ]
+                ],
+                "description": "How often the applicant is paid."
               },
               "compensation_amount": {
                 "type": [
                   "integer",
                   "null"
                 ],
-                "description": "Amount in cents (12345 represents $123.45)."
+                "description": "Compensation rate in cents, per compensation_unit; null when unavailable."
               },
               "compensation_unit": {
                 "type": [
@@ -2401,7 +3097,8 @@
                   "semiweekly",
                   "variable",
                   null
-                ]
+                ],
+                "description": "Unit or period associated with compensation_amount."
               },
               "paystubs": {
                 "type": "array",
@@ -2409,7 +3106,7 @@
                 "items": {
                   "$ref": "#/components/schemas/CePaystub"
                 },
-                "description": "Only payments dated within the enclosing month and review period. Grouped by pay_date, not pay period."
+                "description": "Only payments dated within the enclosing month and review period. Grouped by pay_date, even when the work period falls in another month. Undated paychecks and paychecks outside the review period are omitted."
               }
             },
             "required": [
@@ -2418,10 +3115,11 @@
               "paystubs"
             ]
           }
-        ]
+        ],
+        "description": "Only published, successfully synchronized Argyle or Pinwheel accounts are included. Each employer appears once per month with a paycheck in the review period; employers without dated paychecks in that period have no entry. Payroll money values are in cents, and nullable provider fields remain null. Hours are reported on each paystub as hours_paid; there is no calculated employment-level hours field. A failed payroll fetch fails transmission so the job can retry rather than sending a partial report."
       },
       "CeEducationActivity": {
-        "description": "Education in the enclosing month: self-attested credits, verified NSC enrollment, or verified enrollment with self-attested credits.",
+        "description": "Only published education activities are included: self-attested credits, verified NSC enrollment, or verified enrollment with self-attested credits. Fully self-attested education appears under each reported month. NSC term entries appear under each applicable reporting month, including eligible summer carryover. A month can contain multiple schools or terms.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/CeSelfAttestedEducationActivity"
@@ -2455,31 +3153,36 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Street address of the organization, employer, or school."
               },
               "street_address_line_2": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Additional street address information, such as an apartment or suite."
               },
               "city": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "City of the organization, employer, or school."
               },
               "state": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "State of the organization, employer, or school."
               },
               "zip_code": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "ZIP code of the organization, employer, or school."
               },
               "hours": {
                 "type": "number",
@@ -2490,25 +3193,29 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "contact_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Name of the contact at the work program, employer, or school."
               },
               "contact_email": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Email address of the contact at the work program, employer, or school."
               },
               "contact_phone_number": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Phone number of the contact at the work program, employer, or school."
               },
               "education_type": {
                 "type": [
@@ -2532,7 +3239,8 @@
                 ]
               },
               "school_name": {
-                "type": "string"
+                "type": "string",
+                "description": "Name of the school reported by the applicant."
               },
               "enrollment_status": {
                 "type": "string",
@@ -2550,10 +3258,11 @@
                   "null"
                 ],
                 "minimum": 0,
-                "description": "Academic credit hours for the term; null when not supplied."
+                "description": "Academic credits for the term, reported by the applicant where needed. Fractions are preserved; unknown credits stay null. NSC does not provide academic credits, so this is null for verified enrollment."
               },
               "term": {
-                "$ref": "#/components/schemas/CeEducationTerm"
+                "$ref": "#/components/schemas/CeEducationTerm",
+                "description": "Original enrollment term, with required start_month and end_month in YYYY-MM format."
               },
               "data_source": {
                 "type": "string",
@@ -2570,7 +3279,8 @@
               "education_type"
             ]
           }
-        ]
+        ],
+        "description": "School details, term dates, enrollment status, and optional academic credits reported by the applicant, including address and contact fields. Manual terms appear in each reporting month covered by their dates."
       },
       "CeVerifiedEducationActivity": {
         "allOf": [
@@ -2606,7 +3316,8 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "School name from the NSC enrollment term; null when unavailable."
               },
               "enrollment_status": {
                 "type": "string",
@@ -2616,8 +3327,13 @@
                   "half_time",
                   "less_than_half_time",
                   "enrolled",
+                  "leave_of_absence",
+                  "withdrawn",
+                  "graduated",
+                  "deceased",
                   "unknown"
-                ]
+                ],
+                "description": "NSC enrollment status for this term, including unknown when the status is unavailable."
               },
               "credit_hours": {
                 "type": [
@@ -2625,16 +3341,18 @@
                   "null"
                 ],
                 "minimum": 0,
-                "description": "Academic credit hours for the term; null when not supplied."
+                "description": "Academic credits for the term, reported by the applicant where needed. Fractions are preserved; unknown credits stay null. NSC does not provide academic credits, so this is null for verified enrollment."
               },
               "term": {
-                "$ref": "#/components/schemas/CeEducationTerm"
+                "$ref": "#/components/schemas/CeEducationTerm",
+                "description": "Original enrollment term, with required start_month and end_month in YYYY-MM format."
               },
               "additional_comments": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "data_source": {
                 "type": "string",
@@ -2651,7 +3369,8 @@
               "education_type"
             ]
           }
-        ]
+        ],
+        "description": "NSC-verified enrollment and original term details. NSC does not provide academic credit hours, so credit_hours is null."
       },
       "CeVerifiedEnrollmentOnlyEducationActivity": {
         "allOf": [
@@ -2666,31 +3385,36 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Street address of the organization, employer, or school."
               },
               "street_address_line_2": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Additional street address information, such as an apartment or suite."
               },
               "city": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "City of the organization, employer, or school."
               },
               "state": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "State of the organization, employer, or school."
               },
               "zip_code": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "ZIP code of the organization, employer, or school."
               },
               "hours": {
                 "type": [
@@ -2698,31 +3422,35 @@
                   "null"
                 ],
                 "minimum": 0,
-                "description": "Self-attested academic credit hours for the term, also supplied as credit_hours; null when not reported."
+                "description": "Self-attested academic credit hours for the term, matching credit_hours. Fractions and zero are preserved; null when not reported."
               },
               "additional_comments": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Optional free-text comments the applicant added at the review step."
               },
               "contact_name": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Name of the contact at the work program, employer, or school."
               },
               "contact_email": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Email address of the contact at the work program, employer, or school."
               },
               "contact_phone_number": {
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "Phone number of the contact at the work program, employer, or school."
               },
               "education_type": {
                 "type": [
@@ -2749,7 +3477,8 @@
                 "type": [
                   "string",
                   "null"
-                ]
+                ],
+                "description": "School name from the NSC enrollment term; null when unavailable."
               },
               "enrollment_status": {
                 "type": "string",
@@ -2759,8 +3488,13 @@
                   "half_time",
                   "less_than_half_time",
                   "enrolled",
+                  "leave_of_absence",
+                  "withdrawn",
+                  "graduated",
+                  "deceased",
                   "unknown"
-                ]
+                ],
+                "description": "NSC enrollment status for this term, including unknown when the status is unavailable."
               },
               "credit_hours": {
                 "type": [
@@ -2768,17 +3502,18 @@
                   "null"
                 ],
                 "minimum": 0,
-                "description": "Academic credit hours for the term; null when not supplied."
+                "description": "Academic credits for the term, reported by the applicant where needed. Fractions are preserved; unknown credits stay null. NSC does not provide academic credits, so this is null for verified enrollment."
               },
               "term": {
-                "$ref": "#/components/schemas/CeEducationTerm"
+                "$ref": "#/components/schemas/CeEducationTerm",
+                "description": "Original enrollment term, with required start_month and end_month in YYYY-MM format."
               },
               "data_source": {
                 "type": "string",
                 "enum": [
                   "verified_enrollment_only"
                 ],
-                "description": "NSC-verified enrollment with self-attested academic credits."
+                "description": "NSC-verified enrollment, but whether the user was enrolled full-time, half-time, or less-than-half-time was not provided. The term credit_hours field is populated with self-attested values."
               }
             },
             "required": [
@@ -2789,7 +3524,8 @@
               "education_type"
             ]
           }
-        ]
+        ],
+        "description": "Partially self-attested education combines NSC enrollment and term details with applicant-reported academic credits, retaining self-attested address and contact fields. Every term entry uses verified_enrollment_only, including terms with half-time or greater enrollment."
       },
       "CeEducationTerm": {
         "type": "object",
@@ -2798,12 +3534,12 @@
           "start_month": {
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}$",
-            "description": "Calendar month as YYYY-MM."
+            "description": "Start month of the original enrollment term in YYYY-MM format."
           },
           "end_month": {
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}$",
-            "description": "Calendar month as YYYY-MM."
+            "description": "End month of the original enrollment term in YYYY-MM format."
           }
         },
         "required": [
@@ -2818,21 +3554,24 @@
         "properties": {
           "pay_date": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "description": "Date of payment, used to assign the paycheck to its reporting month."
           },
           "pay_period_start": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date"
+            "format": "date",
+            "description": "Start of the work period covered by the paycheck; may fall outside the payment's reporting month."
           },
           "pay_period_end": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date"
+            "format": "date",
+            "description": "End of the work period covered by the paycheck; may fall outside the payment's reporting month."
           },
           "pay_gross": {
             "type": "integer",
@@ -2843,14 +3582,14 @@
               "integer",
               "null"
             ],
-            "description": "Amount in cents (12345 represents $123.45)."
+            "description": "Year-to-date gross pay in cents; null when unavailable."
           },
           "pay_net": {
             "type": [
               "integer",
               "null"
             ],
-            "description": "Amount in cents (12345 represents $123.45)."
+            "description": "Net pay in cents; null when unavailable."
           },
           "hours_paid": {
             "type": [
@@ -2863,13 +3602,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CePaystubDeduction"
-            }
+            },
+            "description": "Itemized deductions from this paycheck, with amounts in cents."
           },
           "gross_pay_list": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CeGrossPayComponent"
-            }
+            },
+            "description": "Itemized components of gross pay, with amounts in cents."
           }
         },
         "required": [
@@ -2885,7 +3626,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Deduction category reported by the payroll provider."
           },
           "tax": {
             "type": "string",
@@ -2893,7 +3635,8 @@
               "pre_tax",
               "post_tax",
               "unknown"
-            ]
+            ],
+            "description": "Whether the deduction is taken before or after tax, or unknown."
           },
           "amount": {
             "type": [
