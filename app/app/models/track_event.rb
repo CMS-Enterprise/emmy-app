@@ -143,6 +143,7 @@ module TrackEvent
   CommunityServiceExitClicked = "CommunityServiceExitClicked"
   CommunityServiceExitModalCancelled = "CommunityServiceExitModalCancelled"
   CommunityServiceExitModalConfirmed = "CommunityServiceExitModalConfirmed"
+  HouseholdSelectionViewed = "HouseholdSelectionViewed"
   HubViewed = "HubViewed"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
   WorkProgramBackClicked = "WorkProgramBackClicked"
