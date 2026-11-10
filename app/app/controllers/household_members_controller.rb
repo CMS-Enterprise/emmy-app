@@ -4,6 +4,10 @@ class HouseholdMembersController < ApplicationController
   def create
     # Completed household members should not re-enter an activity flow
     if @household_member.completed_activity_flow?
+      track_event(
+        TrackEvent::HouseholdMemberSelected,
+        member_previously_completed: member_previously_completed
+      )
       set_flow_session(nil, :activity)
       return redirect_to household_start_path(token: @household.auth_token)
     end

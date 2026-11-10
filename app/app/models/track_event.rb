@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 module TrackEvent
+  ActivityBackClicked = "ActivityBackClicked"
+  ActivityExitClicked = "ActivityExitClicked"
+  ActivityExitModalCancelled = "ActivityExitModalCancelled"
+  ActivityExitModalConfirmed = "ActivityExitModalConfirmed"
+  ActivityReportConfirmationViewed = "ActivityReportConfirmationViewed"
+  ActivityReportReviewViewed = "ActivityReportReviewViewed"
+  ActivityReportSubmitted = "ActivityReportSubmitted"
+  ActivityTimeoutPageViewed = "ActivityTimeoutPageViewed"
   ApplicantAccessedArgyleModalMFAScreen = "ApplicantAccessedArgyleModalMFAScreen"
   ApplicantAccessedExpiredLinkPage = "ApplicantAccessedExpiredLinkPage"
   ApplicantAccessedFlowWithoutCookie = "ApplicantAccessedFlowWithoutCookie"
@@ -144,6 +152,9 @@ module TrackEvent
   CommunityServiceExitModalCancelled = "CommunityServiceExitModalCancelled"
   CommunityServiceExitModalConfirmed = "CommunityServiceExitModalConfirmed"
   HouseholdSelectionViewed = "HouseholdSelectionViewed"
+  HouseholdMemberSelected = "HouseholdMemberSelected"
+  HubActivityMarkedComplete = "HubActivityMarkedComplete"
+  HubSpokeSelected = "HubSpokeSelected"
   HubViewed = "HubViewed"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
   WorkProgramBackClicked = "WorkProgramBackClicked"
