@@ -684,7 +684,7 @@ en:
         school_contact_email: School contact email
         school_contact_name: School contact name
         school_contact_phone_number: School contact phone number
-        supplemental_enrollment_status: "%{status} (Supplemental enrollment status)"
+        supplemental_enrollment_status: "%{status} (self-attested)"
         term_date_range: "%{start_date} to %{end_date}"
         title: Community Engagement Report
         total_hours_worked: Total hours worked
