@@ -131,6 +131,7 @@ en:
       exit: Exit
       modal:
         back_button: Back
+        close: Close this window
         body: Your progress adding this activity will not be saved.
         exit_link: Exit without saving
         heading: Are you sure you want to exit?
