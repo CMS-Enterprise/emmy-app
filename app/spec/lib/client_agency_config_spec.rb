@@ -254,6 +254,88 @@ RSpec.describe ClientAgencyConfig do
         )
       end
     end
+
+    context "LA activity delivery" do
+      let(:agency) { described_class.new(Rails.root.join("config/client-agency-config.yml"))["la_ldh"] }
+      let(:transmission_method) { "json" }
+      let(:json_api_url) { "https://activity.example.gov/reports" }
+
+      around do |example|
+        ClimateControl.modify(
+          LA_LDH_ACTIVITY_FLOW_TRANSMISSION_METHOD: transmission_method,
+          LA_LDH_ACTIVITY_JSON_API_URL: json_api_url,
+          LA_LDH_ACTIVITY_DOCUMENTS_API_URL: "https://activity.example.gov/documents",
+          LA_LDH_ACTIVITY_APIKEY: "synthetic: gateway # key",
+          LA_LDH_ACTIVITY_ACCOUNTCODE: "00123",
+          LA_LDH_TRANSMISSION_METHOD: "json_and_pdf",
+          LA_LDH_INCOME_REPORT_URL: "https://income.example.gov/reports",
+          LA_LDH_INCOME_REPORT_APIKEY: "legacy-key",
+          LA_LDH_INCOME_REPORT_ACCOUNTCODE: "legacy-account"
+        ) { example.run }
+      end
+
+      it "loads the activity method, endpoints, and gateway headers from the environment" do
+        expect(agency.activity_flow_transmission_method).to eq("json")
+        expect(agency.activity_transmission_method_configuration).to include(
+          "json_api_url" => "https://activity.example.gov/reports",
+          "documents_api_url" => "https://activity.example.gov/documents",
+          "custom_headers" => {
+            "X-Gateway-APIKey" => "synthetic: gateway # key",
+            "AccountCode" => "00123"
+          },
+          "silently_retry_error_codes" => [ 403, 408, 502 ]
+        )
+      end
+
+      it "keeps legacy income delivery settings separate" do
+        expect(agency.income_flow_transmission_method).to eq("json_and_pdf")
+        expect(agency.income_transmission_method_configuration).to include(
+          "json_api_url" => "https://income.example.gov/reports",
+          "custom_headers" => {
+            "X-Gateway-APIKey" => "legacy-key",
+            "AccountCode" => "legacy-account"
+          }
+        )
+      end
+
+      context "with document delivery enabled" do
+        let(:transmission_method) { "http" }
+
+        it "loads the document delivery configuration" do
+          expect(agency.activity_flow_transmission_method).to eq("http")
+          expect(agency.activity_transmission_method_configuration["documents_api_url"])
+            .to eq("https://activity.example.gov/documents")
+        end
+      end
+
+      context "without an activity transmission method" do
+        let(:transmission_method) { nil }
+
+        it "defaults to JSON delivery" do
+          expect(agency.activity_flow_transmission_method).to eq("json")
+          expect(agency.activity_transmission_method_configuration["json_api_url"]).to eq(json_api_url)
+        end
+
+        context "without a JSON receiver URL" do
+          let(:json_api_url) { nil }
+
+          it "rejects the missing endpoint at boot" do
+            expect { agency }.to raise_error(ArgumentError, /Client Agency la_ldh `json_api_url` must be an absolute HTTP\(S\) URL/)
+          end
+        end
+      end
+
+      context "with an empty activity transmission method" do
+        let(:transmission_method) { "" }
+
+        it "rejects configuration without a transmission method" do
+          expect { agency }.to raise_error(
+            ArgumentError,
+            "Client Agency la_ldh sets `activity_transmission_method_configuration` but is missing `activity_flow_transmission_method`"
+          )
+        end
+      end
+    end
   end
 
   context "activity flow transmission endpoints" do
