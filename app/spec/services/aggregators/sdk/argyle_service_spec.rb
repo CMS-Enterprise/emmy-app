@@ -84,7 +84,16 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       stub_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10")
         .to_return(status: 500, body: "", headers: {})
 
-      expect { service.fetch_identities_api }.to raise_error(Faraday::ServerError)
+      allow(NewRelic::Agent).to receive(:notice_error)
+
+      expect { service.fetch_identities_api }.to raise_error(described_class::ArgyleServerError)
+      expect(NewRelic::Agent).to have_received(:notice_error).with(
+        an_instance_of(described_class::ArgyleServerError),
+        custom_params: {
+          provider: "argyle",
+          argyle_environment: "sandbox"
+        }
+      ).once
     end
   end
 
@@ -140,7 +149,7 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       stub_request(:get, "https://api-sandbox.argyle.com/v2/accounts?limit=10")
       .to_return(status: 500, body: "", headers: {})
 
-      expect { service.fetch_accounts_api }.to raise_error(Faraday::ServerError)
+      expect { service.fetch_accounts_api }.to raise_error(described_class::ArgyleServerError)
     end
   end
 
@@ -171,7 +180,7 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       stub_request(:get, "https://api-sandbox.argyle.com/v2/accounts/#{account_id}")
         .to_return(status: 500, body: "", headers: {})
 
-      expect { service.fetch_account_api(account: account_id) }.to raise_error(Faraday::ServerError)
+      expect { service.fetch_account_api(account: account_id) }.to raise_error(described_class::ArgyleServerError)
     end
   end
 
@@ -223,7 +232,7 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?limit=200")
         .to_return(status: 500, body: "", headers: {})
 
-      expect { service.fetch_paystubs_api }.to raise_error(Faraday::ServerError)
+      expect { service.fetch_paystubs_api }.to raise_error(described_class::ArgyleServerError)
     end
 
     context "when the response is paginated" do
@@ -276,7 +285,7 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       stub_request(:get, "https://api-sandbox.argyle.com/v2/employments?account=account123")
         .to_return(status: 500, body: "", headers: {})
 
-      expect { service.fetch_employments_api(account: account_id) }.to raise_error(Faraday::ServerError)
+      expect { service.fetch_employments_api(account: account_id) }.to raise_error(described_class::ArgyleServerError)
     end
   end
 
