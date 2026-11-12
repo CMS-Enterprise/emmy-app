@@ -243,7 +243,9 @@
                 ], tag.br)
               end
 
-              if term.less_than_half_time?
+              if term.supplemental_sufficient_enrollment?
+                row += [ t("shared.not_applicable"), t("shared.not_applicable") ]
+              elsif term.less_than_half_time?
                 credit_hours = term.credit_hours || 0
                 row += [ format_decimal_amount(credit_hours), format_decimal_amount(activity.community_engagement_hours(credit_hours)) ]
               else

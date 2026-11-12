@@ -116,10 +116,9 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
       let(:supplemental_status) { "full_time" }
       let(:credit_hours) { nil }
 
-      it "renders the supplied status and preserves the existing hours calculation" do
+      it "renders the supplied status with inapplicable credit and community engagement hours" do
         expect(term_row).to have_text(I18n.t("activities.education.add_your_term.edit.enrollment_status_options.full_time"))
-        expect(term_row).to have_selector("td", exact_text: "0", count: 2)
-        expect(term_row).to have_no_text(I18n.t("shared.not_applicable"))
+        expect(term_row).to have_selector("td", exact_text: I18n.t("shared.not_applicable"), count: 2)
       end
     end
 
@@ -127,10 +126,9 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
       let(:supplemental_status) { "half_time" }
       let(:credit_hours) { nil }
 
-      it "renders the supplied status and preserves the existing hours calculation" do
+      it "renders the supplied status with inapplicable credit and community engagement hours" do
         expect(term_row).to have_text(I18n.t("activities.education.add_your_term.edit.enrollment_status_options.half_time"))
-        expect(term_row).to have_selector("td", exact_text: "0", count: 2)
-        expect(term_row).to have_no_text(I18n.t("shared.not_applicable"))
+        expect(term_row).to have_selector("td", exact_text: I18n.t("shared.not_applicable"), count: 2)
       end
     end
 
