@@ -311,16 +311,17 @@ RSpec.describe ClientAgencyConfig do
       context "without an activity transmission method" do
         let(:transmission_method) { nil }
 
-        it "defaults to JSON delivery" do
-          expect(agency.activity_flow_transmission_method).to eq("json")
-          expect(agency.activity_transmission_method_configuration["json_api_url"]).to eq(json_api_url)
+        it "disables delivery even when endpoints and credentials are configured" do
+          expect(agency.activity_flow_transmission_method).to be_nil
+          expect(agency.activity_transmission_method_configuration).to be_nil
         end
 
         context "without a JSON receiver URL" do
           let(:json_api_url) { nil }
 
-          it "rejects the missing endpoint at boot" do
-            expect { agency }.to raise_error(ArgumentError, /Client Agency la_ldh `json_api_url` must be an absolute HTTP\(S\) URL/)
+          it "loads with delivery disabled" do
+            expect(agency.activity_flow_transmission_method).to be_nil
+            expect(agency.activity_transmission_method_configuration).to be_nil
           end
         end
       end
@@ -328,11 +329,24 @@ RSpec.describe ClientAgencyConfig do
       context "with an empty activity transmission method" do
         let(:transmission_method) { "" }
 
-        it "rejects configuration without a transmission method" do
-          expect { agency }.to raise_error(
-            ArgumentError,
-            "Client Agency la_ldh sets `activity_transmission_method_configuration` but is missing `activity_flow_transmission_method`"
-          )
+        it "disables delivery" do
+          expect(agency.activity_flow_transmission_method).to be_blank
+          expect(agency.activity_transmission_method_configuration).to be_nil
+        end
+      end
+
+      context "with JSON delivery enabled but no JSON receiver URL" do
+        let(:json_api_url) { nil }
+
+        it "rejects the missing endpoint at boot" do
+          expect { agency }.to raise_error(ArgumentError, /Client Agency la_ldh `json_api_url` must be an absolute HTTP\(S\) URL/)
+        end
+      end
+
+      it "loads the client agency configuration without environment variables" do
+        ClimateControl.modify(ENV.to_h.transform_values { nil }) do
+          expect(agency.activity_flow_transmission_method).to be_nil
+          expect(agency.activity_transmission_method_configuration).to be_nil
         end
       end
     end
