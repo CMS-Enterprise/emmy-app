@@ -11,8 +11,7 @@
   argyle:
     environment: <%= ENV["LA_LDH_ARGYLE_ENVIRONMENT"] %>
   income_flow_transmission_method: <%= ENV.fetch("LA_LDH_TRANSMISSION_METHOD", "json") %>
-  activity_flow_transmission_method: <%= ENV["LA_LDH_ACTIVITY_FLOW_TRANSMISSION_METHOD"].to_json %>
-  # <% if ENV["LA_LDH_ACTIVITY_FLOW_TRANSMISSION_METHOD"].present? %>
+  activity_flow_transmission_method: <%= ENV.fetch("LA_LDH_ACTIVITY_FLOW_TRANSMISSION_METHOD", "none") %>
   activity_transmission_method_configuration:
     json_api_url: <%= ENV["LA_LDH_ACTIVITY_JSON_API_URL"].to_json %>
     documents_api_url: <%= ENV["LA_LDH_ACTIVITY_DOCUMENTS_API_URL"].to_json %>
@@ -23,7 +22,6 @@
     custom_headers:
       X-Gateway-APIKey: <%= ENV["LA_LDH_ACTIVITY_APIKEY"].to_json %>
       AccountCode: <%= ENV["LA_LDH_ACTIVITY_ACCOUNTCODE"].to_json %>
-  # <% end %>
   income_transmission_method_configuration:
     json_api_url: <%= ENV["LA_LDH_INCOME_REPORT_URL"] %>
     pdf_api_url: <%= ENV["LA_LDH_PDF_API_URL"] %>

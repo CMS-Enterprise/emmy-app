@@ -312,16 +312,16 @@ RSpec.describe ClientAgencyConfig do
         let(:transmission_method) { nil }
 
         it "disables delivery even when endpoints and credentials are configured" do
-          expect(agency.activity_flow_transmission_method).to be_nil
-          expect(agency.activity_transmission_method_configuration).to be_nil
+          expect(agency.activity_flow_transmission_method).to eq("none")
+          expect(agency.activity_transmission_method_configuration["json_api_url"]).to eq(json_api_url)
         end
 
         context "without a JSON receiver URL" do
           let(:json_api_url) { nil }
 
           it "loads with delivery disabled" do
-            expect(agency.activity_flow_transmission_method).to be_nil
-            expect(agency.activity_transmission_method_configuration).to be_nil
+            expect(agency.activity_flow_transmission_method).to eq("none")
+            expect(agency.activity_transmission_method_configuration["json_api_url"]).to be_nil
           end
         end
       end
@@ -329,9 +329,21 @@ RSpec.describe ClientAgencyConfig do
       context "with an empty activity transmission method" do
         let(:transmission_method) { "" }
 
-        it "disables delivery" do
-          expect(agency.activity_flow_transmission_method).to be_blank
-          expect(agency.activity_transmission_method_configuration).to be_nil
+        it "rejects configuration without a transmission method" do
+          expect { agency }.to raise_error(
+            ArgumentError,
+            "Client Agency la_ldh sets `activity_transmission_method_configuration` but is missing `activity_flow_transmission_method`"
+          )
+        end
+      end
+
+      context "with activity delivery explicitly disabled" do
+        let(:transmission_method) { "none" }
+        let(:json_api_url) { nil }
+
+        it "loads without requiring a JSON receiver URL" do
+          expect(agency.activity_flow_transmission_method).to eq("none")
+          expect(agency.activity_transmission_method_configuration["json_api_url"]).to be_nil
         end
       end
 
@@ -345,8 +357,11 @@ RSpec.describe ClientAgencyConfig do
 
       it "loads the client agency configuration without environment variables" do
         ClimateControl.modify(ENV.to_h.transform_values { nil }) do
-          expect(agency.activity_flow_transmission_method).to be_nil
-          expect(agency.activity_transmission_method_configuration).to be_nil
+          expect(agency.activity_flow_transmission_method).to eq("none")
+          expect(agency.activity_transmission_method_configuration).to include(
+            "json_api_url" => nil,
+            "documents_api_url" => nil
+          )
         end
       end
     end

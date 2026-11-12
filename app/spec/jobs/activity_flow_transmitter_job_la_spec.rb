@@ -45,6 +45,17 @@ RSpec.describe ActivityFlowTransmitterJob, type: :job do
     expect(request_stub).to have_been_requested.once
   end
 
+  context "when the activity delivery method is not set" do
+    let(:transmission_method) { nil }
+
+    it "skips delivery using the configured none default" do
+      expect { described_class.new.perform(activity_flow.id) }
+        .not_to change { activity_flow.reload.transmitted_at }
+
+      expect(request_stub).not_to have_been_requested
+    end
+  end
+
   context "when LA returns 403" do
     let(:response_status) { 403 }
 
