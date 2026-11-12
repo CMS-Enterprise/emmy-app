@@ -352,7 +352,7 @@ RSpec.describe Activities::ActivitiesController, type: :controller do
         "[data-controller='activity-hub'][data-action='click->activity-hub#trackClick']"
       )
       expect(rendered).to have_css(
-        "[data-activity-hub='community_service'] form[data-hub-action='add']"
+        "[data-activity-type='community_service'] form[data-hub-action='add']"
       )
       expect(rendered).to have_css(
         "[data-activity-type='community_service'] a[data-hub-action='edit']"

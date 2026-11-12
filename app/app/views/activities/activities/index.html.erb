@@ -68,7 +68,7 @@
               <% card.with_header do %>
                 <%= link_to t("activities.hub.edit"), card_data[:edit_path],
                   class: "usa-link",
-                  form: { data: { hub_action: "edit" } } %>
+                  data: { hub_action: "edit" } %>
               <% end %>
               <% card.with_body do %>
                 <% if card_data[:months].none? %>
@@ -102,7 +102,7 @@
               <% card.with_header do %>
                 <%= link_to t("activities.hub.edit"), card_data[:edit_path],
                   class: "usa-link",
-                  form: { data: { hub_action: "edit" } } %>
+                  data: { hub_action: "edit" } %>
               <% end %>
               <% card.with_body do %>
                 <% if card_data[:months].none? %>
@@ -141,7 +141,7 @@
             <% card.with_header do %>
               <%= link_to t("activities.hub.edit"), card_data[:edit_path],
                 class: "usa-link",
-                form: { data: { hub_action: "edit" } } %>
+                data: { hub_action: "edit" } %>
             <% end %>
             <% card.with_body do %>
               <% card_data[:months].each do |month_data| %>
@@ -178,7 +178,7 @@
             <% card.with_header do %>
               <%= link_to t("activities.hub.edit"), card_data[:edit_path],
                 class: "usa-link",
-                form: { data: { hub_action: "edit" } } %>
+                data: { hub_action: "edit" } %>
             <% end %>
             <% card.with_body do %>
               <% card_data[:months].each do |month_data| %>
@@ -210,7 +210,7 @@
             <% card.with_header do %>
               <%= link_to t("activities.hub.edit"), card_data[:edit_path],
                 class: "usa-link",
-                form: { data: { hub_action: "edit" } } %>
+                data: { hub_action: "edit" } %>
             <% end %>
             <% card.with_body do %>
               <% card_data[:months].each do |month_data| %>

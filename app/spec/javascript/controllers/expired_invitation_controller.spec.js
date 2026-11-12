@@ -7,7 +7,7 @@ describe("ExpiredInvitationController", () => {
     document.body.innerHTML = `
       <a href="https://agency.example"
          data-controller="expired-invitation"
-         data-action="click->expired-invitiation#trackAgencyWebsiteClick">
+         data-action="click->expired-invitation#trackAgencyWebsiteClick">
         Visit agency website
       </a>
     `
