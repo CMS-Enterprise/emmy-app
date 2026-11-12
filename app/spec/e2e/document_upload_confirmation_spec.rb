@@ -44,6 +44,30 @@ RSpec.describe "Continuing without supporting documents", :js, type: :feature do
     expect(activity.reload.document_uploads).to be_empty
   end
 
+  it "shows the session warning without submitting the empty upload form" do
+    click_button I18n.t("activities.document_uploads.new.continue")
+    expect(page).to have_text(heading)
+
+    page.execute_script(<<~JS)
+      window.uploadSubmissionCount = 0;
+      document.getElementById("document-upload-form").addEventListener("submit", (event) => {
+        window.uploadSubmissionCount += 1;
+        event.preventDefault();
+      });
+      const modal = document.querySelector("[data-controller~=session]");
+      const controller = window.Stimulus.getControllerForElementAndIdentifier(modal, "session");
+      controller.timeoutValue = 300;
+      controller.setupTimers();
+    JS
+
+    expect(page).to have_text(I18n.t("session_timeout.modal.heading"))
+    expect(page).to have_no_text(heading)
+    expect(page.evaluate_script("window.uploadSubmissionCount")).to eq(0)
+    expect(page).to have_current_path(new_activities_flow_income_employment_document_upload_path(employment_id: activity))
+    click_button I18n.t("session_timeout.modal.extend_button")
+    verify_page(page, title: upload_title, skip_axe_rules: %w[heading-order])
+  end
+
   context "with a previously uploaded document" do
     before do
       activity.document_uploads.attach(io: StringIO.new("Synthetic document"), filename: "evidence.txt", content_type: "text/plain")
