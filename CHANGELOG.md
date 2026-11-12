@@ -13,7 +13,7 @@ integrations, and are accompanied by a notification.
 - No changes, nothing to review!
 
 ### Emmy CE only user facing changes
-- Fix 500 error on "Add more jobs?" page [(#67)](https://github.com/CMS-Enterprise/emmy-app/pull/67) - Krista Chan [[FFS-5067]](https://jiraent.cms.gov/browse/FFS-5067)
+- Fix 500 error on "Add more jobs?" page [(#63)](https://github.com/CMS-Enterprise/emmy-app/pull/63) - Krista Chan [[FFS-5067]](https://jiraent.cms.gov/browse/FFS-5067)
 - Keep consent errors visible on Review and Submit [(#2309)](https://github.com/DSACMS/iv-cbv-payroll/pull/2309) - Jake Wheeler [[FFS-5048]](https://jiraent.cms.gov/browse/FFS-5048)
 - Add individual id to report [(#2314)](https://github.com/DSACMS/iv-cbv-payroll/pull/2314) - Chris [[FFS-5050]](https://jiraent.cms.gov/browse/FFS-5050)
 - Update JSON for the NSC partially self-attested flow [(#2331)](https://github.com/DSACMS/iv-cbv-payroll/pull/2331) - Daphne Gold [[FFS-5024]](https://jiraent.cms.gov/browse/FFS-5024)
