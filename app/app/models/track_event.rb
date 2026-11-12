@@ -154,6 +154,7 @@ module TrackEvent
   HouseholdSelectionViewed = "HouseholdSelectionViewed"
   HouseholdMemberSelected = "HouseholdMemberSelected"
   HubActivityMarkedComplete = "HubActivityMarkedComplete"
+  HubReviewAndSubmitClicked = "HubReviewAndSubmitClicked"
   HubSpokeSelected = "HubSpokeSelected"
   HubViewed = "HubViewed"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
