@@ -198,6 +198,13 @@ en:
           unsupported_type: Select a %{types} file.
           upload_failed: We could not upload that file. Check your connection and try again.
         input_hint: Select %{types} files
+        empty_confirmation:
+          heading: Are you sure you want to continue without uploading documents?
+          description: Uploading documents is the fastest way to show you meet the requirements.
+          warning: Without documents, confirming your eligibility may take longer.
+          go_back: Go back
+          continue: Continue without uploading
+          close: Close this window
         input_label: Add documents
         suggestion_text_html: "<ul><li>Document Type Placeholder 1</li><li>Document Type Placeholder 2</li><li>Document Type Placeholder 3</li></ul>"
         suggestion_title: Suggested documents
