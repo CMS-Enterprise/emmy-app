@@ -131,8 +131,8 @@ en:
       exit: Exit
       modal:
         back_button: Back
-        close: Close this window
         body: Your progress adding this activity will not be saved.
+        close: Close this window
         exit_link: Exit without saving
         heading: Are you sure you want to exit?
     community_service:
@@ -192,6 +192,13 @@ en:
           suggestions_html: "<ul><li>Tuition receipt</li><li>Student portal screenshot</li><li>Official course enrollment for the current term from the Office of the Registrar</li><li>Copy of class schedule for the current term</li><li>Transcript from most recent enrollment period</li></ul>"
           term_end: Term end date
           term_start: Term start date
+        empty_confirmation:
+          close: Close this window
+          continue: Continue without uploading
+          description: Uploading documents is the fastest way to show you meet the requirements.
+          go_back: Go back
+          heading: Are you sure you want to continue without uploading documents?
+          warning: Without documents, confirming your eligibility may take longer.
         errors:
           empty: That file is empty. Choose a different file.
           multiple_files: We could not upload one or more files. Check the files and try again.
@@ -199,13 +206,6 @@ en:
           unsupported_type: Select a %{types} file.
           upload_failed: We could not upload that file. Check your connection and try again.
         input_hint: Select %{types} files
-        empty_confirmation:
-          heading: Are you sure you want to continue without uploading documents?
-          description: Uploading documents is the fastest way to show you meet the requirements.
-          warning: Without documents, confirming your eligibility may take longer.
-          go_back: Go back
-          continue: Continue without uploading
-          close: Close this window
         input_label: Add documents
         suggestion_text_html: "<ul><li>Document Type Placeholder 1</li><li>Document Type Placeholder 2</li><li>Document Type Placeholder 3</li></ul>"
         suggestion_title: Suggested documents
