@@ -390,7 +390,7 @@ RSpec.describe 'e2e Activity Hub flow test', :js, type: :feature do
     expect(page).to have_content I18n.t("activities.hub.empty.education")
   end
 
-  it "completes the tokenized submission flow when education enrollment data exists" do
+  it "downloads supplemental enrollment details after a tokenized education submission" do
     visit URI(root_url).request_uri
 
     invitation = create(:activity_flow_invitation, client_agency_id: "sandbox")
@@ -401,8 +401,10 @@ RSpec.describe 'e2e Activity Hub flow test', :js, type: :feature do
     verify_page(page, title: I18n.t("activities.hub.title"))
 
     current_flow = ActivityFlow.order(created_at: :desc).first
-    education_activity = create(:education_activity, activity_flow: current_flow)
-    create(:nsc_enrollment_term, education_activity:)
+    education_activity = create(:education_activity, activity_flow: current_flow,
+      data_source: :partially_self_attested, status: :succeeded)
+    create(:nsc_enrollment_term, :enrolled, education_activity: education_activity,
+      supplemental_enrollment_status: "less_than_half_time", credit_hours: 3.5)
 
     visit activities_flow_root_path
     verify_page(page, title: I18n.t("activities.hub.title"))
@@ -428,6 +430,21 @@ RSpec.describe 'e2e Activity Hub flow test', :js, type: :feature do
     expect(page).to have_selector("h3", text: I18n.t("activities.success.show.head_of_household_title"))
     expect(page).to have_text(I18n.t("activities.success.show.household_member_description", agency_name: agency_name))
     expect(page).to have_link(agency_website_link_text, href: agency_website)
+
+    pdf_base64 = page.driver.browser.execute_async_script(<<~JS, activities_flow_submit_path(format: :pdf))
+      const [path, done] = arguments
+      fetch(path).then(response => response.blob()).then(blob => {
+        const reader = new FileReader()
+        reader.onload = () => done(reader.result.split(",")[1])
+        reader.readAsDataURL(blob)
+      })
+    JS
+    pdf_text = PDF::Reader.new(StringIO.new(Base64.decode64(pdf_base64))).pages.map(&:text).join(" ").squish
+
+    expect(pdf_text).to include("Test University")
+    expect(pdf_text).to include(I18n.t("activities.submit.pdf.enrolled"))
+    expect(pdf_text).to include(I18n.t("activities.education.add_your_term.edit.enrollment_status_options.less_than_half_time"))
+    expect(pdf_text).to include("3.5", "45.5")
   end
 
   it "shows less-than-half-time education enrollment on the hub" do
