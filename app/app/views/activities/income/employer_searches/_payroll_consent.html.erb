@@ -8,15 +8,11 @@
             class="usa-button usa-button--unstyled payroll-consent__close"
             aria-label="<%= t(".close") %>"
             data-action="cbv-employer-search#cancelConsent">
-      <svg class="usa-icon" aria-hidden="true" focusable="false">
-        <use href="<%= uswds_sprite_icon_href("close") %>"></use>
-      </svg>
+      <%= render Uswds::Icon.new(name: "close") %>
     </button>
     <div class="payroll-consent__introduction">
       <span class="payroll-consent__icon">
-        <svg class="usa-icon" aria-hidden="true" focusable="false">
-          <use href="<%= uswds_sprite_icon_href("work") %>"></use>
-        </svg>
+        <%= render Uswds::Icon.new(name: "work") %>
       </span>
       <h2 id="payroll-consent-heading"><%= t(".heading") %></h2>
       <p id="payroll-consent-description"><%= t(".description") %></p>
@@ -28,7 +24,7 @@
       <p class="usa-error-message" role="alert" hidden data-cbv-employer-search-target="consentError">
         <%= t(".error") %>
       </p>
-      <button type="button" class="usa-button width-full margin-0"
+      <button type="button" class="usa-button width-full margin-x-0 margin-bottom-0 margin-top-1"
               data-cbv-employer-search-target="consentContinue"
               data-action="cbv-employer-search#confirmConsent">
         <%= t(".continue") %>
