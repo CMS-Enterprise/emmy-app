@@ -55,6 +55,22 @@ RSpec.describe "CE payroll consent", :js, type: :feature do
     expect(page.evaluate_script("window.openedProviders")).to be_empty
   end
 
+  it "navigates to success if the flow completes before selecting an employer" do
+    flow.update!(completed_at: Time.current)
+    find("button[aria-label='Select Example Employer']").click
+    verify_page(page, title: I18n.t("activities.success.show.title", agency_name: I18n.t("shared.agency_full_name.sandbox")))
+    expect(flow.reload.payroll_consented_at).to be_nil
+  end
+
+  it "navigates to success if the flow completes while the consent dialog is open" do
+    find("button[aria-label='Select Example Employer']").click
+    expect(page).to have_selector("dialog[open]", text: consent_heading)
+    flow.update!(completed_at: Time.current)
+    click_button continue_label
+    verify_page(page, title: I18n.t("activities.success.show.title", agency_name: I18n.t("shared.agency_full_name.sandbox")))
+    expect(flow.reload.payroll_consented_at).to be_nil
+  end
+
   it "asks once across employers and page reloads" do
     find("button[aria-label='Select Example Employer']").click
     expect(page).to have_selector("dialog[open]", text: consent_heading)

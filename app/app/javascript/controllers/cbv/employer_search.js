@@ -75,7 +75,12 @@ export default class extends Controller {
           headers: { Accept: "application/json" },
           cache: "no-store",
         })
-        if (!response.ok || response.redirected) throw new Error("Consent status unavailable")
+        if (this.pendingSelection !== selection) return
+        if (response.redirected) {
+          this.redirectTo(response.url)
+          return
+        }
+        if (!response.ok) throw new Error("Consent status unavailable")
         const { consented } = await response.json()
         if (this.pendingSelection !== selection) return
         if (consented !== true) {
@@ -108,16 +113,22 @@ export default class extends Controller {
         },
         body: JSON.stringify({ consent: "1" }),
       })
-      if (!response.ok || response.redirected || (await response.json()).consented !== true) {
+      if (this.pendingSelection !== selection) return
+      if (response.redirected) {
+        this.redirectTo(response.url)
+        return
+      }
+      if (!response.ok || (await response.json()).consented !== true) {
         throw new Error("Consent was not saved")
       }
     } catch {
+      if (this.pendingSelection !== selection) return
       this.consentErrorTarget.hidden = false
       this.consentContinueTarget.disabled = false
       return
     }
-    this.consentContinueTarget.disabled = false
     if (this.pendingSelection !== selection) return
+    this.consentContinueTarget.disabled = false
     this.consentDialogTarget.close()
     await this.openProvider(selection)
   }
@@ -125,9 +136,15 @@ export default class extends Controller {
   cancelConsent(event) {
     event?.preventDefault()
     this.pendingSelection = null
+    this.consentContinueTarget.disabled = false
+    this.consentErrorTarget.hidden = true
     if (this.consentDialogTarget.open) this.consentDialogTarget.close()
     this.employerButtonTargets.forEach((el) => el.removeAttribute("disabled"))
     this.lastFocusedElement?.focus()
+  }
+
+  redirectTo(url) {
+    window.location.href = url
   }
 
   async openProvider(selection) {
