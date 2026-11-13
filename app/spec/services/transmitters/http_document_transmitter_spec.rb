@@ -94,8 +94,8 @@ RSpec.describe Transmitters::HttpDocumentTransmitter do
 
   it "signs the report PDF bytes" do
     request = stub_request(:post, api_url).with do |http_request|
-      timestamp = http_request.headers.fetch("X-IVAAS-Timestamp")
-      signature = http_request.headers.fetch("X-IVAAS-Signature")
+      timestamp = http_request.headers.fetch("X-Ivaas-Timestamp")
+      signature = http_request.headers.fetch("X-Ivaas-Signature")
 
       http_request.body == report.content &&
         JsonApiSignature.verify(http_request.body, timestamp, signature, "api-key")

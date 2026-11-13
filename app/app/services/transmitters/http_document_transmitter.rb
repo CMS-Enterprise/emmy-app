@@ -56,7 +56,7 @@ class Transmitters::HttpDocumentTransmitter
 
     custom_headers.each { |header_name, header_value| request[header_name] = header_value }
 
-    Rails.logger.info "Sending activity document transmission to #{url}: filename=#{document.file_name}"
+    Rails.logger.info "Sending activity document transmission to #{url}: filename=#{file_name}"
     request_started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     response = Net::HTTP.start(url.hostname, url.port, use_ssl: url.scheme == "https") do |http|
       http.request(request)
@@ -64,7 +64,7 @@ class Transmitters::HttpDocumentTransmitter
     request_duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - request_started_at
     Rails.logger.info(
       "Activity document transmission response from #{url}: status=#{response.code} " \
-      "duration=#{format("%.3f", request_duration)}s filename=#{document.file_name}"
+      "duration=#{format("%.3f", request_duration)}s filename=#{file_name}"
     )
 
     return if response.is_a?(Net::HTTPSuccess)
