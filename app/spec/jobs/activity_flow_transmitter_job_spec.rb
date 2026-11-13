@@ -157,5 +157,30 @@ RSpec.describe ActivityFlowTransmitterJob, type: :job do
     let(:combined_transmitter) do
       instance_double(Transmitters::ActivityJsonAndDocumentsTransmitter)
     end
+
+    before do
+      allow(Transmitters::ActivityJsonAndDocumentsTransmitter).to receive(:new)
+        .with(activity_flow, current_agency)
+        .and_return(combined_transmitter)
+    end
+
+    it "marks the flow transmitted after combined delivery succeeds" do
+      allow(combined_transmitter).to receive(:deliver)
+
+      expect {
+        described_class.new.perform(activity_flow.id)
+      }.to change { activity_flow.reload.transmitted_at }.from(nil)
+    end
+
+    it "leaves the flow untransmitted when combined delivery fails" do
+      allow(combined_transmitter).to receive(:deliver)
+        .and_raise(StandardError, "document delivery failed")
+
+      expect {
+        described_class.new.perform(activity_flow.id)
+      }.to raise_error(StandardError, "document delivery failed")
+
+      expect(activity_flow.reload.transmitted_at).to be_nil
+    end
   end
 end
