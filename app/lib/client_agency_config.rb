@@ -31,9 +31,9 @@ class ClientAgencyConfig
   MAX_DOCUMENT_UPLOAD_SIZE_MB = 40
 
   ACTIVITY_TRANSMISSION_URL_KEYS = {
-    "http" => ["documents_api_url"],
-    "json" => ["json_api_url"],
-    "json_and_documents" => ["json_api_url", "documents_api_url"]
+    "http" => [ "documents_api_url" ],
+    "json" => [ "json_api_url" ],
+    "json_and_documents" => [ "json_api_url", "documents_api_url" ]
   }.freeze
 
   def initialize(config_path)
