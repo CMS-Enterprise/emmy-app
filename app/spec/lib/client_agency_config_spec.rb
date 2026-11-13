@@ -369,6 +369,8 @@ RSpec.describe ClientAgencyConfig do
 
   context "activity flow transmission endpoints" do
     def config_for(activity_method, activity_configuration)
+      activity_configuration = activity_configuration.strip_heredoc.indent(4)
+
       allow(File).to receive(:read).with(sample_config_path).and_return(<<~YAML)
         - id: foo
           agency_name: foo
