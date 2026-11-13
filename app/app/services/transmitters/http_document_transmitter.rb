@@ -17,7 +17,7 @@ class Transmitters::HttpDocumentTransmitter
         file_path = File.join(directory, document.file_name)
         @processed_s3_service.download_file(document.attachment.blob.key, file_path)
         deliver_document(
-          file_name: document,
+          file_name: document.file_name,
           document_id: document.document_id,
           content_type: document.attachment.blob.content_type.presence || "application/octet-stream",
           content: File.binread(file_path)

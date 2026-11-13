@@ -89,7 +89,7 @@ RSpec.describe Transmitters::HttpDocumentTransmitter do
     transmitter.deliver
 
     expect(pdf_request).to have_been_made.once
-    expect(Rails.logger).to have_receive(:info).with(include("document_count=0"))
+    expect(Rails.logger).to have_received(:info).with(include("document_count=0"))
   end
 
   it "signs the report PDF bytes" do
