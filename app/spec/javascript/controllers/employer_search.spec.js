@@ -221,3 +221,87 @@ describe("EmployerSearchController multiple instances on same page!", () => {
     expect(await trackUserAction).toBeCalledTimes(1)
   })
 })
+
+describe("CE payroll consent", () => {
+  let controller
+  let button
+  let fetchMock
+
+  beforeEach(() => {
+    fetchMock = vi.spyOn(globalThis, "fetch")
+    button = document.createElement("button")
+    Object.assign(button.dataset, { id: "provider-id", providerName: "argyle", name: "Example" })
+    controller = {
+      hasConsentUrlValue: true,
+      consentUrlValue: "/activities/income/payroll_consent",
+      consentErrorTarget: { hidden: true },
+      consentContinueTarget: { disabled: false },
+      consentDialogTarget: { open: true, showModal: vi.fn(), close: vi.fn() },
+      disableButtons: vi.fn(),
+      openProvider: vi.fn(),
+      employerButtonTargets: [button],
+    }
+  })
+
+  afterEach(() => fetchMock.mockRestore())
+
+  it("waits for consent before opening the selected provider", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ consented: false }) })
+    await EmployerSearchController.prototype.select.call(controller, { currentTarget: button })
+    expect(controller.consentDialogTarget.showModal).toHaveBeenCalled()
+    expect(controller.openProvider).not.toHaveBeenCalled()
+  })
+
+  it("skips the dialog when another page already recorded consent", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ consented: true }) })
+    await EmployerSearchController.prototype.select.call(controller, { currentTarget: button })
+    expect(controller.consentDialogTarget.showModal).not.toHaveBeenCalled()
+    expect(controller.openProvider).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "provider-id" })
+    )
+  })
+
+  it("saves consent before opening the provider", async () => {
+    controller.pendingSelection = { id: "provider-id", providerName: "pinwheel" }
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ consented: true }) })
+    await EmployerSearchController.prototype.confirmConsent.call(controller)
+    expect(fetchMock).toHaveBeenCalledWith(
+      controller.consentUrlValue,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ consent: "1" }),
+      })
+    )
+    expect(controller.consentDialogTarget.close).toHaveBeenCalled()
+    expect(controller.openProvider).toHaveBeenCalledWith(controller.pendingSelection)
+  })
+
+  it("does not open a provider if saving consent fails", async () => {
+    controller.pendingSelection = { id: "provider-id" }
+    fetchMock.mockResolvedValue({ ok: false })
+    await EmployerSearchController.prototype.confirmConsent.call(controller)
+    expect(controller.consentErrorTarget.hidden).toBe(false)
+    expect(controller.consentContinueTarget.disabled).toBe(false)
+    expect(controller.openProvider).not.toHaveBeenCalled()
+  })
+
+  it("cancels without saving and restores the selection button", () => {
+    controller.pendingSelection = { id: "provider-id" }
+    controller.lastFocusedElement = button
+    button.disabled = true
+    EmployerSearchController.prototype.cancelConsent.call(controller)
+    expect(controller.pendingSelection).toBeNull()
+    expect(button.disabled).toBe(false)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("does not launch the provider after cancellation during a save", async () => {
+    controller.pendingSelection = { id: "provider-id" }
+    fetchMock.mockImplementation(async () => {
+      controller.pendingSelection = null
+      return { ok: true, json: async () => ({ consented: true }) }
+    })
+    await EmployerSearchController.prototype.confirmConsent.call(controller)
+    expect(controller.openProvider).not.toHaveBeenCalled()
+  })
+})

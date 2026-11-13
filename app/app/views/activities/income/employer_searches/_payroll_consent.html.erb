@@ -1,0 +1,38 @@
+<dialog class="payroll-consent"
+        aria-labelledby="payroll-consent-heading"
+        aria-describedby="payroll-consent-description payroll-consent-disclosure"
+        data-cbv-employer-search-target="consentDialog"
+        data-action="cancel->cbv-employer-search#cancelConsent">
+  <div class="payroll-consent__content">
+    <button type="button"
+            class="usa-button usa-button--unstyled payroll-consent__close"
+            aria-label="<%= t(".close") %>"
+            data-action="cbv-employer-search#cancelConsent">
+      <svg class="usa-icon" aria-hidden="true" focusable="false">
+        <use href="<%= uswds_sprite_icon_href("close") %>"></use>
+      </svg>
+    </button>
+    <div class="payroll-consent__introduction">
+      <span class="payroll-consent__icon">
+        <svg class="usa-icon" aria-hidden="true" focusable="false">
+          <use href="<%= uswds_sprite_icon_href("work") %>"></use>
+        </svg>
+      </span>
+      <h2 id="payroll-consent-heading"><%= t(".heading") %></h2>
+      <p id="payroll-consent-description"><%= t(".description") %></p>
+    </div>
+    <div class="payroll-consent__footer">
+      <p id="payroll-consent-disclosure">
+        <%= t(".disclosure", agency_name: agency_translation("shared.agency_full_name")) %>
+      </p>
+      <p class="usa-error-message" role="alert" hidden data-cbv-employer-search-target="consentError">
+        <%= t(".error") %>
+      </p>
+      <button type="button" class="usa-button width-full margin-0"
+              data-cbv-employer-search-target="consentContinue"
+              data-action="cbv-employer-search#confirmConsent">
+        <%= t(".continue") %>
+      </button>
+    </div>
+  </div>
+</dialog>
