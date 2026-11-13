@@ -38,6 +38,23 @@ RSpec.describe "CE payroll consent", :js, type: :feature do
     JS
   end
 
+  context "with the consent dialog open" do
+    before do
+      find("button[aria-label='Select Example Employer']").click
+    end
+
+    it "uses an H1 and provides appropriately sized icons and close target" do
+      expect(page).to have_selector("dialog[open] h1", text: consent_heading)
+      close_button = find("button[aria-label='#{close_label}']")
+      expect(close_button.rect.width).to be >= 40
+      expect(close_button.rect.height).to be >= 40
+      expect(close_button.find("svg").rect.width).to eq(24)
+      expect(close_button.find("svg").rect.height).to eq(24)
+      expect(find(".payroll-consent__icon svg").rect.width).to eq(24)
+      expect(find(".payroll-consent__icon svg").rect.height).to eq(24)
+    end
+  end
+
   it "can close or escape without consenting, and returns focus to the selection" do
     find("button[aria-label='Select Example Employer']").click
     expect(page).to have_selector("dialog[open]", text: consent_heading)
