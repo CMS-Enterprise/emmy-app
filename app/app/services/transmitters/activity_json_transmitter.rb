@@ -27,6 +27,7 @@ class Transmitters::ActivityJsonTransmitter
 
     case response
     when Net::HTTPSuccess, Net::HTTPRedirection
+      @activity_flow.touch(:json_transmitted_at)
       "ok"
     else
       raise_response_error!(response, ActivityJsonTransmitterError)
