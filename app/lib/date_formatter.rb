@@ -12,9 +12,9 @@ class DateFormatter
 
   def self.parse_month_year(value)
     return if value.blank?
-    return unless value.match?(/\A(0[1-9]|1[0-2])\/\d{4}\z/)
+    return unless value.match?(/\A(0?[1-9]|1[0-2])\/\d{4}\z/)
 
-    date = Date.strptime(value, "%m/%Y")
+    date = Date.strptime(value, "%m/%Y") rescue Date.strptime(value, "%-m/%Y")
     date if date.year.positive?
   end
 

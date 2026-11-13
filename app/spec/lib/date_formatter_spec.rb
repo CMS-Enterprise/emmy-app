@@ -31,7 +31,9 @@ RSpec.describe DateFormatter do
     context "with a month missing its leading zero" do
       let(:value) { "6/2026" }
 
-      it { is_expected.to be_nil }
+      it "returns the first day of the entered month" do
+        expect(parsed_date).to eq(Date.new(2026, 6, 1))
+      end
     end
 
     context "with an ISO date" do
