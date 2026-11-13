@@ -149,4 +149,13 @@ RSpec.describe ActivityFlowTransmitterJob, type: :job do
       expect(activity_flow.reload.transmitted_at).to be_nil
     end
   end
+
+  context "when the agency uses combined JSON and document transmissions" do
+    let(:transmission_method) do
+      Transmitters::ActivityJsonAndDocumentsTransmitter::TRANSMISSION_METHOD
+    end
+    let(:combined_transmitter) do
+      instance_double(Transmitters::ActivityJsonAndDocumentsTransmitter)
+    end
+  end
 end

@@ -16,7 +16,12 @@ class Transmitters::HttpDocumentTransmitter
       documents.each do |document|
         file_path = File.join(directory, document.file_name)
         @processed_s3_service.download_file(document.attachment.blob.key, file_path)
-        deliver_document(document, File.binread(file_path))
+        deliver_document(
+          file_name: document,
+          document_id: document.document_id,
+          content_type: document.attachment.blob.content_type.presence || "application/octet-stream",
+          content: File.binread(file_path)
+        )
       end
     end
 
@@ -25,18 +30,26 @@ class Transmitters::HttpDocumentTransmitter
       "confirmation_code=#{@activity_flow.confirmation_code} " \
       "document_count=#{documents.size}"
     )
+
+    report = ActivityReportPdfService.new(@activity_flow).generate
+    deliver_document(
+      file_name: report.file_name,
+      document_id: report.document_id,
+      content_type: "application/pdf",
+      content: report.content
+    )
   end
 
   private
 
-  def deliver_document(document, content)
+  def deliver_document(file_name:, document_id:, content_type:, content:)
     url = destination_url("documents_api_url")
     request = Net::HTTP::Post.new(url)
-    request.content_type = document.attachment.blob.content_type.presence || "application/octet-stream"
+    request.content_type = content_type
     request.content_length = content.bytesize
     request.body = content
-    request["Content-Disposition"] = %(attachment; filename="#{document.file_name}")
-    request["X-IVAAS-Document-Id"] = document.document_id
+    request["Content-Disposition"] = %(attachment; filename="#{file_name}")
+    request["X-IVAAS-Document-Id"] = document_id
     request["X-IVAAS-Timestamp"] = timestamp
     request["X-IVAAS-Signature"] = signature(content)
     request["X-IVAAS-Confirmation-Code"] = @activity_flow.confirmation_code
