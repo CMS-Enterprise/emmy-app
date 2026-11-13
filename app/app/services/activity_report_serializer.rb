@@ -62,7 +62,10 @@ class ActivityReportSerializer
   end
 
   def agency_partner_metadata
-    CbvApplicant.build_agency_partner_metadata(@current_agency.id) do |attribute|
+    CbvApplicant.build_agency_partner_metadata(
+      @current_agency.id,
+      version: applicant.individual_id.present? ? :v2 : :v1
+    ) do |attribute|
       json_value(applicant.public_send(attribute))
     end
   end
@@ -253,7 +256,10 @@ class ActivityReportSerializer
 
   def education_term_entry(activity, month, term)
     base = if activity.partially_self_attested?
-             self_attested_education_entry(activity, month, term.credit_hours).merge("data_source" => "verified_enrollment_only")
+             self_attested_education_entry(activity, month, term.credit_hours).merge(
+               "data_source" => "verified_enrollment_only",
+               "supplemental_enrollment_status" => term.supplemental_enrollment_status
+             )
            else
              education_entry(activity, month).merge("data_source" => "verified")
            end

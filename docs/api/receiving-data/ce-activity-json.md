@@ -18,14 +18,7 @@ The agency must build an API endpoint that meets this specification and integrat
 This revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.
 
 `agency_partner_metadata` identifies the applicant in the agency's records.
-The webhook currently uses the agency's V1 metadata field set, matching the V1
-income invitation schema, with `null` for unavailable values. Dates of birth
-are serialized as `YYYY-MM-DD`, rather than echoed from the invitation request.
-
-**V2 limitation:** CE webhooks do not yet echo the V2 invitation metadata field
-set. In particular, `individual_id` is omitted. Louisiana webhooks contain
-`case_number`, `date_of_birth`, and `doc_id`; they omit the V2 `first_name` and
-`last_name` fields as well.
+When no individual_id was supplied, the webhook includes the agency's V1 metadata field set. When an individual_id was supplied during V2 invitation creation, it includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. Dates of birth are serialized as YYYY-MM-DD, rather than echoed from the invitation request.
 
 For employment, `employment_type` is populated only for Argyle-sourced records
 as `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify
@@ -78,8 +71,7 @@ The generated request example shows a complete report with all activity types.
 
 # **Design Principles**
 
-| Design | Description |
-| :-- | :-- |
-| Tolerant Reader | Systems should accept payloads that contain unknown or extra fields without rejecting them. Only a minimal set of fields are truly required. |
-| Additive-only schema evolution | New fields can be added to the spec at any time without breaking existing integrations. Fields are only removed in major version releases. |
-| Soft required fields | Fields that should be present but may not always be available from upstream providers are not marked as required, and denote `null` as an acceptable value. |
+| Design | Description                                                                                                                                                                                        |
+| :-- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Legacy System Tolerant Design | Fields should only be added to the spec at any time without breaking existing integrations. Fields are only removed in major version releases. Fields must be introduced in minor version releases |
+| Soft required fields | Fields that should be present but may not always be available from upstream providers are not marked as required, and denote `null` as an acceptable value.                                        |

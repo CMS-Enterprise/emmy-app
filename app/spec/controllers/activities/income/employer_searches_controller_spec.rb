@@ -18,6 +18,19 @@ RSpec.describe Activities::Income::EmployerSearchesController do
 
     render_views
 
+    context "when an empty query is submitted" do
+      let(:rendered) { Capybara.string(response.body) }
+
+      before do
+        get :show, params: { query: "" }
+      end
+
+      it "associates the inline error with the search field" do
+        expect(rendered).to have_selector("#query_error.usa-error-message", text: I18n.t("cbv.employer_searches.search_form.query_required"))
+        expect(rendered).to have_selector("input.usa-input--error[aria-invalid='true'][aria-describedby='query_error']")
+      end
+    end
+
     context "with an aggregator outage alert" do
       let(:enabled_alerts) { "aggregator_outage" }
       let(:locale) { :en }
@@ -94,11 +107,13 @@ RSpec.describe Activities::Income::EmployerSearchesController do
     end
 
     it "tracks an accessed search event with activity_flow_id" do
+      expect(controller).to receive(:track_event).with(TrackEvent::ApplicantAccessedSearchPage, anything).and_call_original
       allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
       expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, hash_including(
         time: be_a(Integer),
         cbv_applicant_id: activity_flow.cbv_applicant_id,
         activity_flow_id: activity_flow.id,
+        cbv_flow_id: activity_flow.id,
         invitation_id: activity_flow.activity_flow_invitation_id
       ))
 
