@@ -26,6 +26,8 @@ RSpec.describe Transmitters::ActivityS3Transmitter do
   end
   let(:processed_download_service) { instance_double(ProcessedDownloadService) }
   let(:destination_s3_service) { instance_double(S3Service) }
+  let(:pdf_content) { "%PDF-1.4 report" }
+  let(:transmitter) { described_class.new(activity_flow, current_agency) }
   let(:pdf_report) do
     ActivityReportPdfService::Report.new(
       content: pdf_content,
@@ -42,6 +44,7 @@ RSpec.describe Transmitters::ActivityS3Transmitter do
     allow(ActivityReportPdfService).to receive(:new)
       .with(activity_flow)
       .and_return(instance_double(ActivityReportPdfService, generate: pdf_report))
+    transmitter
   end
 
   it "uses the processed download service and agency destination bucket by default" do
