@@ -42,14 +42,6 @@
     p { margin: 0; }
   }
 
-  &__icon {
-    display: inline-flex;
-    padding: units(1);
-    border-radius: 50%;
-    background: color("blue-10");
-    color: color("primary");
-  }
-
   &__footer {
     margin-top: auto;
     padding-top: units(4);

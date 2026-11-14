@@ -52,6 +52,8 @@ RSpec.describe "CE payroll consent", :js, type: :feature do
       expect(close_button.find("svg").rect.height).to eq(24)
       expect(find(".payroll-consent__icon svg").rect.width).to eq(24)
       expect(find(".payroll-consent__icon svg").rect.height).to eq(24)
+      expect(find(".payroll-consent__icon").rect.width).to eq(48)
+      expect(find(".payroll-consent__icon").rect.height).to eq(48)
     end
   end
 
