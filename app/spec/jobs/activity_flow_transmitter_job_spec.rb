@@ -211,7 +211,7 @@ RSpec.describe ActivityFlowTransmitterJob, type: :job do
 
     it "tracks ApplicantSharedActivityReport after successful delivery" do
       event_logger = instance_double(GenericEventTracker, track: nil)
-      allow(transmitter).to receive(:deliver)
+      allow(combined_transmitter).to receive(:deliver)
 
       job = described_class.new
       allow(job).to receive(:event_logger).and_return(event_logger)
