@@ -6,6 +6,14 @@ class ActivityReportPdfService
     @activity_flow = activity_flow
   end
 
+  def self.file_name_for(activity_flow)
+    "HR1_Report_#{activity_flow.completed_at.to_date.iso8601}.pdf"
+  end
+
+  def self.document_id_for(activity_flow)
+    "REPORT-#{activity_flow.id}"
+  end
+
   def generate
     html = I18n.with_locale(:en) do
       Activities::SubmitController.new.render_to_string(
@@ -20,8 +28,8 @@ class ActivityReportPdfService
 
     Report.new(
       content: WickedPdf.new.pdf_from_string(html, margin: PDF_MARGIN),
-      file_name: "HR1_Report_#{@activity_flow.completed_at.to_date.iso8601}.pdf",
-      document_id: "REPORT-#{@activity_flow.id}"
+      file_name: self.class.file_name_for(@activity_flow),
+      document_id: self.class.document_id_for(@activity_flow)
     )
   end
 end

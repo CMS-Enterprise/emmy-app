@@ -61,6 +61,9 @@ filename. Use `X-IVAAS-Confirmation-Code` and `X-IVAAS-Document-Id` together to
 deduplicate. The activity report PDF is regenerated for each attempt, so its
 bytes, timestamp, and signature can differ between retries.
 
+For combined activity delivery, the report PDF is also listed in
+`ce_report.documents` with the same document ID and filename.
+
 ## Response and error handling
 
 Return `200 OK` when the document has been successfully received by your agency's

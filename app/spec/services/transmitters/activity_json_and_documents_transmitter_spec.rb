@@ -53,9 +53,20 @@ RSpec.describe Transmitters::ActivityJsonAndDocumentsTransmitter do
       { document_id: "REPORT-#{activity_flow.id}", file_name: "HR1_Report_2026-08-04.pdf" }
     ]
   end
+  let(:include_upload) { true }
+  let(:json_documents) do
+    JSON.parse(json_requests.sole.fetch(:body)).fetch("ce_report").fetch("documents")
+  end
+  let(:pdf_json_document) do
+    {
+      "document_id" => report.document_id,
+      "document_name" => report.file_name,
+      "file_type" => "pdf"
+    }
+  end
 
   before do
-    upload
+    upload if include_upload
     allow(User).to receive(:api_key_for_agency).with("sandbox").and_return("api-key")
     allow(Rails.logger).to receive(:info)
     allow(Rails.logger).to receive(:error)
@@ -94,6 +105,32 @@ RSpec.describe Transmitters::ActivityJsonAndDocumentsTransmitter do
 
     it "records that the JSON was delivered" do
       expect(activity_flow.reload.json_transmitted_at).to be_present
+    end
+
+    it "lists the report PDF in the JSON" do
+      expect(json_documents).to include(pdf_json_document)
+    end
+
+    it "uses matching JSON and document request IDs and filenames" do
+      expect(json_documents.map { |document| document.values_at("document_id", "document_name") })
+        .to eq(document_requests.map { |request| request.values_at(:document_id, :file_name) })
+    end
+  end
+
+  context "when no supporting documents were uploaded" do
+    let(:include_upload) { false }
+
+    before { transmitter.deliver }
+
+    it "lists only the report PDF in the JSON" do
+      expect(json_documents).to eq([ pdf_json_document ])
+    end
+
+    it "sends the PDF after the JSON" do
+      expect(requests.map { |request| request.slice(:url, :document_id) }).to eq([
+        { url: json_api_url, document_id: nil },
+        { url: documents_api_url, document_id: report.document_id }
+      ])
     end
   end
 
@@ -158,6 +195,10 @@ RSpec.describe Transmitters::ActivityJsonAndDocumentsTransmitter do
     it "resends every document with the same IDs and filenames" do
       expect(retry_documents).to eq(expected_documents)
     end
+
+    it "includes the report PDF in the JSON sent before the retry" do
+      expect(json_documents).to include(pdf_json_document)
+    end
   end
 
   context "when the JSON was already delivered" do
@@ -174,6 +215,7 @@ RSpec.describe Transmitters::ActivityJsonAndDocumentsTransmitter do
   def recorded_request(url, request)
     {
       url: url,
+      body: request.body,
       confirmation_code: request.headers["X-Ivaas-Confirmation-Code"],
       document_id: request.headers["X-Ivaas-Document-Id"],
       file_name: request.headers["Content-Disposition"].to_s[/filename="([^"]+)"/, 1]
