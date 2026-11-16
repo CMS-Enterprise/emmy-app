@@ -373,7 +373,7 @@ GEM
     orm_adapter (0.5.0)
     ostruct (0.6.3)
     parallel (2.3.0)
-    parallel_tests (5.8.0)
+    parallel_tests (5.9.0)
       parallel
     parser (3.3.13.0)
       ast (~> 2.4.1)
@@ -498,15 +498,15 @@ GEM
     rexml (3.4.4)
     rouge (5.1.0)
       strscan (~> 3.1)
-    rspec-core (3.13.6)
+    rspec-core (3.13.7)
       rspec-support (~> 3.13.0)
-    rspec-expectations (3.13.5)
+    rspec-expectations (3.13.6)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-mocks (3.13.8)
+    rspec-mocks (3.13.9)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-rails (8.0.4)
+    rspec-rails (8.1.0)
       actionpack (>= 7.2)
       activesupport (>= 7.2)
       railties (>= 7.2)
@@ -514,7 +514,7 @@ GEM
       rspec-expectations (>= 3.13.0, < 5.0.0)
       rspec-mocks (>= 3.13.0, < 5.0.0)
       rspec-support (>= 3.13.0, < 5.0.0)
-    rspec-support (3.13.7)
+    rspec-support (3.13.8)
     rswag-specs (2.17.0)
       activesupport (>= 5.2, < 8.2)
       json-schema (>= 2.2, < 7.0)
@@ -613,7 +613,7 @@ GEM
     unicode-emoji (4.3.0)
     uri (1.1.2)
     useragent (0.16.11)
-    vcr (6.4.0)
+    vcr (6.4.1)
     view_component (4.20.0)
       actionview (>= 7.1.0)
       activesupport (>= 7.1.0)
@@ -695,7 +695,7 @@ DEPENDENCIES
   net-sftp
   net-ssh
   newrelic_rpm
-  parallel_tests (~> 5.8)
+  parallel_tests (~> 5.9)
   pdf-reader (~> 2.16.0)
   pg (~> 1.7)
   pg-aws_rds_iam (~> 0.8.0)
@@ -710,7 +710,7 @@ DEPENDENCIES
   rails_semantic_logger
   redis (~> 6.0)
   rexml (~> 3.4.2)
-  rspec-rails (~> 8.0)
+  rspec-rails (~> 8.1)
   rswag-specs (~> 2.17)
   rubocop
   rubocop-rails-omakase
