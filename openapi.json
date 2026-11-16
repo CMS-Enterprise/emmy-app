@@ -50,7 +50,7 @@
     },
     {
       "name": "Retry logic",
-      "description": "After a failed income report or activity delivery, Emmy retries up to five additional times. The waits\nbetween attempts are 5 minutes, 10 minutes, 30 minutes, 1 hour, and 4 hours.\n\nFor combined income JSON and PDF delivery, a PDF retry does not resend the JSON\nreport when JSON delivery has already succeeded. If the final attempt fails, the job remains failed for investigation by\nthe Emmy team in partnership with your agency's technical team."
+      "description": "After a failed income report or activity delivery, Emmy retries up to five additional times. The waits\nbetween attempts are 5 minutes, 10 minutes, 30 minutes, 1 hour, and 4 hours.\n\nFor combined income JSON and PDF delivery, a PDF retry does not resend the JSON\nreport when JSON delivery has already succeeded.\n\nFor combined activity JSON and document delivery, Emmy sends the CE Activity\nReport JSON first. If the JSON request fails, Emmy sends no documents on that\nattempt. After the JSON succeeds, Emmy sends each uploaded document and the\nactivity report PDF. If a document request fails, the retry does not resend the\nJSON. It resends every activity document, including the report PDF, with the\nsame `X-IVAAS-Document-Id` and filename. See [Documents](#tag/documents).\n\nIf the final attempt fails, the job remains failed for investigation by the Emmy\nteam in partnership with your agency's technical team."
     },
     {
       "name": "CE Activity Reports",
@@ -62,7 +62,7 @@
     },
     {
       "name": "Documents",
-      "description": "This API lets your agency receive documents from the Emmy platform, including\nincome report PDFs and supporting activity documents.\nIt is an alternative to other file delivery methods, such as SFTP, S3, or shared\nemail. Your agency hosts the receiving endpoint and ensures that documents are\nadded to the correct case in its eligibility management system.\n\nFor agencies that also receive income data through the Income Report JSON API,\nEmmy sends the PDF after the JSON delivery succeeds."
+      "description": "This API lets your agency receive documents from the Emmy platform, including\nincome report PDFs, activity report PDFs, and supporting activity documents.\nIt is an alternative to other file delivery methods, such as SFTP, S3, or shared\nemail. Your agency hosts the receiving endpoint and ensures that documents are\nadded to the correct case in its eligibility management system.\n\nFor agencies that also receive income data through the Income Report JSON API,\nEmmy sends the income report PDF after the JSON delivery succeeds.\n\nFor Emmy Employment and Emmy CE activity reports, Emmy sends one document request\nfor each uploaded file and one for the activity report PDF. The activity report\nPDF is sent even when the person uploaded no documents. Agencies using combined\nactivity delivery receive these document requests only after the CE Activity\nReport JSON request succeeds."
     }
   ],
   "x-tagGroups": [
@@ -313,7 +313,7 @@
                   "expire_community_engagement": {
                     "summary": "Expire a community engagement invitation",
                     "value": {
-                      "tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/dbXHYQ3hpS"
+                      "tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/8C6Eng5DgR"
                     }
                   }
                 },
@@ -387,7 +387,7 @@
                         "first_name": "Jane",
                         "last_name": "Doe"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/iCcMeycqKe"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/RXGeqVyrTv"
                     }
                   },
                   "community_engagement": {
@@ -403,7 +403,7 @@
                         "last_name": "Doe",
                         "date_of_birth": "01/15/1990"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/sg3qw7SpxR"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/VjgPvRhgQF"
                     }
                   },
                   "louisiana_community_engagement": {
@@ -419,7 +419,7 @@
                         "last_name": "Doe",
                         "date_of_birth": "01/15/1990"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/sxEM8nofzW"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/L8Qek8C4d8"
                     }
                   }
                 },
@@ -542,7 +542,7 @@
         ],
         "operationId": "receiveCeActivityReport",
         "summary": "Receive a CE Activity Report (JSON)",
-        "description": "## Overview\n\nEmmy sends completed reports to your agency's systems so they can be added to\nthe applicant's case. Your agency hosts the receiving endpoint and arranges its\nURL and any additional headers during onboarding.\n\nThe CE Activity Report webhook below delivers JSON, including income and payroll\ndata. Its request body describes what your agency receives; its response describes\nwhat your endpoint should return to Emmy. The example agency hostname is a\nplaceholder. Use your own receiver URL when testing delivery.\n\n## Model\n\nThis document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nWhen no individual_id was supplied, the webhook includes the agency's V1 metadata field set. When an individual_id was supplied during V2 invitation creation, it includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. Dates of birth are serialized as YYYY-MM-DD, rather than echoed from the invitation request.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.\n\n## Transmission\n\nEmmy sends a completed CE Activity Report as an HTTP `POST` to an endpoint\nhosted by your agency. This is an outbound webhook, not an endpoint on Emmy's\nDev or Demo servers.\n\n### POST /api/v1/ce-activity-report\n\nThis API endpoint is built by the agency and receives one CE activity report record. The endpoint URL can be whatever the agency desires, however, it must include a version number to allow for easy upgrades in the future.\n\nThe complete `CeActivityReport` model is published in the generated\nOpenAPI reference, along with component models for the report,\nreview period, documents, activity types, and payroll details. Find the webhook\nunder **Receiving data from the Emmy Platform**. The request example\ncomes from the tested serializer and includes community service, work programs,\nlinked payroll, self-employment, unpaid work, and all three education variants.\n\n### Request signatures\n\nSee [Webhook signatures](#tag/webhook-signatures) for signing headers,\nverification guidance, and a signed cURL example for testing your receiver.\n\n## Response\n\nThe agency should respond with `200` and a payload containing:\n\n```json\n{\n  \"status\": \"received\",\n  \"confirmation_code\": \"SANDBOX123\",\n  \"received_at\": \"2026-08-11T14:00:05Z\",\n  \"schema_version_received\": \"1.0.0\"\n}\n```\n\nEmmy currently checks the HTTP status and does not validate this response body.\n\n## Request body\n\nThe request body uses the `CeActivityReport` OpenAPI model. Expand its properties\nand linked models in the reference for field descriptions, required and nullable\nfields, monthly reporting rules, and the employment and education variants.\nThe generated request example shows a complete report with all activity types.\n\n# **Design Principles**\n\n| Design | Description                                                                                                                                                                                        |\n| :-- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|\n| Legacy System Tolerant Design | Fields should only be added to the spec at any time without breaking existing integrations. Fields are only removed in major version releases. Fields must be introduced in minor version releases |\n| Soft required fields | Fields that should be present but may not always be available from upstream providers are not marked as required, and denote `null` as an acceptable value.                                        |",
+        "description": "## Overview\n\nEmmy sends completed reports to your agency's systems so they can be added to\nthe applicant's case. Your agency hosts the receiving endpoint and arranges its\nURL and any additional headers during onboarding.\n\nThe CE Activity Report webhook below delivers JSON, including income and payroll\ndata. Its request body describes what your agency receives; its response describes\nwhat your endpoint should return to Emmy. The example agency hostname is a\nplaceholder. Use your own receiver URL when testing delivery.\n\n## Model\n\nThis document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nWhen no individual_id was supplied, the webhook includes the agency's V1 metadata field set. When an individual_id was supplied during V2 invitation creation, it includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. Dates of birth are serialized as YYYY-MM-DD, rather than echoed from the invitation request.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.\n\nFor combined activity JSON and document delivery, `ce_report.documents` also\nlists the generated activity report PDF, even when there are no supporting\nuploads. Its `document_id` is `REPORT-<flow id>`, its `document_name` is the\ntransmitted filename, and its `file_type` is `pdf`. The PDF is a report-level\ndocument and is not referenced by an activity's `document_ids`. Its bytes are\nsent separately after the JSON. JSON-only delivery does not include this entry.\n\n## Transmission\n\nEmmy sends a completed CE Activity Report as an HTTP `POST` to an endpoint\nhosted by your agency. This is an outbound webhook, not an endpoint on Emmy's\nDev or Demo servers.\n\n### POST /api/v1/ce-activity-report\n\nThis API endpoint is built by the agency and receives one CE activity report record. The endpoint URL can be whatever the agency desires, however, it must include a version number to allow for easy upgrades in the future.\n\nThe complete `CeActivityReport` model is published in the generated\nOpenAPI reference, along with component models for the report,\nreview period, documents, activity types, and payroll details. Find the webhook\nunder **Receiving data from the Emmy Platform**. The request example\ncomes from the tested serializer and includes community service, work programs,\nlinked payroll, self-employment, unpaid work, and all three education variants.\n\n### Request signatures\n\nSee [Webhook signatures](#tag/webhook-signatures) for signing headers,\nverification guidance, and a signed cURL example for testing your receiver.\n\n## Response\n\nThe agency should respond with `200` and a payload containing:\n\n```json\n{\n  \"status\": \"received\",\n  \"confirmation_code\": \"SANDBOX123\",\n  \"received_at\": \"2026-08-11T14:00:05Z\",\n  \"schema_version_received\": \"1.0.0\"\n}\n```\n\nEmmy currently checks the HTTP status and does not validate this response body.\n\n## Request body\n\nThe request body uses the `CeActivityReport` OpenAPI model. Expand its properties\nand linked models in the reference for field descriptions, required and nullable\nfields, monthly reporting rules, and the employment and education variants.\nThe generated request example shows a complete report with all activity types.\n\n# **Design Principles**\n\n| Design | Description                                                                                                                                                                                        |\n| :-- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|\n| Legacy System Tolerant Design | Fields should only be added to the spec at any time without breaking existing integrations. Fields are only removed in major version releases. Fields must be introduced in minor version releases |\n| Soft required fields | Fields that should be present but may not always be available from upstream providers are not marked as required, and denote `null` as an acceptable value.                                        |",
         "servers": [
           {
             "url": "https://agency.example.org",
@@ -612,17 +612,17 @@
                       },
                       "documents": [
                         {
-                          "document_id": "DOC-5",
+                          "document_id": "DOC-7",
                           "document_name": "SANDBOX123_work_programs_wioa_participation_letter.pdf",
                           "file_type": "pdf"
                         },
                         {
-                          "document_id": "DOC-6",
+                          "document_id": "DOC-8",
                           "document_name": "SANDBOX123_education_transcript.pdf",
                           "file_type": "pdf"
                         },
                         {
-                          "document_id": "DOC-4",
+                          "document_id": "DOC-6",
                           "document_name": "SANDBOX123_employment_income_statement.pdf",
                           "file_type": "pdf"
                         }
@@ -687,7 +687,7 @@
                               "hours": 20.0,
                               "data_source": "self_attested",
                               "document_ids": [
-                                "DOC-5"
+                                "DOC-7"
                               ]
                             }
                           ],
@@ -709,7 +709,7 @@
                               "hours": 20.0,
                               "data_source": "self_attested",
                               "document_ids": [
-                                "DOC-5"
+                                "DOC-7"
                               ]
                             }
                           ]
@@ -732,7 +732,7 @@
                               "hours": 12.75,
                               "data_source": "self_attested",
                               "document_ids": [
-                                "DOC-4"
+                                "DOC-6"
                               ],
                               "additional_comments": null,
                               "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
@@ -847,7 +847,7 @@
                               "education_type": "trade_or_technical",
                               "month": "2025-02",
                               "document_ids": [
-                                "DOC-6"
+                                "DOC-8"
                               ],
                               "additional_comments": null,
                               "school_name": "Example Technical College",
@@ -875,7 +875,7 @@
                               "education_type": "trade_or_technical",
                               "month": "2025-02",
                               "document_ids": [
-                                "DOC-6"
+                                "DOC-8"
                               ],
                               "additional_comments": null,
                               "school_name": "Example State University",
@@ -903,7 +903,7 @@
                               "education_type": "trade_or_technical",
                               "month": "2025-02",
                               "document_ids": [
-                                "DOC-6"
+                                "DOC-8"
                               ],
                               "additional_comments": null,
                               "school_name": "Example City College",
@@ -973,7 +973,7 @@
                               "education_type": "trade_or_technical",
                               "month": "2025-03",
                               "document_ids": [
-                                "DOC-6"
+                                "DOC-8"
                               ],
                               "additional_comments": null,
                               "school_name": "Example Technical College",
@@ -1001,7 +1001,7 @@
                               "education_type": "trade_or_technical",
                               "month": "2025-03",
                               "document_ids": [
-                                "DOC-6"
+                                "DOC-8"
                               ],
                               "additional_comments": null,
                               "school_name": "Example City College",
@@ -1094,7 +1094,7 @@
             "name": "Content-Type",
             "in": "header",
             "required": true,
-            "description": "MIME type of the document. Any MIME type is supported; income report PDFs use\n`application/pdf`.",
+            "description": "MIME type of the document. Any MIME type is supported; income and activity\nreport PDFs use `application/pdf`.",
             "schema": {
               "type": "string",
               "example": "application/pdf"
@@ -1114,7 +1114,7 @@
             "name": "Content-Disposition",
             "in": "header",
             "required": false,
-            "description": "Sent with supporting activity documents as `attachment; filename=\"<filename>\"`\nto identify the transmitted file's name. Not sent with income report PDFs.",
+            "description": "Sent with activity report PDFs and supporting activity documents as\n`attachment; filename=\"<filename>\"` to identify the transmitted file's name.\nActivity report PDFs use `HR1_Report_<completion date>.pdf`, for example\n`HR1_Report_2026-08-04.pdf`. Not sent with income report PDFs.",
             "schema": {
               "type": "string",
               "example": "attachment; filename=\"SANDBOX123_community_service_time_sheet.pdf\""
@@ -1124,7 +1124,7 @@
             "name": "X-IVAAS-Document-Id",
             "in": "header",
             "required": false,
-            "description": "Sent with supporting activity documents to identify the document, matching its\n`document_id` in the CE Activity Report. For example, `DOC-123`. Not sent with\nincome report PDFs.",
+            "description": "Sent with activity report PDFs and supporting activity documents to identify\nthe document. Supporting documents match their `document_id` in the CE Activity\nReport, for example `DOC-123`. Activity report PDFs use `REPORT-<flow id>`,\nfor example `REPORT-456`. Not sent with income report PDFs.\n\nRetries resend every activity document with the same `X-IVAAS-Document-Id` and\nfilename. Use `X-IVAAS-Confirmation-Code` and `X-IVAAS-Document-Id` together to\ndeduplicate. The activity report PDF is regenerated for each attempt, so its\nbytes, timestamp, and signature can differ between retries.\n\nFor combined activity delivery, the report PDF is also listed in\n`ce_report.documents` with the same document ID and filename.",
             "schema": {
               "type": "string",
               "example": "DOC-123"
@@ -2040,7 +2040,7 @@
           },
           "ce_report": {
             "$ref": "#/components/schemas/CeReport",
-            "description": "Community engagement report containing the review period, supporting document metadata, and activities."
+            "description": "Community engagement report containing the review period, document metadata, and activities."
           }
         },
         "required": [
@@ -2050,7 +2050,7 @@
           "agency_partner_metadata",
           "ce_report"
         ],
-        "description": "This document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nWhen no individual_id was supplied, the webhook includes the agency's V1 metadata field set. When an individual_id was supplied during V2 invitation creation, it includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. Dates of birth are serialized as YYYY-MM-DD, rather than echoed from the invitation request.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.",
+        "description": "This document describes the **Community Engagement (CE) Activity Report Transmission API Specification**, a method by which CE activity data can be sent from the Eligibility made easy (Emmy) platform to an agency's systems.\n\nThe agency must build an API endpoint that meets this specification and integrates with agency systems to process the activity report into the case file for the correct client.\n\nThis revision covers `community_service`, `work_program`, `employment`, and `education`. Employment includes self-attested work and payroll data from linked Argyle or Pinwheel accounts. Education includes self-attested credits, verified NSC enrollment, and partially self-attested education.\n\n`agency_partner_metadata` identifies the applicant in the agency's records.\nWhen no individual_id was supplied, the webhook includes the agency's V1 metadata field set. When an individual_id was supplied during V2 invitation creation, it includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. Dates of birth are serialized as YYYY-MM-DD, rather than echoed from the invitation request.\n\nFor employment, `employment_type` is populated only for Argyle-sourced records\nas `w2` or `gig`; self-attested and Pinwheel entries retain the field as `null`. To identify\nself-employment across both sources, use\n`employment_type == \"gig\" OR is_self_employed == true`.\n\nFor combined activity JSON and document delivery, `ce_report.documents` also\nlists the generated activity report PDF, even when there are no supporting\nuploads. Its `document_id` is `REPORT-<flow id>`, its `document_name` is the\ntransmitted filename, and its `file_type` is `pdf`. The PDF is a report-level\ndocument and is not referenced by an activity's `document_ids`. Its bytes are\nsent separately after the JSON. JSON-only delivery does not include this entry.",
         "example": {
           "schema_version": "1.0.0",
           "confirmation_code": "SANDBOX123",
@@ -2071,17 +2071,17 @@
             },
             "documents": [
               {
-                "document_id": "DOC-5",
+                "document_id": "DOC-7",
                 "document_name": "SANDBOX123_work_programs_wioa_participation_letter.pdf",
                 "file_type": "pdf"
               },
               {
-                "document_id": "DOC-6",
+                "document_id": "DOC-8",
                 "document_name": "SANDBOX123_education_transcript.pdf",
                 "file_type": "pdf"
               },
               {
-                "document_id": "DOC-4",
+                "document_id": "DOC-6",
                 "document_name": "SANDBOX123_employment_income_statement.pdf",
                 "file_type": "pdf"
               }
@@ -2146,7 +2146,7 @@
                     "hours": 20.0,
                     "data_source": "self_attested",
                     "document_ids": [
-                      "DOC-5"
+                      "DOC-7"
                     ]
                   }
                 ],
@@ -2168,7 +2168,7 @@
                     "hours": 20.0,
                     "data_source": "self_attested",
                     "document_ids": [
-                      "DOC-5"
+                      "DOC-7"
                     ]
                   }
                 ]
@@ -2191,7 +2191,7 @@
                     "hours": 12.75,
                     "data_source": "self_attested",
                     "document_ids": [
-                      "DOC-4"
+                      "DOC-6"
                     ],
                     "additional_comments": null,
                     "employer_address": "942 W Harlan Ave, Gainesville, FL 32611",
@@ -2306,7 +2306,7 @@
                     "education_type": "trade_or_technical",
                     "month": "2025-02",
                     "document_ids": [
-                      "DOC-6"
+                      "DOC-8"
                     ],
                     "additional_comments": null,
                     "school_name": "Example Technical College",
@@ -2334,7 +2334,7 @@
                     "education_type": "trade_or_technical",
                     "month": "2025-02",
                     "document_ids": [
-                      "DOC-6"
+                      "DOC-8"
                     ],
                     "additional_comments": null,
                     "school_name": "Example State University",
@@ -2362,7 +2362,7 @@
                     "education_type": "trade_or_technical",
                     "month": "2025-02",
                     "document_ids": [
-                      "DOC-6"
+                      "DOC-8"
                     ],
                     "additional_comments": null,
                     "school_name": "Example City College",
@@ -2432,7 +2432,7 @@
                     "education_type": "trade_or_technical",
                     "month": "2025-03",
                     "document_ids": [
-                      "DOC-6"
+                      "DOC-8"
                     ],
                     "additional_comments": null,
                     "school_name": "Example Technical College",
@@ -2460,7 +2460,7 @@
                     "education_type": "trade_or_technical",
                     "month": "2025-03",
                     "document_ids": [
-                      "DOC-6"
+                      "DOC-8"
                     ],
                     "additional_comments": null,
                     "school_name": "Example City College",
@@ -2510,7 +2510,7 @@
             "items": {
               "$ref": "#/components/schemas/CeDocument"
             },
-            "description": "All supporting documents uploaded for the activities in this report. The files are transmitted separately by the document transmission integration; this array describes what to expect."
+            "description": "Supporting uploads and, for combined JSON and document delivery, the report PDF. The files are transmitted separately."
           },
           "activities": {
             "$ref": "#/components/schemas/CeActivities",
@@ -2523,7 +2523,7 @@
           "documents",
           "activities"
         ],
-        "description": "The report's review period, supporting documents, and reported activities."
+        "description": "The report's review period, documents, and reported activities."
       },
       "CeReviewPeriod": {
         "type": "object",
@@ -2552,7 +2552,7 @@
         "properties": {
           "document_id": {
             "type": "string",
-            "description": "Identifier based on the Emmy Active Storage attachment ID, referenced by an activity's document_ids."
+            "description": "DOC-<attachment id> for a supporting upload, or REPORT-<flow id> for the report PDF. Only supporting document IDs are referenced by an activity."
           },
           "document_name": {
             "type": "string",
