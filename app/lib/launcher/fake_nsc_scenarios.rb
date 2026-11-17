@@ -157,6 +157,7 @@ module Launcher
         date_of_birth: Date.parse("1990-01-01"),
         terms: [
           { school_name: "Harborview College", enrollment_status: :withdrawn, term_type: :later_reporting_term, certification_day_offset: 1, expected_dedupe_result: :keep },
+          { school_name: "Harborview College", enrollment_status: :enrolled, term_type: :later_reporting_term, certification_day_offset: 0, expected_dedupe_result: :keep },
           { school_name: "Harborview College", enrollment_status: :enrolled, term_type: :earlier_reporting_term, certification_day_offset: 1, expected_dedupe_result: :keep },
           { school_name: "Harborview College", enrollment_status: :enrolled, term_type: :earlier_reporting_term, certification_day_offset: 0, expected_dedupe_result: :remove },
           { school_name: "Harborview College", enrollment_status: :withdrawn, nsc_status_code: "S", term_type: :later_reporting_term, certification_day_offset: 0, expected_dedupe_result: :remove },

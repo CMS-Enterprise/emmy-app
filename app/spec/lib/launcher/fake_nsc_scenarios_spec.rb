@@ -16,6 +16,7 @@ RSpec.describe Launcher::FakeNscScenarios do
         expect(records.map { |record| record.values_at("termBeginDate", "termEndDate", "enrollmentStatus", "schoolCertifiedOnDate") })
           .to contain_exactly(
             [ "2021-10-01", "2021-12-01", "W", "2021-10-02" ],
+            [ "2021-10-01", "2021-12-01", "Y", "2021-10-01" ],
             [ "2021-09-01", "2021-09-30", "Y", "2021-09-02" ],
             [ "2021-09-01", "2021-09-30", "Y", "2021-09-01" ],
             [ "2021-10-01", "2021-12-01", "S", "2021-10-01" ],

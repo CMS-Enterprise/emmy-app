@@ -69,13 +69,13 @@ RSpec.describe LauncherController, type: :controller do
         expect(rendered).to have_text(I18n.t("#{copy_scope}.description"))
       end
 
-      it "lists five input records across two terms with their deduplication results" do
+      it "lists six input records across two terms with their deduplication results" do
         rows = details.all("tbody tr", visible: :all)
 
-        expect(rows.size).to eq(5)
+        expect(rows.size).to eq(6)
         expect(details).to have_text(:all, I18n.t("#{copy_scope}.earlier_reporting_term"), count: 2)
-        expect(details).to have_text(:all, I18n.t("#{copy_scope}.later_reporting_term"), count: 3)
-        expect(details.find("table", visible: :all)).to have_text(:all, "(Y)", count: 2)
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.later_reporting_term"), count: 4)
+        expect(details.find("table", visible: :all)).to have_text(:all, "(Y)", count: 3)
         expect(details).to have_text(:all, "(W)")
         expect(details).to have_text(:all, "(S)")
         expect(details).to have_text(:all, "(A)")

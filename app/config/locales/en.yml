@@ -1465,18 +1465,18 @@ en:
   launcher:
     advanced:
       duplicate_enrollments:
-        browser_check: Verify college/university enrollment. Expect two %{school_name} terms. The earlier term is enrolled (Y). The later term shows %{leave_of_absence_status}, with %{withdrawn_status} in a collapsed history accordion. The earlier term's Y does not expand the later term's history. Continue collects supplemental details for the earlier term only.
+        browser_check: Verify college/university enrollment. Expect two %{school_name} terms. The earlier term is enrolled (Y). The later term shows %{leave_of_absence_status}, with %{withdrawn_status} and a prior Y in an expanded history accordion. The Y in the later term causes history to expand by default. Continue collects supplemental details for the earlier term only.
         certification_check: The newer Y record is kept for the earlier term. The older Y and the later term's S record are removed; S groups with W as withdrawn.
         certified_days_after_start:
           one: Term start + 1 day
           other: Term start + %{count} days
           zero: Term start
         certified_on: School certified on
-        description: Earlier enrolled term and later non-enrolled term; 5 NSC records become 3 entries across 2 terms.
+        description: Earlier enrolled term and later non-enrolled term; 6 NSC records become 4 entries across 2 terms.
         earlier_reporting_term: Earlier term
         keep: Keep
         later_reporting_term: Later term
-        records: All 5 records are for %{school_name}. The earlier term covers the first month and the later term covers the rest of the selected reporting window. A one-month window is split into two consecutive terms.
+        records: All 6 records are for %{school_name}. The earlier term covers the first month and the later term covers the rest of the selected reporting window. A one-month window is split into two consecutive terms.
         remove: Remove duplicate
         result: Expected result
         status: NSC status

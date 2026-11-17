@@ -115,6 +115,10 @@ RSpec.describe Launcher::FakeNscDataFetcherService do
           ),
           have_attributes(
             term_begin: reporting_window.begin.next_month, term_end: reporting_window.end,
+            enrollment_status: "enrolled", school_certified_on: reporting_window.begin.next_month
+          ),
+          have_attributes(
+            term_begin: reporting_window.begin.next_month, term_end: reporting_window.end,
             enrollment_status: "leave_of_absence", school_certified_on: reporting_window.begin.next_month + 2.days
           )
         )
