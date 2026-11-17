@@ -109,6 +109,12 @@ RSpec.describe Transmitters::JsonTransmitter do
 
       expect(payload.dig("income_report", "employments", 0, "employer_address")).to eq("942 W Harlan Ave, Suite 100, Gainesville, FL 32611")
     end
+
+    it "raises a transmitter error when the aggregator report is missing" do
+      expect {
+        described_class.new(cbv_flow, mock_client_agency, nil).payload
+      }.to raise_error(Transmitters::JsonTransmitter::JsonTransmitterError, "Aggregator report is missing")
+    end
   end
 
   context 'agency responds with 200' do
