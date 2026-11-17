@@ -339,6 +339,30 @@ RSpec.describe EducationActivity do
         expect(data_source).to eq(:validated)
       end
 
+      context "with an enrolled record at another school" do
+        before { previous.school_name = "Other College" }
+
+        it "preserves supplemental routing for that school" do
+          expect(data_source).to eq(:partially_self_attested)
+        end
+
+        context "when sufficient enrollment already covers the reporting months" do
+          before { previous.enrollment_status = :half_time }
+
+          it "preserves the existing validated routing" do
+            expect(data_source).to eq(:validated)
+          end
+        end
+      end
+
+      context "with an enrolled record in another term at the same school" do
+        before { previous.term_end = jan.end_of_month }
+
+        it "preserves supplemental routing for that term" do
+          expect(data_source).to eq(:partially_self_attested)
+        end
+      end
+
       context "without any previous status" do
         let(:terms) { [ latest ] }
 
@@ -505,6 +529,41 @@ RSpec.describe EducationActivity do
   describe "#less_than_half_time_terms_in_reporting_window" do
     let(:flow) { create(:activity_flow, reporting_window_months: 1, education_activities_count: 0) }
     let(:education_activity) { create(:education_activity, activity_flow: flow, status: "succeeded") }
+
+    context "with withdrawal history and an independent current enrollment" do
+      let!(:prior) do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education_activity,
+          school_certified_on: flow.reporting_window_range.begin)
+      end
+      let!(:withdrawal) do
+        create(:nsc_enrollment_term, education_activity: education_activity, enrollment_status: :withdrawn,
+          school_certified_on: flow.reporting_window_range.begin + 10.days)
+      end
+      let!(:current) do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education_activity,
+          school_name: "Other College", school_certified_on: flow.reporting_window_range.begin + 5.days)
+      end
+
+      it "collects details only for the independent enrollment" do
+        expect(education_activity.less_than_half_time_terms_in_reporting_window).to eq([ current ])
+      end
+
+      context "at the same school in a different term" do
+        before { current.update!(school_name: prior.school_name, term_end: prior.term_end + 1.month) }
+
+        it "still collects details for that term" do
+          expect(education_activity.less_than_half_time_terms_in_reporting_window).to eq([ current ])
+        end
+      end
+
+      context "when enrollment resumes after a withdrawal" do
+        before { prior.update!(school_certified_on: withdrawal.school_certified_on + 1.day) }
+
+        it "collects enrolled details without asking about the historical withdrawal" do
+          expect(education_activity.less_than_half_time_terms_in_reporting_window).to contain_exactly(prior, current)
+        end
+      end
+    end
 
     it "returns only less-than-half-time terms within the reporting window" do
       create(:nsc_enrollment_term, :less_than_half_time, education_activity: education_activity)

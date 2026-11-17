@@ -66,11 +66,11 @@ class EducationActivity < Activity
   def self.data_source_from_nsc_results(enrollment_terms, reporting_months:, required_month_count: nil)
     return :partially_self_attested if enrollment_terms.blank?
 
-    latest = enrollment_terms
-      .select { |term| reporting_months.any? { |month| term.overlaps_month?(month) } }
-      .max_by { |term| [ term.school_certified_on || Date.new(1, 1, 1), term.id || 0 ] }
+    reporting_terms = enrollment_terms.select { |term| reporting_months.any? { |month| term.overlaps_month?(month) } }
+    latest_terms = NscEnrollmentTerm.enrollment_histories(reporting_terms).map(&:first)
+    # A withdrawal at one school must not bypass supplemental details at another.
     # Validated describes the NSC-backed flow, not sufficient enrollment for eligibility.
-    return :validated if latest&.non_enrolled?
+    return :validated if latest_terms.any? && latest_terms.all?(&:non_enrolled?)
 
     required_month_count ||= reporting_months.length
     resolver = EducationReportingMonthResolver.new(terms: enrollment_terms, reporting_months: reporting_months)
@@ -126,8 +126,10 @@ class EducationActivity < Activity
 
   def less_than_half_time_terms_in_reporting_window
     reporting_range = activity_flow.reporting_window_range
-    nsc_enrollment_terms
-      .select { |term| term.less_than_half_time? && term.within_reporting_window?(reporting_range) }
+    NscEnrollmentTerm.enrollment_histories(nsc_enrollment_terms)
+      .reject { |history| history.first.non_enrolled? }
+      .flatten
+      .select { |term| !term.non_enrolled? && term.less_than_half_time? && term.within_reporting_window?(reporting_range) }
       .sort_by { |term| [ term.term_begin, term.id ] }
   end
 
