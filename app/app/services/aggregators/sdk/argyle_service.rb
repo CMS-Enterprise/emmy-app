@@ -6,6 +6,8 @@ require "json"
 
 module Aggregators::Sdk
   class ArgyleService
+    class ArgyleServerError < StandardError; end
+
     ENVIRONMENTS = {
       sandbox: {
         base_url: "https://api-sandbox.argyle.com/v2",
@@ -38,7 +40,8 @@ module Aggregators::Sdk
     attr_reader :webhook_secret
 
     def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil)
-      @environment = ENVIRONMENTS.fetch(environment.to_sym) { |env| raise KeyError.new("ArgyleService unknown environment: #{env}") }
+      @environment_name = environment.to_sym
+      @environment = ENVIRONMENTS.fetch(@environment_name) { |env| raise KeyError.new("ArgyleService unknown environment: #{env}") }
       @api_key_id = api_key_id || @environment[:api_key_id]
       @api_key_secret = api_key_secret || @environment[:api_key_secret]
       @webhook_secret = webhook_secret || @environment[:webhook_secret]
@@ -80,22 +83,30 @@ module Aggregators::Sdk
         secret: @webhook_secret
       }
 
-      @http.post(build_url(WEBHOOKS_ENDPOINT), payload.to_json).body
+      with_argyle_server_error do
+        @http.post(build_url(WEBHOOKS_ENDPOINT), payload.to_json).body
+      end
     end
 
     def delete_webhook_subscription(id)
-      @http.delete(build_url("#{WEBHOOKS_ENDPOINT}/#{id}")).body
+      with_argyle_server_error do
+        @http.delete(build_url("#{WEBHOOKS_ENDPOINT}/#{id}")).body
+      end
     end
 
     # Search for Argyle employer
     # https://docs.argyle.com/api-reference/employer-search#list
     def employer_search(query, status = %w[healthy issues])
-      @http.get(build_url(EMPLOYER_SEARCH_ENDPOINT), { q: query, status: status }).body
+      with_argyle_server_error do
+        @http.get(build_url(EMPLOYER_SEARCH_ENDPOINT), { q: query, status: status }).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/users#retrieve
     def fetch_user_api(user:)
-      @http.get(build_url("#{USERS_ENDPOINT}/#{user}")).body
+      with_argyle_server_error do
+        @http.get(build_url("#{USERS_ENDPOINT}/#{user}")).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/identities#list
@@ -106,7 +117,10 @@ module Aggregators::Sdk
         employment: employment,
         limit: limit
       }.compact
-      @http.get(build_url(IDENTITIES_ENDPOINT), params).body
+
+      with_argyle_server_error do
+        @http.get(build_url(IDENTITIES_ENDPOINT), params).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/accounts#list
@@ -124,18 +138,24 @@ module Aggregators::Sdk
         ongoing_refresh_status: ongoing_refresh_status,
         limit: limit }.compact
 
-      @http.get(build_url(ACCOUNTS_ENDPOINT), params).body
+      with_argyle_server_error do
+        @http.get(build_url(ACCOUNTS_ENDPOINT), params).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/accounts#retrieve
     def fetch_account_api(account: nil)
       raise ArgumentError, "account is required" if account.nil?
-      @http.get(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+      with_argyle_server_error do
+        @http.get(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/accounts#delete
     def delete_account_api(account:)
-      @http.delete(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+      with_argyle_server_error do
+        @http.delete(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/paystubs#list
@@ -156,18 +176,24 @@ module Aggregators::Sdk
         limit: limit }.compact
 
       with_pagination do
-        @http.get(build_url(PAYSTUBS_ENDPOINT), params).body
+        with_argyle_server_error do
+          @http.get(build_url(PAYSTUBS_ENDPOINT), params).body
+        end
       end
     end
 
     def create_user(cbv_flow_end_user_id = nil)
       params = cbv_flow_end_user_id.present? ? { external_id: cbv_flow_end_user_id } : {}
-      @http.post(build_url(USERS_ENDPOINT), params.to_json).body
+      with_argyle_server_error do
+        @http.post(build_url(USERS_ENDPOINT), params.to_json).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/user-tokens#create
     def create_user_token(user_id)
-      @http.post(build_url(USER_TOKENS_ENDPOINT), { user: user_id }.to_json).body
+      with_argyle_server_error do
+        @http.post(build_url(USER_TOKENS_ENDPOINT), { user: user_id }.to_json).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/gigs#list
@@ -182,13 +208,17 @@ module Aggregators::Sdk
         limit: limit }.compact
 
       with_pagination do
-        @http.get(GIGS_ENDPOINT, params).body
+        with_argyle_server_error do
+          @http.get(GIGS_ENDPOINT, params).body
+        end
       end
     end
 
     # https://docs.argyle.com/api-reference/shifts#list
     def fetch_shifts_api(**params)
-      @http.get(SHIFTS_ENDPOINT, params).body
+      with_argyle_server_error do
+        @http.get(SHIFTS_ENDPOINT, params).body
+      end
     end
 
     # https://docs.argyle.com/api-reference/employments#list
@@ -197,7 +227,9 @@ module Aggregators::Sdk
     def fetch_employments_api(user: nil, account: nil)
       raise ArgumentError if user.nil? && account.nil?
       params = { user: user, account: account }.compact
-      @http.get(build_url(EMPLOYMENTS_ENDPOINT), params).body
+      with_argyle_server_error do
+        @http.get(build_url(EMPLOYMENTS_ENDPOINT), params).body
+      end
     end
 
     def build_url(endpoint)
@@ -221,6 +253,22 @@ module Aggregators::Sdk
       end
 
       { "results" => results, "next" => nil }
+    end
+
+    def with_argyle_server_error
+      yield
+    rescue Faraday::ServerError => cause
+      error = ArgyleServerError.new("Argyle API returned an HTTP 5xx response")
+
+      NewRelic::Agent.notice_error(
+        error,
+        custom_params: {
+          provider: "argyle",
+          argyle_environment: @environment_name.to_s
+        }
+      )
+
+      raise error, cause: cause
     end
   end
 end
