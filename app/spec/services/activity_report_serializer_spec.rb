@@ -370,6 +370,29 @@ RSpec.describe ActivityReportSerializer do
       end
     end
 
+    context "with a newer withdrawal at another school" do
+      let(:education) { create(:education_activity, activity_flow: activity_flow, status: :succeeded) }
+
+      before do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education, school_name: "Current College",
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month,
+          supplemental_enrollment_status: "less_than_half_time", credit_hours: 3)
+        create(:nsc_enrollment_term, education_activity: education, enrollment_status: :withdrawn, school_name: "Former College",
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month + 10.days)
+        education.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          education.nsc_enrollment_terms, reporting_months: activity_flow.reporting_months))
+      end
+
+      it "exports the independent enrollment's supplemental details and the withdrawal" do
+        expect(education_entries.fetch("2026-06")).to contain_exactly(
+          include("school_name" => "Current College", "enrollment_status" => "enrolled",
+            "supplemental_enrollment_status" => "less_than_half_time", "credit_hours" => 3.0,
+            "data_source" => "verified_enrollment_only"),
+          include("school_name" => "Former College", "enrollment_status" => "withdrawn", "credit_hours" => nil)
+        )
+      end
+    end
+
     it "reports verified NSC terms in each overlapping reporting month" do
       education = create(
         :education_activity,

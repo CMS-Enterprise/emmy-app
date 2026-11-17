@@ -60,12 +60,33 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
     end
 
     it "retains both current and historical statuses in the PDF report" do
-      expect(document).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      expect(document).to have_text(I18n.t("activities.submit.pdf.enrolled"))
       expect(document).to have_text(I18n.t("components.enrollment_term_table_component.status.withdrawn"))
     end
 
     it "omits supplemental credit-hour columns for the validated flow" do
       expect(document).to have_no_selector("th", text: I18n.t("activities.summary.education.credit_hours"))
+    end
+  end
+
+  context "with a newer withdrawal at another school" do
+    let(:education_activity) do
+      create(:education_activity, activity_flow: flow, status: :succeeded).tap do |activity|
+        create(:nsc_enrollment_term, :enrolled, education_activity: activity, school_name: "Current College",
+          school_certified_on: flow.reporting_months.first, supplemental_enrollment_status: "less_than_half_time", credit_hours: 3)
+        create(:nsc_enrollment_term, education_activity: activity, enrollment_status: :withdrawn, school_name: "Former College",
+          school_certified_on: flow.reporting_months.first + 10.days)
+        activity.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          activity.nsc_enrollment_terms, reporting_months: flow.reporting_months))
+      end
+    end
+
+    it "preserves credit-hour reporting alongside the withdrawn school's status" do
+      expect(document).to have_text("Current College")
+      expect(document).to have_text("Former College")
+      expect(document).to have_text(I18n.t("components.enrollment_term_table_component.status.withdrawn"))
+      expect(document).to have_selector("th", text: I18n.t("activities.summary.education.credit_hours"))
+      expect(document).to have_selector("td", exact_text: "3")
     end
   end
 
