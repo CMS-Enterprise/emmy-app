@@ -31,5 +31,13 @@ RSpec.describe ViewHelper, type: :helper do
       # It should be relative and safe
       expect(link).to include("href=\"/es\"")
     end
+
+    it "handles params being a HashWithIndifferentAccess" do
+      hash_params = ActiveSupport::HashWithIndifferentAccess.new(params)
+      allow(helper.request).to receive(:params).and_return(hash_params)
+
+      link = helper.switch_locale_link(:es)
+      expect(link).to include("/es")
+    end
   end
 end
