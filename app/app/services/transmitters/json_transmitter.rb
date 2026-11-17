@@ -61,6 +61,9 @@ class Transmitters::JsonTransmitter
   end
 
   def income_report_for_json_webhook
+    if @aggregator_report.nil?
+      raise JsonTransmitterError, "Aggregator report is missing"
+    end
     report = @aggregator_report.income_report.deep_dup
     report[:employments] = report.fetch(:employments).map do |employment|
       employment.merge(
