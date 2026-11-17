@@ -32,7 +32,7 @@ RSpec.describe ViewHelper, type: :helper do
       expect(link).to include("href=\"/es\"")
     end
 
-    it "handles params being a HashWithIndifferentAccess" do
+    it "handles HashWithIndifferentAccess for params (common in controller tests)" do
       hash_params = ActiveSupport::HashWithIndifferentAccess.new(params)
       allow(helper.request).to receive(:params).and_return(hash_params)
 
