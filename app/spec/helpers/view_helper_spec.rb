@@ -3,8 +3,7 @@ RSpec.describe ViewHelper, type: :helper do
   describe "#switch_locale_link" do
     before do
       allow(helper).to receive(:t).and_return("Language Name")
-      allow(helper.request).to receive(:path).and_return("/en/activities")
-      allow(helper.request).to receive(:query_parameters).and_return({})
+      allow(helper.request).to receive_messages(path: "/en/activities", query_parameters: {})
     end
 
     it "generates a link with the new locale" do
