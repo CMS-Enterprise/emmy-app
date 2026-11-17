@@ -1,21 +1,30 @@
 module ViewHelper
   def switch_locale_link(locale)
-    # Brakeman flags the use of request.params.to_unsafe_h as a potential XSS/Open Redirect risk (LinkToHref).
-    # To satisfy Brakeman and maintain security, we use request.path_parameters and request.query_parameters
-    # which are safer alternatives to request.params.
-    # We explicitly merge them, permit everything (since we want to preserve current state),
-    # but critically exclude keys that could lead to host injection.
+    # To satisfy Brakeman and maintain security, we avoid rebuilding the URL from parameters.
+    # Instead, we keep the same base path and just update the locale part of the path.
+    # We also preserve the query string if present, but since we use request.path,
+    # we don't have to worry about host injection via request.params.
 
-    # In production, query_parameters is an ActionController::Parameters object.
-    # In RSpec controller specs, it might be a simple Hash or HashWithIndifferentAccess.
-    query_params = request.query_parameters
-    path_params = request.path_parameters
+    path = request.path
+    locale_pattern = %r{^/(#{I18n.available_locales.join("|")})(/|$)}
 
-    q = query_params.respond_to?(:permit!) ? query_params.clone.permit!.to_h : query_params.to_h
-    p = path_params.respond_to?(:permit!) ? path_params.clone.permit!.to_h : path_params.to_h
+    new_path = if path =~ locale_pattern
+                 path.sub(locale_pattern, "/#{locale}\\2")
+               else
+                 "/#{locale}#{path == "/" ? "" : path}"
+               end
 
-    safe_params = p.merge(q).except(:host, :port, :protocol, :script_name, :original_script_name, :anchor, :params, :trailing_slash, "host", "port", "protocol", "script_name", "original_script_name")
-    path = url_for(safe_params.merge(locale: locale, only_path: true))
-    link_to t("shared.languages.#{locale}"), path, class: "usa-nav__link", data: { "turbo-prefetch": false, "action": "click->language#switchLocale", "locale": locale }
+    # Preserve query parameters safely.
+    # request.query_parameters is already filtered and safe in this context.
+    # However, to be extra safe and avoid any potential XSS from query params
+    # being used in a link, we can just use the raw query string if we trust it,
+    # or better, reconstruct it from query_parameters except for sensitive keys.
+    query_params = request.query_parameters.respond_to?(:to_unsafe_h) ? request.query_parameters.to_unsafe_h : request.query_parameters.to_h
+    safe_query = query_params.except(:host, :port, :protocol, :script_name, "host", "port", "protocol", "script_name")
+
+    final_path = new_path
+    final_path += "?#{safe_query.to_query}" if safe_query.present?
+
+    link_to t("shared.languages.#{locale}"), final_path, class: "usa-nav__link", data: { "turbo-prefetch": false, "action": "click->language#switchLocale", "locale": locale }
   end
 end
