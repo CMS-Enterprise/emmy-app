@@ -225,6 +225,9 @@
                   <thead>
                     <tr>
                       <th scope="col">
+                        <%= t(".duplicate_enrollments.term") %>
+                      </th>
+                      <th scope="col">
                         <%= t(".duplicate_enrollments.status") %>
                       </th>
                       <th scope="col">
@@ -238,12 +241,15 @@
                   <tbody>
                     <% dedupe_profile.terms.each do |term| %>
                       <tr>
+                        <td data-label="<%= t(".duplicate_enrollments.term") %>">
+                          <%= t(".duplicate_enrollments.#{term.fetch(:term_type)}") %>
+                        </td>
                         <td data-label="<%= t(".duplicate_enrollments.status") %>">
                           <%= term.fetch(:enrollment_status) == :withdrawn ? t(".duplicate_enrollments.withdrawn") : t("components.enrollment_term_table_component.status.#{term.fetch(:enrollment_status)}") %>
                           (<%= term.fetch(:nsc_status_code) { Launcher::FakeNscScenarios::STATUS_CODES.fetch(term.fetch(:enrollment_status)) } %>)
                         </td>
                         <td data-label="<%= t(".duplicate_enrollments.certified_on") %>">
-                          <%= t(".duplicate_enrollments.certified_after_start", count: term.fetch(:certification_month_offset)) %>
+                          <%= t(".duplicate_enrollments.certified_days_after_start", count: term.fetch(:certification_day_offset)) %>
                         </td>
                         <td data-label="<%= t(".duplicate_enrollments.result") %>">
                           <%= t(".duplicate_enrollments.#{term.fetch(:expected_dedupe_result)}") %>
@@ -253,10 +259,10 @@
                   </tbody>
                 </table>
                 <p>
-                  <%= t(".duplicate_enrollments.browser_check", school_name: dedupe_school_name, full_time_status: t("components.enrollment_term_table_component.status.full_time"), withdrawn_status: t("components.enrollment_term_table_component.status.withdrawn"), leave_of_absence_status: t("components.enrollment_term_table_component.status.leave_of_absence")) %>
+                  <%= t(".duplicate_enrollments.browser_check", school_name: dedupe_school_name, withdrawn_status: t("components.enrollment_term_table_component.status.withdrawn"), leave_of_absence_status: t("components.enrollment_term_table_component.status.leave_of_absence")) %>
                 </p>
                 <p class="usa-hint">
-                  <%= t(".duplicate_enrollments.certification_check", full_time_status: t("components.enrollment_term_table_component.status.full_time")) %>
+                  <%= t(".duplicate_enrollments.certification_check") %>
                 </p>
               </details>
             </div>

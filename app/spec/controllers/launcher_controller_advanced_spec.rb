@@ -69,18 +69,17 @@ RSpec.describe LauncherController, type: :controller do
         expect(rendered).to have_text(I18n.t("#{copy_scope}.description"))
       end
 
-      it "lists the five input records and which ones should remain" do
-        rows = details.all("tbody tr", visible: :all).map { |row| row.text(:all).squish }
-        full_time = I18n.t("components.enrollment_term_table_component.status.full_time")
-        keep = I18n.t("#{copy_scope}.keep")
+      it "lists five input records across two terms with their deduplication results" do
+        rows = details.all("tbody tr", visible: :all)
 
-        expect(rows).to eq([
-          "#{I18n.t("#{copy_scope}.withdrawn")} (W) #{I18n.t("#{copy_scope}.certified_after_start", count: 2)} #{keep}",
-          "#{full_time} (F) #{I18n.t("#{copy_scope}.certified_after_start", count: 1)} #{keep}",
-          "#{full_time} (F) #{I18n.t("#{copy_scope}.certified_after_start", count: 0)} #{I18n.t("#{copy_scope}.remove")}",
-          "#{I18n.t("#{copy_scope}.withdrawn")} (S) #{I18n.t("#{copy_scope}.certified_after_start", count: 1)} #{I18n.t("#{copy_scope}.remove")}",
-          "#{I18n.t("components.enrollment_term_table_component.status.leave_of_absence")} (A) #{I18n.t("#{copy_scope}.certified_after_start", count: 2)} #{keep}"
-        ])
+        expect(rows.size).to eq(5)
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.earlier_reporting_term"), count: 2)
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.later_reporting_term"), count: 3)
+        expect(details.find("table", visible: :all)).to have_text(:all, "(Y)", count: 2)
+        expect(details).to have_text(:all, "(W)")
+        expect(details).to have_text(:all, "(S)")
+        expect(details).to have_text(:all, "(A)")
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.remove"), count: 2)
       end
 
       it "provides collapsed instructions for the browser check and its limit" do
@@ -88,11 +87,9 @@ RSpec.describe LauncherController, type: :controller do
         expect(details).to have_text(:all, I18n.t("#{copy_scope}.records", school_name: profile.terms.first.fetch(:school_name)))
         expect(details).to have_text(:all, I18n.t("#{copy_scope}.browser_check",
           school_name: profile.terms.first.fetch(:school_name),
-          full_time_status: I18n.t("components.enrollment_term_table_component.status.full_time"),
           withdrawn_status: I18n.t("components.enrollment_term_table_component.status.withdrawn"),
           leave_of_absence_status: I18n.t("components.enrollment_term_table_component.status.leave_of_absence")))
-        expect(details).to have_text(:all, I18n.t("#{copy_scope}.certification_check",
-          full_time_status: I18n.t("components.enrollment_term_table_component.status.full_time")))
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.certification_check"))
       end
     end
 

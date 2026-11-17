@@ -156,11 +156,11 @@ module Launcher
         last_name: "Testuser",
         date_of_birth: Date.parse("1990-01-01"),
         terms: [
-          { school_name: "Harborview College", enrollment_status: :withdrawn, certification_month_offset: 2, expected_dedupe_result: :keep },
-          { school_name: "Harborview College", enrollment_status: :full_time, certification_month_offset: 1, expected_dedupe_result: :keep },
-          { school_name: "Harborview College", enrollment_status: :full_time, certification_month_offset: 0, expected_dedupe_result: :remove },
-          { school_name: "Harborview College", enrollment_status: :withdrawn, nsc_status_code: "S", certification_month_offset: 1, expected_dedupe_result: :remove },
-          { school_name: "Harborview College", enrollment_status: :leave_of_absence, certification_month_offset: 2, expected_dedupe_result: :keep }
+          { school_name: "Harborview College", enrollment_status: :withdrawn, term_type: :later_reporting_term, certification_day_offset: 1, expected_dedupe_result: :keep },
+          { school_name: "Harborview College", enrollment_status: :enrolled, term_type: :earlier_reporting_term, certification_day_offset: 1, expected_dedupe_result: :keep },
+          { school_name: "Harborview College", enrollment_status: :enrolled, term_type: :earlier_reporting_term, certification_day_offset: 0, expected_dedupe_result: :remove },
+          { school_name: "Harborview College", enrollment_status: :withdrawn, nsc_status_code: "S", term_type: :later_reporting_term, certification_day_offset: 0, expected_dedupe_result: :remove },
+          { school_name: "Harborview College", enrollment_status: :leave_of_absence, term_type: :later_reporting_term, certification_day_offset: 2, expected_dedupe_result: :keep }
         ]
       )
     ].freeze
@@ -231,13 +231,24 @@ module Launcher
           nsc_status_code: term_data.fetch(:nsc_status_code) { STATUS_CODES.fetch(term_data[:enrollment_status].to_sym) },
           term_begin: covered_window.begin,
           term_end: covered_window.end,
-          school_certified_on: covered_window.begin + term_data.fetch(:certification_month_offset, 0).months
+          school_certified_on: covered_window.begin + term_data.fetch(:certification_month_offset, 0).months + term_data.fetch(:certification_day_offset, 0).days
         }
       end
     end
 
     def covered_window_for_term_data(profile, reporting_window, term_data)
       case term_data[:term_type]&.to_sym
+      when :earlier_reporting_term, :later_reporting_term
+        later_start = reporting_window.begin.next_month
+        # Keep two distinct terms inside even a single-month reporting window.
+        if later_start > reporting_window.end
+          later_start = reporting_window.begin + ((reporting_window.end - reporting_window.begin).to_i + 1) / 2
+        end
+        if term_data[:term_type].to_sym == :earlier_reporting_term
+          reporting_window.begin..(later_start - 1.day)
+        else
+          later_start..reporting_window.end
+        end
       when :qualifying_spring
         Date.new(reporting_window.begin.year, 3, 1)..Date.new(reporting_window.begin.year, 6, 15)
       when :summer_less_than_half_time

@@ -9,18 +9,32 @@ RSpec.describe Launcher::FakeNscScenarios do
       end
       let(:reporting_window) { Date.new(2021, 9, 1)..Date.new(2021, 12, 1) }
 
-      it "returns full-time updates, both raw withdrawal codes, and a distinct leave of absence" do
+      it "returns an earlier enrolled term and a later non-enrolled term with duplicate records" do
         response = described_class.nsc_response_for(identity: identity, reporting_window: reporting_window)
         records = response.fetch("enrollmentDetails").flat_map { |detail| detail.fetch("enrollmentData") }
 
         expect(records.map { |record| record.values_at("termBeginDate", "termEndDate", "enrollmentStatus", "schoolCertifiedOnDate") })
           .to contain_exactly(
-            [ "2021-09-01", "2021-12-01", "W", "2021-11-01" ],
-            [ "2021-09-01", "2021-12-01", "F", "2021-10-01" ],
-            [ "2021-09-01", "2021-12-01", "F", "2021-09-01" ],
-            [ "2021-09-01", "2021-12-01", "S", "2021-10-01" ],
-            [ "2021-09-01", "2021-12-01", "A", "2021-11-01" ]
+            [ "2021-10-01", "2021-12-01", "W", "2021-10-02" ],
+            [ "2021-09-01", "2021-09-30", "Y", "2021-09-02" ],
+            [ "2021-09-01", "2021-09-30", "Y", "2021-09-01" ],
+            [ "2021-10-01", "2021-12-01", "S", "2021-10-01" ],
+            [ "2021-10-01", "2021-12-01", "A", "2021-10-03" ]
           )
+      end
+    end
+
+    context "with Dedupe in a one-month reporting window" do
+      let(:profile) { described_class.by_key("duplicate_enrollments_dedupe") }
+      let(:reporting_window) { Date.new(2026, 2, 1)..Date.new(2026, 2, 28) }
+      let(:terms) { described_class.terms_for_profile(profile, reporting_window) }
+
+      it "keeps the earlier and later terms distinct and inside the reporting window" do
+        expect(terms.map { |term| term.values_at(:term_begin, :term_end) }.uniq).to contain_exactly(
+          [ Date.new(2026, 2, 1), Date.new(2026, 2, 14) ],
+          [ Date.new(2026, 2, 15), Date.new(2026, 2, 28) ]
+        )
+        expect(terms.map { |term| term.fetch(:school_certified_on) }).to all(be_between(reporting_window.begin, reporting_window.end))
       end
     end
 
