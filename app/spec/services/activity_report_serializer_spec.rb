@@ -789,6 +789,16 @@ RSpec.describe ActivityReportSerializer do
         expect(entries.map { |entry| entry["paystubs"].sole["pay_date"] }).to eq(%w[2026-07-01 2026-07-02])
       end
 
+      it "preserves Argyle gig classification alongside Pinwheel null" do
+        account = create(:payroll_account, :argyle_fully_synced, flow: activity_flow, aggregator_account_id: "argyle_report1")
+        gig_report = build(:argyle_report, payroll_accounts: [ account ], has_fetched: true)
+        gig_report.employments.first.employment_type = :gig
+        gig_report.paystubs.first.pay_date = "2026-07-02"
+        allow(fetcher).to receive(:report_for_payroll_account).with(account).and_return(gig_report)
+
+        expect(employment_months.fetch("2026-07").map { |entry| entry.fetch("employment_type") }).to eq([ nil, "gig" ])
+      end
+
       it "omits payroll employers with no payments in the reporting period" do
         payroll_report.paystubs.clear
         expect(employment_months).to eq({})
