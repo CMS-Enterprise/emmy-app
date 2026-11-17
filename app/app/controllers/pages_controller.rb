@@ -20,6 +20,14 @@ class PagesController < ApplicationController
     @flow = flow_class.find_by(id: session[:flow_id])
     @invitation = @flow&.is_a?(ActivityFlow) ? @flow&.activity_flow_invitation : @flow&.cbv_flow_invitation
 
+    # Ensure CSP is set even when called via exceptions_app
+    # ActionDispatch::ContentSecurityPolicy::Middleware might not be applied
+    # when self.routes is used as exceptions_app.
+    if Rails.application.config.content_security_policy.present?
+      policy = Rails.application.config.content_security_policy.clone
+      response.headers["Content-Security-Policy"] = policy.build(self, request.content_security_policy_nonce)
+    end
+
     render status: :not_found, formats: %i[html]
   end
 
@@ -27,6 +35,12 @@ class PagesController < ApplicationController
     # When in development environment, you'll need to set
     #   config.consider_all_requests_local = false
     # in config/development.rb for these pages to actually show up.
+
+    # Ensure CSP is set even when called via exceptions_app
+    if Rails.application.config.content_security_policy.present?
+      policy = Rails.application.config.content_security_policy.clone
+      response.headers["Content-Security-Policy"] = policy.build(self, request.content_security_policy_nonce)
+    end
 
     render status: :internal_server_error, formats: %i[html]
   end
