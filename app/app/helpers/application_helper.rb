@@ -140,7 +140,7 @@ module ApplicationHelper
       if form_builder.required_fields_notice? && @flow.is_a?(ActivityFlow)
         notice = tag.p(t("us_form_with.required_fields_notice_html",
           asterisk: tag.span("*", class: "usa-hint--required")),
-          class: "margin-top-2")
+          class: "margin-top-2 margin-bottom-4")
         safe_join([ notice, form_html ])
       else
         form_html
