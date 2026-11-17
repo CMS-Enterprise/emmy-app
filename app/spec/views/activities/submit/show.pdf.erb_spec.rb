@@ -45,6 +45,28 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
     expect(term_table).to have_selector("thead th", text: I18n.t("activities.summary.education.community_engagement_hours"))
   end
 
+  context "with a withdrawal following enrolled status in the same term" do
+    let(:education_activity) do
+      create(:education_activity, activity_flow: flow, data_source: :validated, status: :succeeded).tap do |activity|
+        create(:nsc_enrollment_term, :enrolled, education_activity: activity,
+          school_certified_on: flow.reporting_months.first)
+        create(:nsc_enrollment_term, education_activity: activity, enrollment_status: :withdrawn,
+          school_certified_on: flow.reporting_months.first + 10.days)
+        activity.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          activity.nsc_enrollment_terms, reporting_months: flow.reporting_months))
+      end
+    end
+
+    it "retains both current and historical statuses in the PDF report" do
+      expect(document).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      expect(document).to have_text(I18n.t("components.enrollment_term_table_component.status.withdrawn"))
+    end
+
+    it "omits supplemental credit-hour columns for the validated flow" do
+      expect(document).to have_no_selector("th", text: I18n.t("activities.summary.education.credit_hours"))
+    end
+  end
+
   context "with full-time enrollment" do
     let(:enrollment_status) { "full_time" }
     let(:credit_hours) { nil }

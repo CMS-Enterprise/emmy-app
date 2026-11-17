@@ -66,6 +66,12 @@ class EducationActivity < Activity
   def self.data_source_from_nsc_results(enrollment_terms, reporting_months:, required_month_count: nil)
     return :partially_self_attested if enrollment_terms.blank?
 
+    latest = enrollment_terms
+      .select { |term| reporting_months.any? { |month| term.overlaps_month?(month) } }
+      .max_by { |term| [ term.school_certified_on || Date.new(1, 1, 1), term.id || 0 ] }
+    # Validated describes the NSC-backed flow, not sufficient enrollment for eligibility.
+    return :validated if latest&.non_enrolled?
+
     required_month_count ||= reporting_months.length
     resolver = EducationReportingMonthResolver.new(terms: enrollment_terms, reporting_months: reporting_months)
     sufficient_month_count = resolver.reporting_month_enrollments.count(&:sufficient_enrollment?)

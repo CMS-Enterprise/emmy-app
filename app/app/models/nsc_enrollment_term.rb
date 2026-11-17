@@ -47,6 +47,11 @@ class NscEnrollmentTerm < ApplicationRecord
     "unknown" => 0
   }.freeze
 
+  # W and S share the withdrawn status after NSC normalization.
+  def non_enrolled?
+    enrollment_status.in?(%w[withdrawn leave_of_absence graduated deceased])
+  end
+
   def half_time_or_above?
     HALF_TIME_OR_ABOVE_STATUSES.include?(enrollment_status)
   end

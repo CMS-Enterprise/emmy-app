@@ -348,6 +348,28 @@ RSpec.describe ActivityReportSerializer do
       expect(education_entries["2026-06"].sole).to include("contact_title" => nil)
     end
 
+    context "with a withdrawal following enrolled status in the same term" do
+      let(:education) { create(:education_activity, activity_flow: activity_flow, status: :succeeded) }
+
+      before do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education,
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month)
+        create(:nsc_enrollment_term, education_activity: education, enrollment_status: :withdrawn,
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month + 10.days)
+        education.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          education.nsc_enrollment_terms, reporting_months: activity_flow.reporting_months))
+      end
+
+      it "retains both current and historical statuses in the JSON report" do
+        expect(education_entries.fetch("2026-06").map { |entry| entry.fetch("enrollment_status") }).to contain_exactly("enrolled", "withdrawn")
+      end
+
+      it "exports validated NSC data without supplemental credit hours" do
+        expect(education_entries.fetch("2026-06")).to all(include("data_source" => "verified", "credit_hours" => nil))
+        expect(education_entries.fetch("2026-06").flat_map(&:keys)).not_to include("supplemental_enrollment_status")
+      end
+    end
+
     it "reports verified NSC terms in each overlapping reporting month" do
       education = create(
         :education_activity,

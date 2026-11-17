@@ -300,6 +300,86 @@ RSpec.describe EducationActivity do
       NscEnrollmentTerm.new(enrollment_status: status, term_begin: begin_date, term_end: end_date)
     end
 
+    context "when the most recent reporting-term status is non-enrolled" do
+      subject(:data_source) do
+        described_class.data_source_from_nsc_results(terms, reporting_months: reporting_months)
+      end
+
+      let(:latest_status) { :withdrawn }
+      let(:previous) do
+        NscEnrollmentTerm.new(enrollment_status: :enrolled, term_begin: jan, term_end: feb.end_of_month,
+          school_certified_on: jan)
+      end
+      let(:latest) do
+        NscEnrollmentTerm.new(enrollment_status: latest_status, term_begin: jan, term_end: feb.end_of_month,
+          school_certified_on: feb)
+      end
+      let(:terms) { [ latest, previous ] }
+
+      it "uses the validated flow for withdrawal after enrolled" do
+        expect(data_source).to eq(:validated)
+      end
+
+      context "without any previous status" do
+        let(:terms) { [ latest ] }
+
+        it "still uses the validated flow" do
+          expect(data_source).to eq(:validated)
+        end
+      end
+
+      context "with a leave of absence" do
+        let(:latest_status) { :leave_of_absence }
+
+        it "uses the validated flow" do
+          expect(data_source).to eq(:validated)
+        end
+      end
+
+      context "with graduation" do
+        let(:latest_status) { :graduated }
+
+        it "uses the validated flow" do
+          expect(data_source).to eq(:validated)
+        end
+      end
+
+      context "with deceased status" do
+        let(:latest_status) { :deceased }
+
+        it "uses the validated flow" do
+          expect(data_source).to eq(:validated)
+        end
+      end
+
+      context "when enrolled is more recent than the non-enrolled record" do
+        before { previous.school_certified_on = feb + 1.day }
+
+        it "continues to request supplemental details" do
+          expect(data_source).to eq(:partially_self_attested)
+        end
+      end
+
+      context "when the non-enrolled term is outside the reporting window" do
+        before do
+          latest.term_begin = jan - 1.year
+          latest.term_end = feb.end_of_month - 1.year
+        end
+
+        it "does not let that term bypass supplemental details" do
+          expect(data_source).to eq(:partially_self_attested)
+        end
+      end
+
+      context "with an unknown status" do
+        let(:latest_status) { :unknown }
+
+        it "continues to request supplemental details" do
+          expect(data_source).to eq(:partially_self_attested)
+        end
+      end
+    end
+
     it "returns :validated when half_time_or_above covers all reporting months" do
       half_time_term = term(status: "half_time", begin_date: jan, end_date: feb.end_of_month)
 

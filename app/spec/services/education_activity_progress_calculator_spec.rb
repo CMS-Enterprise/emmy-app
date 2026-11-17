@@ -7,6 +7,22 @@ RSpec.describe EducationActivityProgressCalculator do
   let(:month_start) { flow.reporting_window_range.begin }
 
   describe "#progress_hours_for_month" do
+    context "with validated non-enrollment following a Y status" do
+      before do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education_activity, school_certified_on: month_start)
+        create(:nsc_enrollment_term, education_activity: education_activity,
+          enrollment_status: :withdrawn, school_certified_on: month_start + 10.days)
+        education_activity.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          education_activity.nsc_enrollment_terms, reporting_months: flow.reporting_months))
+      end
+
+      it "does not treat the validated flow as sufficient enrollment" do
+        expect(education_activity).to be_validated
+        expect(calculator.progress_hours_for_month(month_start)).to eq(0)
+        expect(calculator).not_to be_sufficient_enrollment_for_month(month_start)
+      end
+    end
+
     context "when a manual term has not been entered" do
       let(:education_activity) do
         create(
