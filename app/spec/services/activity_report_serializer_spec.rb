@@ -650,7 +650,7 @@ RSpec.describe ActivityReportSerializer do
       expect(employment_months["2026-07"].sole).to include(
         "type" => "employment", "month" => "2026-07", "data_source" => "self_attested",
         "employer_name" => "Gainesville Wrecking", "is_self_employed" => false,
-        "employer_address" => "942 W Harlan Ave, Gainesville, FL 32611", "employment_type" => nil,
+        "employer_address" => "942 W Harlan Ave, Gainesville, FL 32611", "employment_type" => "paid",
         "hours" => 12.75, "gross_income" => 123.45, "additional_comments" => "Seasonal work",
         "document_ids" => [ "DOC-#{document.id}" ]
       )
@@ -658,7 +658,7 @@ RSpec.describe ActivityReportSerializer do
       expect(report.dig("ce_report", "documents").sole["document_id"]).to eq("DOC-#{document.id}")
     end
 
-    it "includes self-employed and unpaid work with null employment types" do
+    it "classifies self-employed paid work and in-kind work" do
       self_employed = create(:employment_activity, activity_flow: activity_flow, is_self_employed: true)
       unpaid = create(:employment_activity, activity_flow: activity_flow, compensation_type: :unpaid_or_in_kind)
       [ self_employed, unpaid ].each do |employment|
@@ -666,10 +666,38 @@ RSpec.describe ActivityReportSerializer do
       end
 
       expect(employment_months["2026-06"].first).to include(
-        "employment_type" => nil, "is_self_employed" => true,
+        "employment_type" => "paid", "is_self_employed" => true,
         "contact_name" => nil, "contact_email" => nil, "contact_phone_number" => nil
       )
-      expect(employment_months["2026-06"].last).to include("employment_type" => nil, "is_self_employed" => false, "gross_income" => 0.0)
+      expect(employment_months["2026-06"].last).to include("employment_type" => "in_kind", "is_self_employed" => false, "gross_income" => 0.0)
+    end
+
+    context "with manual fallback after an unsuccessful payroll connection" do
+      let(:employment) { create(:employment_activity, activity_flow: activity_flow) }
+
+      before do
+        create(:payroll_account, flow: activity_flow, synchronization_status: :failed)
+        create(:employment_activity_month, employment_activity: employment, month: first_month)
+      end
+
+      it "reports the default compensation type as paid" do
+        expect(employment_months.fetch("2026-06").sole).to include("employment_type" => "paid")
+      end
+    end
+
+    context "with a Community Engagement flow" do
+      let(:employment_focused) { false }
+      let!(:paid) { create(:employment_activity, activity_flow: activity_flow, compensation_type: :paid) }
+      let!(:unpaid) { create(:employment_activity, activity_flow: activity_flow, compensation_type: :unpaid_or_in_kind) }
+
+      before do
+        create(:employment_activity_month, employment_activity: paid, month: first_month)
+        create(:employment_activity_month, employment_activity: unpaid, month: first_month)
+      end
+
+      it "keeps both self-attested employment types null" do
+        expect(employment_months.fetch("2026-06").map { |entry| entry.fetch("employment_type") }).to eq([ nil, nil ])
+      end
     end
 
     it "excludes drafts and does not fetch unsuccessful or unpublished payroll connections" do

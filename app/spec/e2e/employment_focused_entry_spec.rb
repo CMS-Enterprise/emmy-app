@@ -10,7 +10,7 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     I18n.t("activities.reporting_for.text_html", name: "#{applicant.first_name} #{applicant.last_name}")
   }
 
-  it "routes employment-focused in-kind work through manual income and hours entry" do
+  it "routes employment-focused in-kind work through manual entry with the in-kind compensation type" do
     visit activities_flow_start_path(token: invitation.auth_token, reporting_window_months: 3)
 
     verify_page(page, title: I18n.t("activities.entries.show.employment_focused.header"))
@@ -24,18 +24,19 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     expect(page).to have_text(reporting_for_text, count: 1)
     choose I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.label"), allow_label_click: true
     click_button I18n.t("continue")
-    verify_page(page, title: I18n.t("activities.employment_info.title"))
+    verify_page(page, title: I18n.t("activities.employment_info.unpaid_or_in_kind.title"))
     fill_in "employment_activity_employer_name", with: "Example Employer"
     click_button I18n.t("activities.employment_info.continue")
 
     verify_page(page, title: I18n.t("activities.employment.month_selections.edit.title", employer_name: "Example Employer"))
     activity = invitation.activity_flows.last.employment_activities.last
+    expect(activity).to be_unpaid_or_in_kind
     month = activity.activity_flow.reporting_months.first
     check I18n.l(month, format: :month_year), allow_label_click: true
     click_button I18n.t("activities.employment.month_selections.edit.continue")
 
-    verify_page(page, title: I18n.t("activities.employment.hours_input.heading", organization: "Example Employer"))
-    expect(page).to have_field("employment_activity_month_gross_income")
+    verify_page(page, title: I18n.t("activities.employment.hours_input.unpaid_or_in_kind.heading", organization: "Example Employer"))
+    expect(page).to have_no_field("employment_activity_month_gross_income")
     expect(page).to have_field("employment_activity_month_hours")
   end
 
