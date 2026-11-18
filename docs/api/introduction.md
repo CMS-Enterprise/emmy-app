@@ -16,10 +16,6 @@ variants; activity month maps accept only keys matching the documented `YYYY-MM`
 pattern. Composition wrappers (`anyOf` and `oneOf`) inherit these restrictions
 from their concrete variants.
 
-This is a schema validation constraint, not a change to controller behavior.
-Validate integrations against the published schema; server-side filtering of
-unknown request fields does not make those fields valid.
-
 <!-- Remove this link-check exception after the first reviewed deployment. -->
 <!-- markdown-link-check-disable-next-line -->
 [Download the official OpenAPI JSON](https://cms-enterprise.github.io/emmy-app/openapi.json).

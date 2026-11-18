@@ -101,8 +101,11 @@ separate V2 field list in the invitation schemas.
 The reference uses OpenAPI 3.1. Objects do not allow undocumented fields; new
 fields are communicated via updated schemas rather than allowing additive
 schema changes. Month-keyed activity maps also use `patternProperties` to
-validate arrays under `YYYY-MM` keys while allowing future fields with other
-names. Nullable fields include `null` in their `type` array.
+validate arrays under `YYYY-MM` keys; `additionalProperties: false` rejects
+keys outside that pattern. Nullable fields include `null` in their `type` array.
+These constraints apply to schema validation, not controller behavior.
+Server-side filtering of unknown request fields does not make those fields
+valid against the published schema.
 Request examples come from real test requests using synthetic data and fixed
 tokens. The CE model example comes from the transmission specs; model examples
 and webhook request and response examples are validated during the build.
