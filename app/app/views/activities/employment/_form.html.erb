@@ -1,5 +1,5 @@
 <% field_label = ->(text) { tag.strong(text) } %>
-<% if employment_activity.unpaid_or_in_kind? %>
+<% if employment_activity.uses_unpaid_work_flow? %>
   <div class="maxw-mobile-lg">
     <%= render AccordionComponent.new(
           id: "unpaid-or-in-kind-work",
