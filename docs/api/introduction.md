@@ -22,7 +22,7 @@ unknown request fields does not make those fields valid.
 
 <!-- Remove this link-check exception after the first reviewed deployment. -->
 <!-- markdown-link-check-disable-next-line -->
-[Download the official OpenAPI JSON](https://DSACMS.github.io/iv-cbv-payroll/openapi.json).
+[Download the official OpenAPI JSON](https://cms-enterprise.github.io/emmy-app/openapi.json).
 The JSON and this reference are generated together from executable API tests.
 
 ## API environments
