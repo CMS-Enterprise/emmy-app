@@ -9,9 +9,16 @@ Its component models include self-attested employment, validated payroll, and ed
 Your agency hosts this receiver.
 Examples use synthetic applicant data and nonfunctional tokens.
 
-Object schemas allow additional properties for forward compatibility. Integrations
-should tolerate unknown response fields so new fields can be added without breaking
-existing clients. Required fields and documented field types still apply.
+JSON objects with documented fields use `additionalProperties: false`: schema
+validation rejects undocumented fields in requests, responses, and report webhooks,
+including nested objects. Agency metadata is validated against its documented
+variants; activity month maps accept only keys matching the documented `YYYY-MM`
+pattern. Composition wrappers (`anyOf` and `oneOf`) inherit these restrictions
+from their concrete variants.
+
+This is a schema validation constraint, not a change to controller behavior.
+Validate integrations against the published schema; server-side filtering of
+unknown request fields does not make those fields valid.
 
 <!-- Remove this link-check exception after the first reviewed deployment. -->
 <!-- markdown-link-check-disable-next-line -->
