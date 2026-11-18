@@ -108,7 +108,7 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
         get :show
 
         expect(Capybara.string(response.body)).to have_text(
-          "If you need to report multiple jobs, add each job separately. Only include paid and in-kind work. You can report unpaid work later."
+          I18n.t("activities.employment.add_your_work.show.employment_focused.description")
         )
       end
 
@@ -125,8 +125,8 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
         get :show
 
         rendered = Capybara.string(response.body)
-        expect(rendered).to have_selector("label .text-bold", text: "Enter in-kind work manually", exact_text: true)
-        expect(rendered).to have_text("Add work where you received housing, food, or other goods instead of money.")
+        expect(rendered).to have_selector("label .text-bold", text: I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.label"), exact_text: true)
+        expect(rendered).to have_text(I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.hint"))
         expect(rendered).to have_no_text(I18n.t("activities.employment.add_your_work.show.options.unpaid.hint"))
         expect(rendered).to have_no_text("Enter unpaid or in-kind work")
       end
