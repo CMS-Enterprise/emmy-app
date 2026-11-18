@@ -103,6 +103,10 @@ fields are communicated via updated schemas rather than allowing additive
 schema changes. Month-keyed activity maps also use `patternProperties` to
 validate arrays under `YYYY-MM` keys; `additionalProperties: false` rejects
 keys outside that pattern. Nullable fields include `null` in their `type` array.
+Agency metadata is validated against its documented variants. Apply
+`additionalProperties: false` to the concrete variants behind `anyOf` and
+`oneOf`, not to the composition wrappers: the constraint cannot recognize
+properties declared only in referenced variants.
 These constraints apply to schema validation, not controller behavior.
 Server-side filtering of unknown request fields does not make those fields
 valid against the published schema.

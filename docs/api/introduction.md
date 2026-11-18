@@ -9,12 +9,11 @@ Its component models include self-attested employment, validated payroll, and ed
 Your agency hosts this receiver.
 Examples use synthetic applicant data and nonfunctional tokens.
 
-JSON objects with documented fields use `additionalProperties: false`: schema
-validation rejects undocumented fields in requests, responses, and report webhooks,
-including nested objects. Agency metadata is validated against its documented
-variants; activity month maps accept only keys matching the documented `YYYY-MM`
-pattern. Composition wrappers (`anyOf` and `oneOf`) inherit these restrictions
-from their concrete variants.
+Emmy's API schemas restrict objects to their documented fields so validation
+can catch integration mistakes and unexpected changes in the data exchanged
+with your agency. Validate requests and responses against the published schemas
+to identify these issues before they affect report processing. Each schema
+defines the fields accepted for that part of the API.
 
 <!-- Remove this link-check exception after the first reviewed deployment. -->
 <!-- markdown-link-check-disable-next-line -->
