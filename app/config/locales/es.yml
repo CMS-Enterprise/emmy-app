@@ -725,10 +725,3 @@ es:
     date_picker_format: 'Formato: mm/dd/aaaa'
     optional: Opcional
     tax_id_format: 'Formato: 123456789'
-  activities:
-    employment:
-      add_your_work:
-        show:
-          seasonal_job_accordion:
-            body: Si solo trabajó durante ciertas temporadas o períodos del año, debe utilizar el Portal de Autoservicio de Luisiana para informar su trabajo de temporada. Aún puede agregar otros tipos de trabajos con Emmy.
-            title: "¿Qué pasa si mi trabajo es de temporada?"
