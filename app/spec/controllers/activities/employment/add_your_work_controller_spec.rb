@@ -70,6 +70,22 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
           normalize_ws: true
         )
       end
+
+      it "renders the seasonal job accordion" do
+        get :show
+
+        expect(response.body).to include(I18n.t("activities.employment.add_your_work.show.seasonal_job_accordion.title"))
+      end
+    end
+
+    context "with a twelve-month reporting period" do
+      let(:activity_flow) { create(:activity_flow, reporting_window_months: 12) }
+
+      it "does not render the seasonal job accordion" do
+        get :show
+
+        expect(response.body).not_to include(I18n.t("activities.employment.add_your_work.show.seasonal_job_accordion.title"))
+      end
     end
 
     it "renders all three options with bolded labels and their hints" do
