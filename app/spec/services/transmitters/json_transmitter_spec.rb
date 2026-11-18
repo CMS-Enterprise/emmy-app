@@ -39,7 +39,8 @@ RSpec.describe Transmitters::JsonTransmitter do
   describe "#payload" do
     let(:schema_path) { Rails.root.join("spec/fixtures/income-report-2026-06-18.json") }
     let(:schema) { JSON.parse(schema_path.read) }
-    let(:payload) { JSON.parse(described_class.new(cbv_flow, mock_client_agency, schema_report).payload) }
+    let(:transmitter) { described_class.new(cbv_flow, mock_client_agency, schema_report) }
+    let(:payload) { JSON.parse(transmitter.payload) }
     let(:schema_report) { build(:pinwheel_report, :hydrated, :with_pinwheel_account) }
 
     before do
@@ -99,6 +100,31 @@ RSpec.describe Transmitters::JsonTransmitter do
       end
 
       expect(errors).to eq([])
+      expect(payload).not_to have_key("report_pdf")
+    end
+
+    context "when the report PDF is included" do
+      let(:income_transmission_method_configuration) { super().merge("include_report_pdf" => true) }
+      let(:pdf_content) { "synthetic PDF content" }
+      let(:pdf_output) { instance_double(PdfService::PdfGenerationResult, content: pdf_content) }
+      let(:validator) { JSONSchemer.schema(schema) }
+
+      before do
+        allow(transmitter).to receive(:pdf_output).and_return(pdf_output)
+      end
+
+      it "accepts the transmitter's Base64-encoded report PDF" do
+        expect(Base64.strict_decode64(payload.fetch("report_pdf"))).to eq(pdf_content)
+        expect(validator.validate(payload).to_a).to be_empty
+      end
+
+      it "rejects a non-string report PDF" do
+        expect(validator.valid?(payload.merge("report_pdf" => 123))).to be(false)
+      end
+
+      it "still rejects undocumented fields" do
+        expect(validator.valid?(payload.merge("undocumented" => true))).to be(false)
+      end
     end
   end
 

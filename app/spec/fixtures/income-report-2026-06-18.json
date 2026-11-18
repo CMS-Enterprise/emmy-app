@@ -6,6 +6,10 @@
   "additionalProperties": false,
   "required": ["confirmation_code", "completed_at", "agency_partner_metadata", "income_report"],
   "properties": {
+    "report_pdf": {
+      "type": "string",
+      "description": "Base64-encoded report PDF, included only when include_report_pdf is enabled."
+    },
     "confirmation_code": {
       "type": "string",
       "description": "Unique code assigned when the report was completed."
