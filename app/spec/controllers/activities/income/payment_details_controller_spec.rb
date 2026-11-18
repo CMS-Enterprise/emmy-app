@@ -65,8 +65,27 @@ RSpec.describe Activities::Income::PaymentDetailsController do
         expect(page).to have_no_text("Community engagement hours")
       end
 
+      context "for a non-employment-focused CE flow" do
+        before { flow.update!(employment_focused: false) }
+
+        it "omits the Employment-focused comments hint" do
+          get :show, params: { user: { account_id: account_id } }
+
+          expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_hint"))
+        end
+      end
+
       context "for an employment_focused activity" do
         before { flow.update!(employment_focused: true) }
+
+        it "shows the hint above the comments field for Employment-focused flows" do
+          get :show, params: { user: { account_id: account_id } }
+
+          rendered = Capybara.string(response.body)
+          expect(rendered).to have_selector('label + p#employment-additional-information-hint',
+            text: I18n.t("activities.employment.additional_comments_hint"))
+          expect(rendered).to have_selector('p#employment-additional-information-hint + textarea[aria-describedby="employment-additional-information-hint"]')
+        end
 
         it "omits the community engagement report description for a single month" do
           flow.update!(reporting_window_months: 1)

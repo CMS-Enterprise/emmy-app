@@ -56,7 +56,13 @@
         t(unpaid ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description_unpaid" : other ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description" : "activities.employment.review.additional_comments_description",
           agency_name: agency_translation("shared.agency_full_name")),
         class: "usa-label" %>
-  <%= form.text_area :additional_comments, class: "usa-textarea", rows: 5 %>
+  <% if @flow.employment_focused? %>
+    <p id="employment-additional-comments-hint" class="usa-hint margin-top-2">
+      <%= t("activities.employment.additional_comments_hint") %>
+    </p>
+  <% end %>
+  <%= form.text_area :additional_comments, class: "usa-textarea", rows: 5,
+        aria: { describedby: @flow.employment_focused? ? "employment-additional-comments-hint" : nil } %>
 
   <% submit_label = params[:from_edit].present? ? t("activities.hub.save") : t("activities.employment.review.save") %>
   <%= form.submit submit_label, class: "usa-button usa-button--primary" %>

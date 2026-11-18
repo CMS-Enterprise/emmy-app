@@ -82,7 +82,13 @@
 
     <% additional_information_label = t(".additional_information_label", agency_acronym: agency_translation("shared.agency_acronym")) %>
     <%= form.label :additional_information, additional_information_label, class: "usa-label" %>
-    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5 %>
+    <% if @flow.employment_focused? %>
+      <p id="employment-additional-information-hint" class="usa-hint margin-top-1">
+        <%= t("activities.employment.additional_comments_hint") %>
+      </p>
+    <% end %>
+    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5,
+        aria: { describedby: @flow.employment_focused? ? "employment-additional-information-hint" : nil } %>
     <%= form.submit t(".continue"), class: "usa-button usa-button--primary" %>
   <% end %>
 </div>
