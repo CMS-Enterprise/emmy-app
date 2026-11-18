@@ -83,7 +83,7 @@
     <% additional_information_label = t(".additional_information_label", agency_acronym: agency_translation("shared.agency_acronym")) %>
     <%= form.label :additional_information, additional_information_label, class: "usa-label" %>
     <% if @flow.employment_focused? %>
-      <p id="employment-additional-information-hint" class="usa-hint margin-top-1">
+      <p id="employment-additional-information-hint" class="usa-hint margin-top-2">
         <%= t("activities.employment.additional_comments_hint") %>
       </p>
     <% end %>
