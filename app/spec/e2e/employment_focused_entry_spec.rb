@@ -20,6 +20,8 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     click_link I18n.t("activities.entries.show.employment_focused.get_started")
 
     verify_page(page, title: "Choose how you want to add your job")
+    expect(page).to have_text("If you need to report multiple jobs, add each job separately. Only include paid and in-kind work. You can report unpaid work later.")
+    expect(page).to have_text("Add work where you received housing, food, or other goods instead of money.")
     expect(page).to have_selector("fieldset legend", text: I18n.t("activities.employment.add_your_work.show.legend"))
     expect(page).to have_text(reporting_for_text, count: 1)
     choose I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.label"), allow_label_click: true
