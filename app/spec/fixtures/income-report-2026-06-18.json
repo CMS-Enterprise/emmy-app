@@ -3,6 +3,7 @@
   "id": "https://reportmyincome.org/schema/income-report",
   "title": "EMMY Income Report API (2026-06-18)",
   "type": "object",
+  "additionalProperties": false,
   "required": ["confirmation_code", "completed_at", "agency_partner_metadata", "income_report"],
   "properties": {
     "confirmation_code": {
@@ -20,6 +21,7 @@
     },
     "income_report": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["has_other_jobs", "employments"],
       "properties": {
         "has_other_jobs": {
@@ -29,6 +31,7 @@
           "type": "array",
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "required": ["applicant_full_name", "employer_name", "paystubs"],
             "properties": {
               "applicant_full_name": {
@@ -181,6 +184,7 @@
                 "type": "array",
                 "items": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": ["pay_date", "pay_gross"],
                   "properties": {
                     "pay_date": {
@@ -249,6 +253,7 @@
                       "type": "array",
                       "items": {
                         "type": "object",
+                        "additionalProperties": false,
                         "required": ["category", "tax", "amount"],
                         "properties": {
                           "category": {
@@ -284,7 +289,7 @@
                       "description": "Itemized breakdown of gross pay components for this paystub. Amounts are in cents.",
                       "items": {
                         "type": "object",
-                        "additionalProperties": true,
+                        "additionalProperties": false,
                         "required": ["type", "amount"],
                         "properties": {
                           "type": {

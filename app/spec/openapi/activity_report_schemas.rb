@@ -1,4 +1,5 @@
 require_relative "invitation_documentation"
+require_relative "report_metadata_schemas"
 
 module ActivityReportSchemas
   def self.schemas
@@ -36,10 +37,7 @@ module ActivityReportSchemas
         confirmation_code: { type: :string, description: "Unique code assigned when the report was completed, shared with the applicant and used to debug report processing errors." },
         completed_at: { type: :string, format: :"date-time", description: "UTC time the applicant completed the report, in ISO 8601 format." },
         agency_partner_metadata: {
-          anyOf: [
-            ref("AgencyPartnerMetadata"),
-            ref("AgencyPartnerMetadataV2")
-          ],
+          "$ref" => "#/components/schemas/ReportAgencyPartnerMetadata",
           description: "Agency-specific fields used to associate the report with the correct case. The accepted fields depend on the agency and invitation version."
         },
       ce_report: { "$ref" => "#/components/schemas/CeReport", description: "Community engagement report containing the review period, supporting document metadata, and activities." }
@@ -174,7 +172,7 @@ module ActivityReportSchemas
         type: { type: :string, enum: %w[base benefits bereavement bonus commission disability double_overtime employer_contribution fare holiday hourly life_insurance meal_comp medical other overtime parental premium pto retirement retro_pay salary shift_differential sick stock tips unpaid vacation] },
         amount: cents
       })
-    }
+    }.merge(ReportMetadataSchemas.schemas)
   end
 
   def self.object(required, properties, **options)
@@ -207,6 +205,7 @@ module ActivityReportSchemas
   def self.months(name)
     {
       type: :object,
+      additionalProperties: false,
       description: "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
       patternProperties: { '^\d{4}-\d{2}$' => { type: :array, items: ref(name) } }
     }

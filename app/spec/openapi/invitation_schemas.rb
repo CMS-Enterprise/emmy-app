@@ -12,6 +12,8 @@ module InvitationSchemas
       doc_id: { type: %w[string null], example: "EXAMPLE-DOC-123" }
     }
 
+    # Close each concrete metadata variant, not the anyOf wrapper: properties
+    # declared in a referenced variant are not visible to additionalProperties.
     schemas = {
       AgencyPartnerMetadata: {
         type: :object,
@@ -66,7 +68,7 @@ module InvitationSchemas
           tokenized_url: { type: :string, format: :uri, description: "Income reporting link. Treat the token as opaque and direct the applicant to this URL unchanged." },
           expiration_date: { type: :string, format: :"date-time", description: "Expiration of tokenized_url, at the end of the day in America/New_York after the agency's configured validity period." },
           language: { type: :string, enum: %w[en es] },
-          agency_partner_metadata: { "$ref" => "#/components/schemas/AgencyPartnerMetadata" }
+          agency_partner_metadata: { "$ref" => "#/components/schemas/AgencyPartnerMetadataResponse" }
         }
       },
       InvitationResponseV2: {
@@ -144,7 +146,8 @@ module InvitationSchemas
       schema = {
         title: schema_name,
         type: :object,
-        description: "Accepted metadata for #{title}. The API ignores fields outside this schema.",
+        additionalProperties: false,
+        description: "Accepted metadata for #{title}. Schema validation rejects fields outside this schema.",
         properties: metadata_fields.slice(*fields)
       }
       schema[:required] = %w[first_name last_name] if agency == "NewHampshire"
@@ -154,13 +157,23 @@ module InvitationSchemas
       client_agency = Rails.application.config.client_agencies[agency_id] ||
         raise(KeyError, "No client agency config for #{agency_id.inspect}")
 
+      # V1 responses include every configured output field, even fields that
+      # cannot be supplied in the invitation request (as null when unavailable).
+      response_name = "#{schema_name}Response"
+      schemas[response_name] = schema.merge(
+        title: response_name,
+        description: "V1 invitation response metadata for #{title}. Omitted values are returned as null.",
+        properties: metadata_fields.slice(*client_agency.applicant_attribute_names(version: :v1))
+      )
+
       %w[community_engagement employment].each do |invitation_type|
         v2_schema_name = "AgencyMetadataV2#{agency}#{invitation_type.camelize}"
         v2_fields = client_agency.api_metadata(invitation_type)
         v2_schema = {
           title: v2_schema_name,
           type: :object,
-          description: "Accepted V2 metadata for #{title}'s #{invitation_type.humanize.downcase} invitations. The API ignores fields outside this schema.",
+          additionalProperties: false,
+          description: "Accepted V2 metadata for #{title}'s #{invitation_type.humanize.downcase} invitations. Schema validation rejects fields outside this schema.",
           properties: v2_fields.to_h { |field| [ field, metadata_fields.fetch(field) ] },
           required: client_agency.api_required_metadata(invitation_type).map(&:to_s)
         }
@@ -172,6 +185,13 @@ module InvitationSchemas
         schemas[v2_schema_name] = v2_schema
       end
     end
+
+    schemas[:AgencyPartnerMetadataResponse] = {
+      type: :object,
+      anyOf: %w[Sandbox NewHampshire Louisiana Research Accenture].map do |agency|
+        { "$ref" => "#/components/schemas/AgencyMetadata#{agency}Response" }
+      end
+    }
 
     schemas[:CommunityEngagementInvitationRequest] = {
       type: :object,

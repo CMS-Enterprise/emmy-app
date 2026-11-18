@@ -63,16 +63,41 @@ RSpec.describe ActivityReportSchemas do
     expect(schema.valid?(report)).to be(false)
   end
 
-  it "allows undeclared fields in Louisiana metadata" do
-    report["agency_partner_metadata"] = { "doc_id" => "EXAMPLE-DOC-123", "case_number" => 123 }
+  it "rejects undeclared fields in Louisiana metadata" do
+    report["agency_partner_metadata"] = { "doc_id" => "EXAMPLE-DOC-123", "undocumented" => true }
 
-    expect(schema.valid?(report)).to be(true)
+    expect(schema.valid?(report)).to be(false)
   end
 
   it "validates every month's entries, including months absent from documentation examples" do
     report["ce_report"]["activities"]["employment"]["2030-12"] = [ payroll.merge("paystubs" => [ { "pay_date" => "2030-12-01", "pay_gross" => "invalid" } ]) ]
 
     expect(schema.valid?(report)).to be(false)
+  end
+
+  it "accepts additional reporting months that match the documented key pattern" do
+    report["ce_report"]["activities"]["employment"]["2030-12"] = [ payroll.merge("month" => "2030-12") ]
+
+    expect(schema.validate(report).to_a).to be_empty
+  end
+
+  it "rejects undocumented keys in each activity month map" do
+    report.fetch("ce_report").fetch("activities").each_key do |activity_type|
+      invalid_report = report.deep_dup
+      invalid_report["ce_report"]["activities"][activity_type]["undocumented"] = []
+
+      expect(schema.valid?(invalid_report)).to be(false), activity_type
+    end
+  end
+
+  it "rejects extra fields in nested payroll details" do
+    expect(schema.validate(report).to_a).to be_empty
+    %w[deductions gross_pay_list].each do |field|
+      invalid_report = report.deep_dup
+      invalid_report["ce_report"]["activities"]["employment"].fetch("2026-07").last["paystubs"].first[field].first["undocumented"] = true
+
+      expect(schema.valid?(invalid_report)).to be(false), field
+    end
   end
 
   it "requires arrays for month keys" do
