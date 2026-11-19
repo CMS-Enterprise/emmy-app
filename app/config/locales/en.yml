@@ -394,6 +394,9 @@ en:
             unpaid:
               hint: Add work where you either received no income or you received housing, food, or other goods instead of money.
               label: Enter unpaid or in-kind work
+          seasonal_job_accordion:
+            body: If you only worked during certain seasons or periods of the year, you must use Louisiana’s Self-Service Portal to report your seasonal job. You can still add other types of jobs with Emmy.
+            title: What if my job is seasonal?
       document_upload_month_detail: "%{gross_income}, %{hours}"
       document_upload_suggestion_text_html: "<ul><li>Paystubs</li><li>1099 or W-2 tax document</li><li>Schedule C (1040) tax document if you're self-employed</li><li>Bank statement showing income earned</li><li>Official email or letter from your employer's HR department with monthly income and hours detailed</li></ul>"
       hours_input:
@@ -1366,6 +1369,8 @@ en:
       month: "%B"
       month_year: "%B %Y"
       short: "%b %-d"
+  health_check:
+    pdf_rendering: The PDF works!
   help:
     index:
       company_id: I don't know my company ID
@@ -1470,19 +1475,22 @@ en:
   launcher:
     advanced:
       duplicate_enrollments:
-        browser_check: Verify college/university enrollment. Expect one %{school_name} enrollment showing %{leave_of_absence_status}. Expand enrollment history to see %{withdrawn_status} and %{full_time_status}. The older F record and the S record should be removed; S groups with W as withdrawn.
-        certification_check: The status dates reflect the retained certifications, including the newer %{full_time_status} record kept after deduplication.
-        certified_after_start:
-          one: Term start + 1 month
-          other: Term start + %{count} months
+        browser_check: Verify college/university enrollment. Expect two %{school_name} terms. The earlier term is enrolled (Y). The later term shows %{leave_of_absence_status}, with %{withdrawn_status} and a prior Y in an expanded history accordion. The Y in the later term causes history to expand by default. Continue collects supplemental details for the earlier term only.
+        certification_check: The newer Y record is kept for the earlier term. The older Y and the later term's S record are removed; S groups with W as withdrawn.
+        certified_days_after_start:
+          one: Term start + 1 day
+          other: Term start + %{count} days
           zero: Term start
         certified_on: School certified on
-        description: 5 NSC records; expect 3 enrollment entries.
+        description: Earlier enrolled term and later non-enrolled term; 6 NSC records become 4 entries across 2 terms.
+        earlier_reporting_term: Earlier term
         keep: Keep
-        records: All 5 records are for %{school_name}, with term dates matching the selected reporting window.
+        later_reporting_term: Later term
+        records: All 6 records are for %{school_name}. The earlier term covers the first month and the later term covers the rest of the selected reporting window. A one-month window is split into two consecutive terms.
         remove: Remove duplicate
         result: Expected result
         status: NSC status
+        term: Reporting term
         test_data: Test data and expected result
         title: Dedupe Testuser
         withdrawn: Withdrawn
