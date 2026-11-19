@@ -212,7 +212,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       before { get :show }
 
       it "separates enrollment information from all term fields" do
-        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true, normalize_ws: true)
         expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), exact_text: true)
         expect(details).to have_text(term.enrollment_status_display)
         expect(details).to have_text(I18n.t("activities.summary.education.term_credit_hours"))
@@ -235,11 +235,32 @@ RSpec.describe Activities::SummaryController, type: :controller do
         let(:status) { :less_than_half_time }
 
         it "shows fractional credits and engagement hours only in the term table" do
+          expect(details).to have_no_text(term.school_name)
           expect(details).to have_selector("td", text: "3.5", exact_text: true)
           expect(details).to have_selector("td", text: "45.5", exact_text: true)
           school_table = rendered.find("table", text: I18n.t("components.enrollment_term_table_component.student_name_label"))
           expect(school_table).to have_no_text(term.enrollment_status_display)
           expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+        end
+
+        context "with two schools in the same term" do
+          before do
+            create(:nsc_enrollment_term, :less_than_half_time, education_activity: education,
+              school_name: "Other College", term_begin: term.term_begin, term_end: term.term_end, credit_hours: 2)
+            get :show
+          end
+
+          it "associates each school's status and hours with its term row" do
+            first_row = details.find("tbody tr", text: term.school_name)
+            second_row = details.find("tbody tr", text: "Other College")
+
+            expect(first_row).to have_text(term.enrollment_status_display)
+            expect(first_row).to have_selector("td", text: "3.5", exact_text: true)
+            expect(first_row).to have_selector("td", text: "45.5", exact_text: true)
+            expect(second_row).to have_text(term.enrollment_status_display)
+            expect(second_row).to have_selector("td", text: "2", exact_text: true)
+            expect(second_row).to have_selector("td", text: "26", exact_text: true)
+          end
         end
 
         context "with Y status" do

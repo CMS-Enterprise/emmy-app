@@ -75,8 +75,8 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     verify_page(page, title: I18n.t("activities.summary.title"))
     expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
     details = page.find("table", text: I18n.t("activities.summary.education.term_details"))
-    expect(details).to have_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
-    expect(details).to have_text(I18n.t("components.enrollment_term_table_component.status.half_time"))
+    expect(details.find("tbody tr", text: "Riverside Community College")).to have_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+    expect(details.find("tbody tr", text: "Pine Valley College")).to have_text(I18n.t("components.enrollment_term_table_component.status.half_time"))
     expect(details).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
   end
 
