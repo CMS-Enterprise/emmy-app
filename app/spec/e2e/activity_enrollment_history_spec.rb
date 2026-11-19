@@ -28,7 +28,7 @@ RSpec.describe "Student enrollment history", :js, type: :feature do
     expect(page).to have_text("Withdrawn (As of August 2, 2026)", normalize_ws: true)
     expect(page).to have_text("#{I18n.t('components.enrollment_term_table_component.status.enrolled')} (As of August 1, 2026)", normalize_ws: true)
     expect(page.evaluate_script("document.documentElement.scrollWidth <= window.innerWidth")).to be(true)
-    click_button "View enrollment history"
+    click_button "Enrollment status history"
     expect(page).to have_no_text("Withdrawn (As of August 2, 2026)", normalize_ws: true)
   ensure
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
@@ -37,6 +37,7 @@ RSpec.describe "Student enrollment history", :js, type: :feature do
   it "uses horizontal rules without boxes or column headings in the enrollment and history tables" do
     visit edit_activities_flow_education_path(id: education)
     verify_page(page, title: I18n.t("activities.education.edit.header"))
+    click_button "Enrollment status history"
 
     expect(page).to have_no_selector("table.details-table thead", visible: true)
     page.all("table.details-table", count: 3).each do |table|

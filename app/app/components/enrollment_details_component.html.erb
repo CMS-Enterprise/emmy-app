@@ -16,10 +16,13 @@
   <% if history.any? %>
     <div class="maxw-table">
       <%= render AccordionComponent.new(id: "enrollment-history-#{latest.id}", expanded: expanded) do |accordion| %>
-        <% accordion.with_title { t("activities.education.edit.enrollment_history") } %>
+        <% accordion.with_title { t("activities.education.edit.enrollment_history", count: history.size) } %>
         <% accordion.with_body do %>
+          <p>
+            <%= t("activities.education.edit.enrollment_history_description") %>
+          </p>
           <%= render TableComponent.new(
-            caption: t("activities.education.edit.enrollment_history"),
+            caption: t("activities.education.edit.enrollment_history", count: history.size),
             class_names: "details-table"
           ) do |table| %>
             <% history.each do |term| %>

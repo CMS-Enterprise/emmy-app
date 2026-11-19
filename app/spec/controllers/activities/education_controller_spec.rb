@@ -409,7 +409,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         expect(rendered).to have_text(I18n.t("activities.education.edit.enrollment_history_description"))
         expect(rendered).to have_selector("h2", text: "Enrollment #1 information")
         expect(rendered).to have_no_selector("h2", text: "Enrollment #2 information")
-        expect(rendered).to have_button("View enrollment history")
+        expect(rendered).to have_button("Enrollment status history")
         expect(rendered).to have_field("education_activity[additional_comments]")
       end
     end

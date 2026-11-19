@@ -24,8 +24,9 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     expect(rendered.css("table").first).to have_text(I18n.l(latest.term_end, format: :long))
   end
 
-  it "puts previous statuses in a collapsed history accordion" do
-    expect(rendered).to have_selector("button[aria-expanded='false']", text: "View enrollment history")
+  it "puts previous statuses and description in a collapsed history accordion" do
+    expect(rendered).to have_selector("button[aria-expanded='false']", text: "Enrollment status history (1)")
+    expect(rendered.css(".usa-accordion__content")).to have_text("All statuses listed in the term count toward your eligibility.")
     expect(rendered.css(".usa-accordion__content")).to have_text("Full-time (As of September 1, 2026)", normalize_ws: true)
     expect(rendered.css(".usa-accordion__content")).to have_no_text("Withdrawn")
   end
@@ -76,7 +77,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
       expect(rendered).to have_selector("h2", text: "Enrollment #1 information")
       expect(rendered).to have_selector("h2", text: "Enrollment #2 information")
       expect(rendered).to have_text("Other College", count: 1)
-      expect(rendered).to have_button("View enrollment history", count: 1)
+      expect(rendered).to have_button("Enrollment status history (1)", count: 1)
     end
   end
 
@@ -89,7 +90,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
     it "keeps the other term separate" do
       expect(rendered).to have_selector("h2", text: "Enrollment #2 information")
-      expect(rendered).to have_button("View enrollment history", count: 1)
+      expect(rendered).to have_button("Enrollment status history (1)", count: 1)
     end
   end
 
@@ -97,7 +98,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     let(:terms) { [ latest ] }
 
     it "omits the history accordion" do
-      expect(rendered).to have_no_button("View enrollment history")
+      expect(rendered).to have_no_button("Enrollment status history")
     end
   end
 
@@ -114,7 +115,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     end
 
     it "keeps other statuses in enrollment history" do
-      expect(rendered).to have_button(I18n.t("activities.education.edit.enrollment_history"))
+      expect(rendered).to have_button(I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(rendered).to have_selector(".usa-accordion__content", text: older.enrollment_status_display)
     end
 
@@ -123,7 +124,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
       it "hides status rows and the empty history accordion" do
         expect(rendered).to have_no_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_status"))
-        expect(rendered).to have_no_button(I18n.t("activities.education.edit.enrollment_history"))
+        expect(rendered).to have_no_button(I18n.t("activities.education.edit.enrollment_history", count: 0))
       end
     end
   end
@@ -133,7 +134,8 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
     it "expands history and shows the previous enrolled status" do
       expect(rendered).to have_text(latest.enrollment_status_display)
-      expect(rendered).to have_selector("button[aria-expanded='true']", text: "View enrollment history")
+      expect(rendered).to have_selector("button[aria-expanded='true']", text: "Enrollment status history")
+      expect(rendered).to have_no_button(I18n.t("activities.education.edit.enrollment_history", count: 0))
       expect(rendered.css(".usa-accordion__content")).to have_text(older.enrollment_status_display)
     end
   end
@@ -148,7 +150,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     it "expands history with both enrolled and other statuses" do
       expect(rendered).to have_selector(".usa-accordion__content", text: older.enrollment_status_display)
       expect(rendered.css(".usa-accordion__content")).to have_text(enrolled_history.enrollment_status_display)
-      expect(rendered).to have_selector("button[aria-expanded='true']", text: "View enrollment history")
+      expect(rendered).to have_selector("button[aria-expanded='true']", text: "Enrollment status history")
     end
   end
 
