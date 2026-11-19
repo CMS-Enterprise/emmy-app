@@ -1,9 +1,11 @@
+require_relative "agency_schema_names"
+
 module ReportMetadataSchemas
   def self.schemas
     agencies = Rails.application.config.client_agencies
     variants = agencies.client_agency_ids.each_with_object({}) do |agency_id, schemas|
       %i[v1 v2].each do |version|
-        name = "ReportAgencyMetadata#{agency_id.camelize}#{version.to_s.upcase}"
+        name = "ReportAgencyMetadata#{AgencySchemaNames::NAMES.fetch(agency_id)}#{version.to_s.upcase}"
         fields = agencies[agency_id].applicant_attribute_names(version: version)
         schemas[name] = {
           type: :object,

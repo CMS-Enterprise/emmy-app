@@ -1,4 +1,5 @@
 require_relative "invitation_documentation"
+require_relative "agency_schema_names"
 
 module InvitationSchemas
   def self.schemas
@@ -18,13 +19,13 @@ module InvitationSchemas
       AgencyPartnerMetadata: {
         type: :object,
         description: InvitationDocumentation.read("agency-partner-metadata"),
-        anyOf: %w[Sandbox NewHampshire Louisiana Research Accenture].map { |agency| { "$ref" => "#/components/schemas/AgencyMetadata#{agency}" } }
+        anyOf: AgencySchemaNames::NAMES.values.map { |agency| { "$ref" => "#/components/schemas/AgencyMetadata#{agency}" } }
       },
       AgencyPartnerMetadataV2: {
         type: :object,
         description: InvitationDocumentation.read("agency-partner-metadata"),
         anyOf: %w[community_engagement employment].flat_map do |invitation_type|
-          %w[Sandbox NewHampshire Louisiana Research Accenture].map do |agency|
+          AgencySchemaNames::NAMES.values.map do |agency|
             { "$ref" => "#/components/schemas/AgencyMetadataV2#{agency}#{invitation_type.camelize}" }
           end
         end
@@ -136,12 +137,13 @@ module InvitationSchemas
     }
 
     {
-      "Sandbox" => [ "sandbox", "Sandbox", %i[first_name middle_name last_name case_number date_of_birth] ],
-      "NewHampshire" => [ "nh_dhhs", "New Hampshire", %i[first_name middle_name last_name case_number date_of_birth] ],
-      "Louisiana" => [ "la_ldh", "Louisiana", %i[doc_id] ],
-      "Research" => [ "research", "Research", %i[case_number date_of_birth] ],
-      "Accenture" => [ "accenture", "Accenture", %i[case_number] ]
-    }.each do |agency, (agency_id, title, fields)|
+      "sandbox" => [ "Sandbox", %i[first_name middle_name last_name case_number date_of_birth] ],
+      "nh_dhhs" => [ "New Hampshire", %i[first_name middle_name last_name case_number date_of_birth] ],
+      "la_ldh" => [ "Louisiana", %i[doc_id] ],
+      "research" => [ "Research", %i[case_number date_of_birth] ],
+      "accenture" => [ "Accenture", %i[case_number] ]
+    }.each do |agency_id, (title, fields)|
+      agency = AgencySchemaNames::NAMES.fetch(agency_id)
       schema_name = "AgencyMetadata#{agency}"
       schema = {
         title: schema_name,
@@ -157,8 +159,6 @@ module InvitationSchemas
       client_agency = Rails.application.config.client_agencies[agency_id] ||
         raise(KeyError, "No client agency config for #{agency_id.inspect}")
 
-      # V1 responses include every configured output field, even fields that
-      # cannot be supplied in the invitation request (as null when unavailable).
       response_name = "#{schema_name}Response"
       schemas[response_name] = schema.merge(
         title: response_name,
@@ -188,7 +188,7 @@ module InvitationSchemas
 
     schemas[:AgencyPartnerMetadataResponse] = {
       type: :object,
-      anyOf: %w[Sandbox NewHampshire Louisiana Research Accenture].map do |agency|
+      anyOf: AgencySchemaNames::NAMES.values.map do |agency|
         { "$ref" => "#/components/schemas/AgencyMetadata#{agency}Response" }
       end
     }
@@ -206,7 +206,7 @@ module InvitationSchemas
         },
         agency_partner_metadata: {
           type: :object,
-          anyOf: %w[Sandbox NewHampshire Louisiana Research Accenture].map do |agency|
+          anyOf: AgencySchemaNames::NAMES.values.map do |agency|
             { "$ref" => "#/components/schemas/AgencyMetadataV2#{agency}CommunityEngagement" }
           end
         }

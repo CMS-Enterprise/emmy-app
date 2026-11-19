@@ -24,11 +24,19 @@ RSpec.describe ReportMetadataSchemas do
     expect(schema.valid?(metadata.merge("undocumented" => true))).to be(false)
   end
 
+  it "uses the established agency names for report components" do
+    names = described_class.schemas.keys
+
+    expect(names).to include("ReportAgencyMetadataLouisianaV1", "ReportAgencyMetadataLouisianaV2",
+      "ReportAgencyMetadataNewHampshireV1", "ReportAgencyMetadataNewHampshireV2")
+    expect(names.grep(/LaLdh|NhDhhs/)).to be_empty
+  end
+
   it "matches every agency's serialized field set for both versions" do
     Rails.application.config.client_agencies.client_agency_ids.each do |agency_id|
       %i[v1 v2].each do |version|
         payload = CbvApplicant.build_agency_partner_metadata(agency_id, version: version) { "synthetic" }
-        name = "ReportAgencyMetadata#{agency_id.camelize}#{version.to_s.upcase}"
+        name = "ReportAgencyMetadata#{AgencySchemaNames::NAMES.fetch(agency_id)}#{version.to_s.upcase}"
         variant = document.schema(name)
 
         expect(described_class.schemas.fetch(name)[:properties].keys.map(&:to_s)).to match_array(payload.keys)
