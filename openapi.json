@@ -3,7 +3,7 @@
   "info": {
     "title": "Emmy Platform API Documentation",
     "version": "v1",
-    "description": "# Introduction\n\nIntegrate your agency's systems with the Emmy platform. This reference currently\ncovers the Tokenized Link API (v1 and v2) for creating personalized reporting links and the\nCE Activity Report webhook for outbound community engagement reports. Find the\nwebhook under **Receiving data from the Emmy Platform**, including its JSON\nrequest example, signing headers, expected response, and signed cURL sample.\nIts component models include self-attested employment, validated payroll, and education.\nYour agency hosts this receiver.\nExamples use synthetic applicant data and nonfunctional tokens.\n\nObject schemas allow additional properties for forward compatibility. Integrations\nshould tolerate unknown response fields so new fields can be added without breaking\nexisting clients. Required fields and documented field types still apply.\n\n<!-- Remove this link-check exception after the first reviewed deployment. -->\n<!-- markdown-link-check-disable-next-line -->\n[Download the official OpenAPI JSON](https://cms-enterprise.github.io/emmy-app/openapi.json).\nThe JSON and this reference are generated together from executable API tests.\n\n## API environments\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Production | https://emmy.cms.gov | Run live integrations with your agency's highest environment. |\n| UAT | https://uat.emmy.cms.gov | Perform integration testing with your agency's second-highest environment, for example UAT. |\n| Production Sandbox | https://sandbox.emmy.cms.gov | Develop and test integrations with your agency's lowest environment, for example SIT. |\n\n**Legacy environments support Emmy Income only.**\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Dev (Legacy) | https://verify-demo.navapbc.cloud | Develop and test Emmy Income integrations. |\n| Demo (Legacy) | https://demo.reportmyincome.org | Demonstrate and evaluate Emmy Income. |\n\nThese URLs host the invitation API. Report webhooks use your agency's configured\nreceiver URL instead.\n\nUse the API key issued for the selected environment. Credentials are provided\nduring agency onboarding.\n\n## Networking\n\nUse the following IP addresses when configuring your agency's firewall\nallowlists. Incoming and outgoing are from Emmy's perspective:\n\n- **Incoming IP addresses** are the destination addresses for requests from your\n  agency to Emmy, such as invitation API requests.\n- **Outgoing IP addresses** are the source addresses for requests from Emmy to\n  your agency, such as report and document webhooks.\n\nAll traffic uses **HTTPS with TLS 1.2 or later over TCP port 443**.\nContinue to use the environment's hostname for API requests; the IP addresses\nbelow are for network configuration.\n\n| Environment | Incoming IP addresses | Outgoing IP addresses |\n| :-- | :-- | :-- |\n| Production | `18.213.216.33`, `44.211.14.94`, `52.20.193.29` | `3.215.248.116`, `52.73.87.18`, `54.209.184.111` |\n| UAT | `18.235.177.44`, `52.205.81.42`, `52.6.231.243` | `35.171.156.207`, `3.223.173.67`, `34.197.38.57` |\n| Production Sandbox | `100.26.93.171`, `35.169.122.224`, `44.213.152.175` | `98.91.6.41`, `32.193.216.192`, `32.194.27.148` |\n\n## API keys and authentication\n\nContact [emmy@cms.hhs.gov](mailto:emmy@cms.hhs.gov) to request an agency API key\nfor each environment. The Tokenized Link API uses a 32-character secret API key.\nKeep it on your server, never in browser code or public repositories.\n\nFor invitation requests, each key identifies an agency and its configured metadata and invitation settings.\nSending a `client_agency_id` cannot select another agency. Include these headers:\n\n```http\nAuthorization: Bearer API_KEY\nContent-Type: application/json\n```\n\nA missing or invalid key returns `401 Unauthorized` with the plain-text body\n`HTTP Token: Access denied.` and a `WWW-Authenticate` header. If a key is\ncompromised, contact emmy@cms.hhs.gov to have it replaced.\n\nOutbound report webhooks use HMAC signing headers instead of Bearer\nauthentication. See **Receiving data from the Emmy Platform** for verification\ndetails and an example delivery to your agency."
+    "description": "# Introduction\n\nIntegrate your agency's systems with the Emmy platform. This reference currently\ncovers the Tokenized Link API (v1 and v2) for creating personalized reporting links and the\nCE Activity Report webhook for outbound community engagement reports. Find the\nwebhook under **Receiving data from the Emmy Platform**, including its JSON\nrequest example, signing headers, expected response, and signed cURL sample.\nIts component models include self-attested employment, validated payroll, and education.\nYour agency hosts this receiver.\nExamples use synthetic applicant data and nonfunctional tokens.\n\nEmmy's API schemas restrict objects to their documented fields so validation\ncan catch integration mistakes and unexpected changes in the data exchanged\nwith your agency. Validate requests and responses against the published schemas\nto identify these issues before they affect report processing. Each schema\ndefines the fields accepted for that part of the API.\n\n<!-- Remove this link-check exception after the first reviewed deployment. -->\n<!-- markdown-link-check-disable-next-line -->\n[Download the official OpenAPI JSON](https://cms-enterprise.github.io/emmy-app/openapi.json).\nThe JSON and this reference are generated together from executable API tests.\n\n## API environments\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Production | https://emmy.cms.gov | Run live integrations with your agency's highest environment. |\n| UAT | https://uat.emmy.cms.gov | Perform integration testing with your agency's second-highest environment, for example UAT. |\n| Production Sandbox | https://sandbox.emmy.cms.gov | Develop and test integrations with your agency's lowest environment, for example SIT. |\n\n**Legacy environments support Emmy Income only.**\n\n| Environment | Base URL | Purpose |\n| :-- | :-- | :-- |\n| Dev (Legacy) | https://verify-demo.navapbc.cloud | Develop and test Emmy Income integrations. |\n| Demo (Legacy) | https://demo.reportmyincome.org | Demonstrate and evaluate Emmy Income. |\n\nThese URLs host the invitation API. Report webhooks use your agency's configured\nreceiver URL instead.\n\nUse the API key issued for the selected environment. Credentials are provided\nduring agency onboarding.\n\n## Networking\n\nUse the following IP addresses when configuring your agency's firewall\nallowlists. Incoming and outgoing are from Emmy's perspective:\n\n- **Incoming IP addresses** are the destination addresses for requests from your\n  agency to Emmy, such as invitation API requests.\n- **Outgoing IP addresses** are the source addresses for requests from Emmy to\n  your agency, such as report and document webhooks.\n\nAll traffic uses **HTTPS with TLS 1.2 or later over TCP port 443**.\nContinue to use the environment's hostname for API requests; the IP addresses\nbelow are for network configuration.\n\n| Environment | Incoming IP addresses | Outgoing IP addresses |\n| :-- | :-- | :-- |\n| Production | `18.213.216.33`, `44.211.14.94`, `52.20.193.29` | `3.215.248.116`, `52.73.87.18`, `54.209.184.111` |\n| UAT | `18.235.177.44`, `52.205.81.42`, `52.6.231.243` | `35.171.156.207`, `3.223.173.67`, `34.197.38.57` |\n| Production Sandbox | `100.26.93.171`, `35.169.122.224`, `44.213.152.175` | `98.91.6.41`, `32.193.216.192`, `32.194.27.148` |\n\n## API keys and authentication\n\nContact [emmy@cms.hhs.gov](mailto:emmy@cms.hhs.gov) to request an agency API key\nfor each environment. The Tokenized Link API uses a 32-character secret API key.\nKeep it on your server, never in browser code or public repositories.\n\nFor invitation requests, each key identifies an agency and its configured metadata and invitation settings.\nSending a `client_agency_id` cannot select another agency. Include these headers:\n\n```http\nAuthorization: Bearer API_KEY\nContent-Type: application/json\n```\n\nA missing or invalid key returns `401 Unauthorized` with the plain-text body\n`HTTP Token: Access denied.` and a `WWW-Authenticate` header. If a key is\ncompromised, contact emmy@cms.hhs.gov to have it replaced.\n\nOutbound report webhooks use HMAC signing headers instead of Bearer\nauthentication. See **Receiving data from the Emmy Platform** for verification\ndetails and an example delivery to your agency."
   },
   "servers": [
     {
@@ -58,7 +58,7 @@
     },
     {
       "name": "Income Reports (JSON)",
-      "description": "Contact the Emmy Team to request documentation about the Income Report API.\n\nIncome Report JSON POSTs include the agency's V1 agency_partner_metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, the webhook includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. See the\n[metadata guide](../agency-partner-metadata.md) for details.\n\nIncome Report JSON POSTs include `confirmation_code` in the JSON body, but do\nnot send the `X-IVAAS-Confirmation-Code` header. The `X-IVAAS-Timestamp` and\n`X-IVAAS-Signature` headers are included for signature verification."
+      "description": "Contact the Emmy Team to request documentation about the Income Report API.\n\nIncome Report JSON POSTs include the agency's V1 agency_partner_metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, the webhook includes the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied. See the\n[metadata guide](../agency-partner-metadata.md) for details.\n\nIncome Report JSON POSTs include `confirmation_code` in the JSON body, but do\nnot send the `X-IVAAS-Confirmation-Code` header. The `X-IVAAS-Timestamp` and\n`X-IVAAS-Signature` headers are included for signature verification.\n\nThe Income Report schema uses `additionalProperties: false` for objects with\ndocumented fields, including nested employment and paystub records. The\nintegration-defined `agency_partner_metadata` dictionary is exempt."
     },
     {
       "name": "Documents",
@@ -313,7 +313,7 @@
                   "expire_community_engagement": {
                     "summary": "Expire a community engagement invitation",
                     "value": {
-                      "tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/KHRV9Kvm6A"
+                      "tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/iPDZMVe7dF"
                     }
                   }
                 },
@@ -387,7 +387,7 @@
                         "first_name": "Jane",
                         "last_name": "Doe"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/mosdkWBAdk"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/1hQHsniSUe"
                     }
                   },
                   "community_engagement": {
@@ -403,7 +403,7 @@
                         "last_name": "Doe",
                         "date_of_birth": "01/15/1990"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/8T9B3e4Pqn"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/oXgNkcvn66"
                     }
                   },
                   "louisiana_community_engagement": {
@@ -419,7 +419,7 @@
                         "last_name": "Doe",
                         "date_of_birth": "01/15/1990"
                       },
-                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/ZdssN24U2U"
+                      "activity_tokenized_url": "https://verify-demo.navapbc.cloud/activities/start/HSxKJWByf7"
                     }
                   }
                 },
@@ -1186,7 +1186,7 @@
     "schemas": {
       "AgencyPartnerMetadata": {
         "type": "object",
-        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor Louisiana, use the following metadata fields for each Emmy flow:\n\n| Emmy flow | Tokenized Link API endpoint | Metadata fields |\n| --- | --- | --- |\n| Employment | `POST /api/v2/employment/invitations` | `individual_id`, `first_name`, `last_name` |\n| CE | `POST /api/v2/community-engagement/invitations` | `individual_id`, `first_name`, `last_name`, `date_of_birth` |\n| Income | `POST /api/v1/invitations` | `doc_id` |\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields are\nignored.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields are ignored, and omitted optional fields\nare not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nBoth JSON report webhooks include the agency's V1 metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, they include the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
+        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSchema validation rejects fields outside the selected metadata schema.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor Louisiana, use the following metadata fields for each Emmy flow:\n\n| Emmy flow | Tokenized Link API endpoint | Metadata fields |\n| --- | --- | --- |\n| Employment | `POST /api/v2/employment/invitations` | `individual_id`, `first_name`, `last_name` |\n| CE | `POST /api/v2/community-engagement/invitations` | `individual_id`, `first_name`, `last_name`, `date_of_birth` |\n| Income | `POST /api/v1/invitations` | `doc_id` |\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields fail schema\nvalidation.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields fail schema validation, and omitted optional\nfields are not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nBoth JSON report webhooks include the agency's V1 metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, they include the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
         "anyOf": [
           {
             "$ref": "#/components/schemas/AgencyMetadataSandbox"
@@ -1207,7 +1207,7 @@
       },
       "AgencyPartnerMetadataV2": {
         "type": "object",
-        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor Louisiana, use the following metadata fields for each Emmy flow:\n\n| Emmy flow | Tokenized Link API endpoint | Metadata fields |\n| --- | --- | --- |\n| Employment | `POST /api/v2/employment/invitations` | `individual_id`, `first_name`, `last_name` |\n| CE | `POST /api/v2/community-engagement/invitations` | `individual_id`, `first_name`, `last_name`, `date_of_birth` |\n| Income | `POST /api/v1/invitations` | `doc_id` |\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields are\nignored.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields are ignored, and omitted optional fields\nare not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nBoth JSON report webhooks include the agency's V1 metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, they include the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
+        "description": "Metadata links a submitted report to the agency's records. Select the schema\nfor the API version, invitation type, and agency associated with your API key.\nSchema validation rejects fields outside the selected metadata schema.\nSome agency schemas overlap, so matching a schema alone does not identify the\nagency.\n\nFor Louisiana, use the following metadata fields for each Emmy flow:\n\n| Emmy flow | Tokenized Link API endpoint | Metadata fields |\n| --- | --- | --- |\n| Employment | `POST /api/v2/employment/invitations` | `individual_id`, `first_name`, `last_name` |\n| CE | `POST /api/v2/community-engagement/invitations` | `individual_id`, `first_name`, `last_name`, `date_of_birth` |\n| Income | `POST /api/v1/invitations` | `doc_id` |\n\nFor V1 income invitations, the response contains all accepted metadata fields\nfor the agency, with `null` for omitted values. Unrecognized fields fail schema\nvalidation.\n\nFor V2 invitations, the response echoes the accepted metadata fields supplied\nin the request. Unrecognized fields fail schema validation, and omitted optional\nfields are not added to the response. Select the agency's community engagement or\nemployment schema to see the accepted and required fields, including\n`individual_id`.\n\nBoth JSON report webhooks include the agency's V1 metadata field set when no individual_id was supplied. When an individual_id was supplied during V2 invitation creation, they include the agency's V2 metadata field set, including that exact ID. Unavailable values are sent as null; individual_id is omitted when it was not supplied.\n\nSupply dates of birth as `MM/DD/YYYY`. Invitation responses echo date strings\nas supplied. **Louisiana Emmy CE requests require `date_of_birth`** in\n`agency_partner_metadata`, along with `individual_id`, `first_name`, and\n`last_name`. This applies to `POST /api/v2/community-engagement/invitations`;\nV2 employment invitations do not accept `date_of_birth`.",
         "anyOf": [
           {
             "$ref": "#/components/schemas/AgencyMetadataV2SandboxCommunityEngagement"
@@ -1319,7 +1319,7 @@
             ]
           },
           "agency_partner_metadata": {
-            "$ref": "#/components/schemas/AgencyPartnerMetadata"
+            "$ref": "#/components/schemas/AgencyPartnerMetadataResponse"
           }
         }
       },
@@ -1445,7 +1445,49 @@
       "AgencyMetadataSandbox": {
         "title": "AgencyMetadataSandbox",
         "type": "object",
-        "description": "Accepted metadata for Sandbox. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted metadata for Sandbox. Schema validation rejects fields outside this schema.",
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Jane"
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Alex"
+          },
+          "last_name": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Doe"
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-123",
+            "description": "Agency case identifier."
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "01/15/1990",
+            "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
+          }
+        }
+      },
+      "AgencyMetadataSandboxResponse": {
+        "title": "AgencyMetadataSandboxResponse",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "V1 invitation response metadata for Sandbox. Omitted values are returned as null.",
         "properties": {
           "first_name": {
             "type": "string",
@@ -1485,7 +1527,8 @@
       "AgencyMetadataV2SandboxCommunityEngagement": {
         "title": "AgencyMetadataV2SandboxCommunityEngagement",
         "type": "object",
-        "description": "Accepted V2 metadata for Sandbox's community engagement invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Sandbox's community engagement invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1519,7 +1562,8 @@
       "AgencyMetadataV2SandboxEmployment": {
         "title": "AgencyMetadataV2SandboxEmployment",
         "type": "object",
-        "description": "Accepted V2 metadata for Sandbox's employment invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Sandbox's employment invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1547,7 +1591,53 @@
       "AgencyMetadataNewHampshire": {
         "title": "AgencyMetadataNewHampshire",
         "type": "object",
-        "description": "Accepted metadata for New Hampshire. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted metadata for New Hampshire. Schema validation rejects fields outside this schema.",
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Jane"
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Alex"
+          },
+          "last_name": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Doe"
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-123",
+            "description": "Agency case identifier."
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "01/15/1990",
+            "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
+          }
+        },
+        "required": [
+          "first_name",
+          "last_name"
+        ]
+      },
+      "AgencyMetadataNewHampshireResponse": {
+        "title": "AgencyMetadataNewHampshireResponse",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "V1 invitation response metadata for New Hampshire. Omitted values are returned as null.",
         "properties": {
           "first_name": {
             "type": "string",
@@ -1591,7 +1681,8 @@
       "AgencyMetadataV2NewHampshireCommunityEngagement": {
         "title": "AgencyMetadataV2NewHampshireCommunityEngagement",
         "type": "object",
-        "description": "Accepted V2 metadata for New Hampshire's community engagement invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for New Hampshire's community engagement invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1625,7 +1716,8 @@
       "AgencyMetadataV2NewHampshireEmployment": {
         "title": "AgencyMetadataV2NewHampshireEmployment",
         "type": "object",
-        "description": "Accepted V2 metadata for New Hampshire's employment invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for New Hampshire's employment invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1653,8 +1745,40 @@
       "AgencyMetadataLouisiana": {
         "title": "AgencyMetadataLouisiana",
         "type": "object",
+        "additionalProperties": false,
         "description": "Metadata for Louisiana Emmy Income invitations: doc_id only.",
         "properties": {
+          "doc_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-DOC-123"
+          }
+        }
+      },
+      "AgencyMetadataLouisianaResponse": {
+        "title": "AgencyMetadataLouisianaResponse",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "V1 invitation response metadata for Louisiana. Omitted values are returned as null.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-123",
+            "description": "Agency case identifier."
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "01/15/1990",
+            "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
+          },
           "doc_id": {
             "type": [
               "string",
@@ -1667,7 +1791,8 @@
       "AgencyMetadataV2LouisianaCommunityEngagement": {
         "title": "AgencyMetadataV2LouisianaCommunityEngagement",
         "type": "object",
-        "description": "Accepted V2 metadata for Louisiana's community engagement invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Louisiana's community engagement invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1701,7 +1826,8 @@
       "AgencyMetadataV2LouisianaEmployment": {
         "title": "AgencyMetadataV2LouisianaEmployment",
         "type": "object",
-        "description": "Accepted V2 metadata for Louisiana's employment invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Louisiana's employment invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1729,7 +1855,32 @@
       "AgencyMetadataResearch": {
         "title": "AgencyMetadataResearch",
         "type": "object",
-        "description": "Accepted metadata for Research. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted metadata for Research. Schema validation rejects fields outside this schema.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-123",
+            "description": "Agency case identifier."
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "01/15/1990",
+            "description": "MM/DD/YYYY. Echoed as supplied, not converted to an ISO date in the response."
+          }
+        }
+      },
+      "AgencyMetadataResearchResponse": {
+        "title": "AgencyMetadataResearchResponse",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "V1 invitation response metadata for Research. Omitted values are returned as null.",
         "properties": {
           "case_number": {
             "type": [
@@ -1752,7 +1903,8 @@
       "AgencyMetadataV2ResearchCommunityEngagement": {
         "title": "AgencyMetadataV2ResearchCommunityEngagement",
         "type": "object",
-        "description": "Accepted V2 metadata for Research's community engagement invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Research's community engagement invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1786,7 +1938,8 @@
       "AgencyMetadataV2ResearchEmployment": {
         "title": "AgencyMetadataV2ResearchEmployment",
         "type": "object",
-        "description": "Accepted V2 metadata for Research's employment invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Research's employment invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1814,7 +1967,24 @@
       "AgencyMetadataAccenture": {
         "title": "AgencyMetadataAccenture",
         "type": "object",
-        "description": "Accepted metadata for Accenture. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted metadata for Accenture. Schema validation rejects fields outside this schema.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "EXAMPLE-123",
+            "description": "Agency case identifier."
+          }
+        }
+      },
+      "AgencyMetadataAccentureResponse": {
+        "title": "AgencyMetadataAccentureResponse",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "V1 invitation response metadata for Accenture. Omitted values are returned as null.",
         "properties": {
           "case_number": {
             "type": [
@@ -1829,7 +1999,8 @@
       "AgencyMetadataV2AccentureCommunityEngagement": {
         "title": "AgencyMetadataV2AccentureCommunityEngagement",
         "type": "object",
-        "description": "Accepted V2 metadata for Accenture's community engagement invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Accenture's community engagement invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1863,7 +2034,8 @@
       "AgencyMetadataV2AccentureEmployment": {
         "title": "AgencyMetadataV2AccentureEmployment",
         "type": "object",
-        "description": "Accepted V2 metadata for Accenture's employment invitations. The API ignores fields outside this schema.",
+        "additionalProperties": false,
+        "description": "Accepted V2 metadata for Accenture's employment invitations. Schema validation rejects fields outside this schema.",
         "properties": {
           "individual_id": {
             "type": "string",
@@ -1886,6 +2058,26 @@
           "individual_id",
           "first_name",
           "last_name"
+        ]
+      },
+      "AgencyPartnerMetadataResponse": {
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgencyMetadataSandboxResponse"
+          },
+          {
+            "$ref": "#/components/schemas/AgencyMetadataNewHampshireResponse"
+          },
+          {
+            "$ref": "#/components/schemas/AgencyMetadataLouisianaResponse"
+          },
+          {
+            "$ref": "#/components/schemas/AgencyMetadataResearchResponse"
+          },
+          {
+            "$ref": "#/components/schemas/AgencyMetadataAccentureResponse"
+          }
         ]
       },
       "CommunityEngagementInvitationRequest": {
@@ -2022,14 +2214,7 @@
             "description": "UTC time the applicant completed the report, in ISO 8601 format."
           },
           "agency_partner_metadata": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AgencyPartnerMetadata"
-              },
-              {
-                "$ref": "#/components/schemas/AgencyPartnerMetadataV2"
-              }
-            ],
+            "$ref": "#/components/schemas/ReportAgencyPartnerMetadata",
             "description": "Agency-specific fields used to associate the report with the correct case. The accepted fields depend on the agency and invitation version."
           },
           "ce_report": {
@@ -2564,6 +2749,7 @@
         "properties": {
           "community_service": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
             "patternProperties": {
               "^\\d{4}-\\d{2}$": {
@@ -2576,6 +2762,7 @@
           },
           "work_program": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
             "patternProperties": {
               "^\\d{4}-\\d{2}$": {
@@ -2588,6 +2775,7 @@
           },
           "employment": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
             "patternProperties": {
               "^\\d{4}-\\d{2}$": {
@@ -2600,6 +2788,7 @@
           },
           "education": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
             "patternProperties": {
               "^\\d{4}-\\d{2}$": {
@@ -3883,6 +4072,327 @@
         "required": [
           "type",
           "amount"
+        ]
+      },
+      "ReportAgencyMetadataLouisianaV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for la_ldh v1. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doc_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataLouisianaV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for la_ldh v2. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doc_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "individual_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataNewHampshireV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for nh_dhhs v1. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataNewHampshireV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for nh_dhhs v2. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataSandboxV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for sandbox v1. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataSandboxV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for sandbox v2. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "individual_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataResearchV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for research v1. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataResearchV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for research v2. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date_of_birth": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataAccentureV1": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for accenture v1. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyMetadataAccentureV2": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Report metadata for accenture v2. Unavailable values are null; dates use YYYY-MM-DD. These are report fields, not invitation input fields.",
+        "properties": {
+          "case_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ReportAgencyPartnerMetadata": {
+        "description": "Agency-specific report metadata. The serializer uses V2 fields when individual_id is supplied, otherwise V1 fields. Each variant rejects undocumented fields.",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataLouisianaV1"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataLouisianaV2"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataNewHampshireV1"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataNewHampshireV2"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataSandboxV1"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataSandboxV2"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataResearchV1"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataResearchV2"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataAccentureV1"
+          },
+          {
+            "$ref": "#/components/schemas/ReportAgencyMetadataAccentureV2"
+          }
         ]
       }
     }
