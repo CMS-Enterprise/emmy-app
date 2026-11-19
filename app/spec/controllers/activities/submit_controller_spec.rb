@@ -345,10 +345,12 @@ RSpec.describe Activities::SubmitController, type: :controller do
         get :show, format: :pdf
 
         text = extract_pdf_text(response)
-        expect(text).to match(/#{Regexp.escape(I18n.t("activities.submit.pdf.enrolled"))} \(as of November 15,.*2025\)/)
+        # PDF extraction can interleave neighboring columns between wrapped lines.
+        expect(text).to match(/#{Regexp.escape(I18n.t("activities.submit.pdf.enrolled"))} \(as of .*?November 15,.*?2025\)/)
         supplemental_status = I18n.t("activities.submit.pdf.supplemental_enrollment_status", status: term.supplemental_enrollment_status_display)
         expect(text.gsub(/-\s+/, "-")).to include(supplemental_status)
-        expect(text).to include(I18n.t("activities.summary.education.credit_hours"))
+        credit_hours_label = I18n.t("activities.summary.education.credit_hours").split(/(?<=-)|\s+/).map { |part| Regexp.escape(part) }.join(".*?")
+        expect(text).to match(/#{credit_hours_label}/)
       end
     end
 
