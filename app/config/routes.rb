@@ -54,6 +54,7 @@ Rails.application.routes.draw do
       resource :expired_invitation, only: %i[show]
       resource :entry, only: %i[show], controller: "entries"
       post "presigned_uploads", to: "presigned_uploads#create", as: :presigned_uploads
+      get "document_scan_statuses/:signed_id", to: "document_scan_statuses#show", as: :document_scan_status
       if ENV["UNSCANNED_BUCKET_NAME"].blank?
         post "local_uploads", to: "local_uploads#create", as: :local_uploads
       end

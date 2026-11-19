@@ -114,4 +114,19 @@ RSpec.describe ActivityDocumentsService do
     )
     activity.document_uploads_attachments.order(:id).last
   end
+
+  it "excludes documents that failed the security scan" do
+    volunteering = create(:volunteering_activity, activity_flow: activity_flow)
+    rejected = attach_document(volunteering, "Rejected.pdf")
+    attach_document(volunteering, "Clean.pdf")
+
+    allow(DocumentScanStatusService).to receive(:call) do |blob|
+      status = blob == rejected.blob ? DocumentScanStatusService::REJECTED : DocumentScanStatusService::CLEAN
+      DocumentScanStatusService::Result.new(status, nil)
+    end
+
+    expect(described_class.new(activity_flow).all.map(&:file_name)).to eq([
+      "SANDBOX123_community_service_clean.pdf"
+    ])
+  end
 end

@@ -730,6 +730,49 @@ RSpec.describe Activities::DocumentUploadsController, type: :controller do
         extra_attributes: -> { { volunteering_activity_id: kind_of(Integer), document_count: 0 } }
     end
 
+    context "when an attached document failed the security scan" do
+      let(:volunteering_activity) { create(:volunteering_activity, activity_flow: activity_flow) }
+      let(:blob) do
+        ActiveStorage::Blob.create_and_upload!(
+          io: StringIO.new("%PDF-1.4"),
+          filename: "encrypted.pdf",
+          content_type: "application/pdf",
+          service_name: PresignedUploadService::SERVICE_NAME
+        )
+      end
+
+      before do
+        allow(DocumentScanStatusService).to receive(:call)
+          .and_return(DocumentScanStatusService::Result.new(DocumentScanStatusService::REJECTED, "encrypted"))
+      end
+
+      it "purges the rejected upload and re-renders with an error" do
+        expect {
+          post :create, params: {
+            community_service_id: volunteering_activity.id,
+            activity: { document_uploads: [ blob.signed_id ] }
+          }
+        }.not_to change(ActiveStorage::Blob, :count)
+
+        expect(response).to render_template(:new)
+        expect(flash.now[:alert]).to include("encrypted.pdf")
+        expect(volunteering_activity.reload.document_uploads).to be_empty
+      end
+
+      context "scan rejection tracking" do
+        let(:tracked_flow) { activity_flow }
+        let(:perform_tracked_action) do
+          post :create, params: {
+            community_service_id: volunteering_activity.id,
+            activity: { document_uploads: [ blob.signed_id ] }
+          }
+        end
+
+        it_behaves_like "tracks an event", TrackEvent::CommunityServiceDocumentUploadScanRejected,
+          extra_attributes: -> { { volunteering_activity_id: kind_of(Integer), rejected_count: 1 } }
+      end
+    end
+
     it "does not track EducationDocumentUploadSubmitted when the update fails" do
       education_activity = create(
         :education_activity,

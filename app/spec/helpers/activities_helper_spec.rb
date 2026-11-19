@@ -53,6 +53,36 @@ RSpec.describe ActivitiesHelper do
     end
   end
 
+  describe "#document_upload_error_message" do
+    let(:client_agency) do
+      instance_double(
+        ClientAgencyConfig::ClientAgency,
+        max_document_upload_size_bytes: 10.megabytes,
+        allowed_document_types: %w[pdf png]
+      )
+    end
+
+    it "renders the encrypted-PDF message" do
+      expect(helper.document_upload_error_message(client_agency, :encrypted))
+        .to eq(I18n.t("activities.document_uploads.new.errors.encrypted"))
+    end
+
+    it "renders the malformed-PDF message" do
+      expect(helper.document_upload_error_message(client_agency, :malformed))
+        .to eq(I18n.t("activities.document_uploads.new.errors.malformed"))
+    end
+
+    it "renders the GuardDuty threat message" do
+      expect(helper.document_upload_error_message(client_agency, :guardduty_threat_found))
+        .to eq(I18n.t("activities.document_uploads.new.errors.guardduty_threat_found"))
+    end
+
+    it "falls back to a generic message for an unrecognized rejection reason" do
+      expect(helper.document_upload_error_message(client_agency, "some_future_reason"))
+        .to eq(I18n.t("activities.document_uploads.new.errors.scan_rejected"))
+    end
+  end
+
   describe "#document_upload_allowed_types_sentence" do
     it "formats the agency's configured types for user-facing copy" do
       client_agency = instance_double(

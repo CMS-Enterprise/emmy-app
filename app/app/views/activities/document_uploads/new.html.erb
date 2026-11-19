@@ -64,7 +64,10 @@
       document_upload_error_too_large_value: t(".errors.too_large", limit: number_to_human_size(upload_max_file_size)),
       document_upload_error_unsupported_type_value: t(".errors.unsupported_type", types: upload_allowed_types_sentence),
       document_upload_error_upload_failed_value: t(".errors.upload_failed"),
-      document_upload_error_multiple_files_value: t(".errors.multiple_files")
+      document_upload_error_multiple_files_value: t(".errors.multiple_files"),
+      document_upload_scan_status_path_value: activities_flow_document_scan_status_path(signed_id: 'SIGNED_ID_PLACEHOLDER'),
+      document_upload_scan_poll_interval_value: 3_000,
+      document_upload_scan_timeout_value: 120_000
     }) do |f| %>
   <% if @activity.document_uploads.any? %>
     <% @activity.document_uploads.each do |attachment| %>

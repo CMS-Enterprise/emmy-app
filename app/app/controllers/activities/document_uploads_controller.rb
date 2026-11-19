@@ -26,6 +26,16 @@ class Activities::DocumentUploadsController < Activities::BaseController
     end
 
     if @activity.update(document_upload_params)
+      @document_upload_scan_rejected_filenames = purge_rejected_uploads!
+
+      if @document_upload_scan_rejected_filenames.any?
+        flash.now[:alert] = t(
+          "activities.document_uploads.new.errors.scan_rejected_summary",
+          filenames: @document_upload_scan_rejected_filenames.map { |name| ERB::Util.html_escape(name) }.to_sentence
+        )
+        return render :new
+      end
+
       redirect_to after_activity_path
     else
       render :new
@@ -230,6 +240,16 @@ class Activities::DocumentUploadsController < Activities::BaseController
     )
   end
 
+  def purge_rejected_uploads!
+    @activity.document_uploads_attachments.includes(:blob).select { |attachment| DocumentScanStatusService.call(attachment.blob).rejected? }.map do |attachment|
+      filename = attachment.blob.filename.to_s
+      blob = attachment.blob
+      attachment.delete
+      blob.destroy unless blob.attachments.exists?
+      filename
+    end
+  end
+
   def track_submitted_event
     return unless tracking_config
 
@@ -238,6 +258,12 @@ class Activities::DocumentUploadsController < Activities::BaseController
         TrackEvent.const_get("#{track_event_prefix}DocumentUploadSubmitted"),
         tracking_config.last => @activity.id,
         document_count: @activity.document_uploads.count
+      )
+    elsif @document_upload_scan_rejected_filenames.present?
+      track_event(
+        TrackEvent.const_get("#{track_event_prefix}DocumentUploadScanRejected"),
+        tracking_config.last => @activity.id,
+        rejected_count: @document_upload_scan_rejected_filenames.size
       )
     elsif params[:job_training_id].present? && @activity.errors.any?
       track_event(

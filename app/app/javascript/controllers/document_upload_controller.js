@@ -26,15 +26,19 @@ export default class extends Controller {
     errorUnsupportedType: String,
     errorUploadFailed: String,
     errorMultipleFiles: String,
+    scanStatusPath: String,
+    scanPollInterval: Number,
+    scanTimeout: Number,
   }
 
   connect() {
     this.clearing = false
     this.uploading = false
+    this.pendingScans = new Set()
   }
 
   confirmEmptyUpload(event) {
-    if (this.uploading) {
+    if (this.uploading || this.pendingScans.size > 0) {
       event.preventDefault()
       return
     }
@@ -85,7 +89,8 @@ export default class extends Controller {
       return
     }
 
-    this.#blockSubmit(true)
+    this.uploading = true
+    this.#updateSubmitState()
 
     try {
       const uploads = await this.#requestPresignedUploads(validFiles)
@@ -94,7 +99,10 @@ export default class extends Controller {
       )
 
       results.forEach((result, index) => {
-        if (result.status === "fulfilled") this.#record(uploads[index])
+        if (result.status === "fulfilled") {
+          this.#record(uploads[index])
+          ths.#watchScanStatus(uploads[index])
+        }
       })
 
       this.#refreshList()
@@ -106,13 +114,60 @@ export default class extends Controller {
       this.#showError(files.length > 1 ? this.errorMultipleFilesValue : message)
     } finally {
       this.#clearInput()
-      this.#blockSubmit(false)
+      this.uploading = false
+      this.#updateSubmitState()
     }
   }
 
-  #blockSubmit(blocked) {
-    this.uploading = blocked
-    this.element.querySelectorAll("input[type=submit], button[type=submit]").forEach((button) => {
+  // Polls the scan-status endpoint for a single upload until it resolves to
+  // "clean" or "rejected", or until scanTimeoutValue elapses. "Continue" stays
+  // disabled the whole time (see #updateSubmitState). Activities::DocumentUploadsController#create
+  // re-checks and purges any rejected document server-side regardless
+  // of whether the client polled long enough to see the result.
+  async #watchScanStatus(upload) {
+    const signedId = upload.signed_id
+    this.pendingScans.add(signedId)
+    this.#updateSubmitState()
+
+    const url = this.scanStatusPathValue.replace("SIGNED_ID_PLACEHOLDER", encodeURIComponent(signedId))
+    const deadline = Date.now() + this.scanTimeoutValue
+
+    try {
+      while (Date.now() < deadline) {
+        const response = await fetch(url, { headers: { Accept: "application/json" } })
+
+        if (response.ok) {
+          const body = await this.#json(response)
+
+          if (body?.status === "rejected") {
+            this.#removeUpload(signedId)
+            this.#showError(body.error || this.errorUploadFailedValue)
+            return
+          }
+
+          if (body?.status === "clean") return
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, this.scanPollIntervalValue))
+      }
+    } finally {
+      this.pendingScans.delete(signedId)
+      this.#updateSubmitState()
+    }
+  }
+
+  #removeUpload(signedId) {
+    Array.from(this.signedIdsTarget.children)
+      .filter((input) => input.value === signedId)
+      .forEach((input) => input.remove())
+
+    this.listTarget.querySelector(`[data-signed-id="${CSS.escape(signedId)}"]`)?.remove()
+    this.#refreshList()
+  }
+
+  #updateSubmitState() {
+    const blocked = this.uploading || this.pendingScans.size > 0
+    this.element.querySelector("input[type=submit], button[type=submit]").forEach((button) => {
       button.disabled = blocked
     })
   }
@@ -123,12 +178,7 @@ export default class extends Controller {
     const item = event.target.closest("[data-signed-id]")
     const signedId = item.dataset.signedId
 
-    Array.from(this.signedIdsTarget.children)
-      .filter((input) => input.value === signedId)
-      .forEach((input) => input.remove())
-
-    item.remove()
-    this.#refreshList()
+    this.#removeUpload(signedId)
   }
 
   #validate(file) {

@@ -202,7 +202,12 @@ en:
           warning: Without documents, confirming your eligibility may take longer.
         errors:
           empty: That file is empty. Choose a different file.
+          encrypted: That file is password protected or encrypted. Remove the password protection and upload it again.
+          guardduty_threat_found: That file did not pass a security scan. Try a different file.
+          malformed: We could not read that file. It may be damaged or an unsupported format. Try a different file.
           multiple_files: We could not upload one or more files. Check the files and try again.
+          scan_rejected: We could not process that file. Try a different file and upload it again.
+          scan_rejected_summary: We could not process %{filenames} because it may be encrypted or didn't pass a security check. Remove any password protection, or try a different file, and upload it again.
           too_large: Each file must be smaller than %{limit}.
           unsupported_type: Select a %{types} file.
           upload_failed: We could not upload that file. Check your connection and try again.
