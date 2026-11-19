@@ -62,6 +62,16 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     expect(page).to have_text(I18n.t("activities.education.edit.status_as_of", date: I18n.l(Date.new(2026, 9, 15), format: :long)))
     expect(page).to have_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
     expect(page).to have_text(I18n.t("activities.education.review.credit_hours_self_attested"))
+    original_size = page.current_window.size
+    begin
+      page.current_window.resize_to(768, 1024)
+      details = page.find("table", text: I18n.t("activities.education.review.additional_details"))
+      expect(details.evaluate_script("this.getBoundingClientRect().right <= window.innerWidth")).to be(true)
+      edit_link = details.find(".desktop-edit-link a")
+      expect(edit_link.evaluate_script("this.getBoundingClientRect().right <= window.innerWidth")).to be(true)
+    ensure
+      page.current_window.resize_to(*original_size)
+    end
     expect(page).to have_content(I18n.t("activities.education.review.community_engagement_hours"))
     expect(page).to have_content(I18n.t("activities.education.review.ce_explainer_title"))
     expect(page).to have_content(
@@ -160,6 +170,9 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
       page,
       title: I18n.t("activities.education.review.title_no_school_name")
     )
+
+    expect(page).to have_no_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
+    expect(page).to have_text(I18n.t("activities.education.review.credit_hours_self_attested"))
 
     click_button I18n.t("activities.education.review.save")
     verify_page(page, title: I18n.t("activities.hub.title"))

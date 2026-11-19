@@ -797,11 +797,29 @@ RSpec.describe Activities::EducationController, type: :controller do
         end
 
         it "renders the supplemental status and fractional hours in the term details" do
+          expect(review_content).to have_selector("th", text: I18n.t("activities.education.review.enrollment_status_self_attested"), exact_text: true)
           expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.enrollment_status_self_attested')}']",
             text: I18n.t("activities.education.add_your_term.edit.enrollment_status_options.unknown"))
           expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours_self_attested')}']", text: ApplicationHelper.format_decimal_amount(credit_hours).to_s, exact_text: true)
           expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.community_engagement_hours')}']",
             text: ApplicationHelper.format_decimal_amount(credit_hours * EducationActivity::CREDIT_HOUR_CE_MULTIPLIER).to_s, exact_text: true)
+        end
+
+        context "with an NSC-reported less-than-half-time status" do
+          before do
+            enrolled_term.update!(enrollment_status: :less_than_half_time, supplemental_enrollment_status: nil)
+            get :review, params: { id: education_activity.id, from_edit: 1 }
+          end
+
+          it "labels only credit hours as self-attested" do
+            details = review_content.find("table", text: I18n.t("activities.education.review.additional_details"))
+            status_label = I18n.t("components.enrollment_term_table_component.enrollment_status")
+
+            expect(details).to have_selector("th", text: status_label, exact_text: true)
+            expect(details).to have_selector("td[data-label='#{status_label}']", text: enrolled_term.enrollment_status_display)
+            expect(details).to have_no_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
+            expect(details).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours_self_attested')}']", text: "2.5")
+          end
         end
 
         context "with sufficient supplemental enrollment" do
