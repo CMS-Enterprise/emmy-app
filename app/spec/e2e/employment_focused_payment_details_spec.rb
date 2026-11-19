@@ -58,17 +58,17 @@ RSpec.describe "Employment-focused payment details copy", :js, type: :feature do
       open_payment_details(months: 3)
 
       expect(page).to have_text("This will be included in your community engagement report.")
-      expect(page).to have_no_text(I18n.t("activities.employment.additional_comments_hint"))
+      expect(page).to have_no_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
       expect(page).to have_no_selector("h2", text: "Employment information", exact_text: true)
     end
   end
 
   def verify_employment_details_copy
     expect(page).to have_text("Please review your information.")
-    expect(page).to have_text(I18n.t("activities.employment.additional_comments_hint"))
+    expect(page).to have_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
     expect(page).to have_no_text("This will be included in your community engagement report.")
     expect(page.all("h2").map(&:text).first(3)).to eq(
-      [ "Employment information", "Monthly details", "Additional comments (optional)" ]
+      [ "Employment information", "Monthly details", "Have anything else to share?" ]
     )
     within(page.all("table").first) do
       [ "Employment start date", "Employment end date", "Employment status", "Pay frequency", "Compensation amount" ].each do |label|

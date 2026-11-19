@@ -579,9 +579,11 @@ RSpec.describe Activities::EmploymentController, type: :controller do
         get :review, params: { id: employment_activity.id }
 
         rendered = Capybara.string(response.body)
-        expect(rendered).to have_selector('label + p#employment-additional-comments-hint',
-          text: I18n.t("activities.employment.additional_comments_hint"))
-        expect(rendered).to have_selector('p#employment-additional-comments-hint + textarea[aria-describedby="employment-additional-comments-hint"]')
+        expect(rendered).to have_selector("h2", text: "Have anything else to share?", exact_text: true)
+        expect(rendered).to have_field("Additional comments (optional)")
+        expect(rendered).to have_selector('h2 + p#employment-additional-comments-hint',
+          text: I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
+        expect(rendered).to have_selector('p#employment-additional-comments-hint + label.text-bold + textarea[aria-describedby="employment-additional-comments-hint"]')
       end
 
       it "shows the employer and agency comment prompt with a blank line between them" do
@@ -609,7 +611,7 @@ RSpec.describe Activities::EmploymentController, type: :controller do
     it "omits the Employment-focused comments hint for Community Engagement" do
       get :review, params: { id: employment_activity.id }
 
-      expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_hint"))
+      expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
     end
 
     it "displays employment activity months" do

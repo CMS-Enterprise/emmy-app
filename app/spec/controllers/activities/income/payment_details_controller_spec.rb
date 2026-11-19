@@ -57,7 +57,7 @@ RSpec.describe Activities::Income::PaymentDetailsController do
 
         page = Capybara.string(response.body)
         headings = page.all("h2").map(&:text)
-        expect(headings.first(3)).to eq([ "Employment information", "Monthly details", "Additional comments (optional)" ])
+        expect(headings.first(3)).to eq([ "Employment information", "Monthly details", "Have anything else to share?" ])
         expect(page).to have_selector("table", count: 2)
         expect(page).to have_text("Compensation amount")
         expect(page).to have_text("Hours worked")
@@ -71,7 +71,7 @@ RSpec.describe Activities::Income::PaymentDetailsController do
         it "omits the Employment-focused comments hint" do
           get :show, params: { user: { account_id: account_id } }
 
-          expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_hint"))
+          expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
         end
       end
 
@@ -82,9 +82,11 @@ RSpec.describe Activities::Income::PaymentDetailsController do
           get :show, params: { user: { account_id: account_id } }
 
           rendered = Capybara.string(response.body)
-          expect(rendered).to have_selector('label + p#employment-additional-information-hint',
-            text: I18n.t("activities.employment.additional_comments_hint"))
-          expect(rendered).to have_selector('p#employment-additional-information-hint + textarea[aria-describedby="employment-additional-information-hint"]')
+          expect(rendered).to have_selector("h2", text: "Have anything else to share?", exact_text: true)
+          expect(rendered).to have_field("Additional comments (optional)")
+          expect(rendered).to have_selector('p#employment-additional-information-hint',
+            text: I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
+          expect(rendered).to have_selector('p#employment-additional-information-hint + label.text-bold + textarea[aria-describedby="employment-additional-information-hint"]')
         end
 
         it "omits the community engagement report description for a single month" do

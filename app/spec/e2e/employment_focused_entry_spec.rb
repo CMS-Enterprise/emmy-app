@@ -53,7 +53,7 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     verify_page(page, title: I18n.t("activities.employment.review.title", employer_name: "Example Employer"))
     expect(page).to have_text(I18n.t("activities.employment.review.gross_income"))
     expect(page).to have_text("$125.00")
-    expect(page).to have_text(I18n.t("activities.employment.additional_comments_hint"))
+    expect(page).to have_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
     click_button I18n.t("activities.employment.review.save")
 
     verify_page(page, title: I18n.t("activities.employment.add_your_work.add_jobs.header"))
