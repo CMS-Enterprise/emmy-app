@@ -206,10 +206,11 @@ RSpec.describe Activities::SummaryController, type: :controller do
       let(:source) { :validated }
       let!(:education) { create(:education_activity, activity_flow: activity_flow, data_source: source, status: :succeeded, education_type: "college_or_university") }
       let!(:term) { create(:nsc_enrollment_term, education_activity: education, enrollment_status: status, credit_hours: 3.5) }
-      let(:rendered) { Capybara.string(response.body) }
+      let(:rendered) do
+        get :show
+        Capybara.string(response.body)
+      end
       let(:details) { rendered.find("table", text: I18n.t("activities.summary.education.term_details")) }
-
-      before { get :show }
 
       it "separates enrollment information from all term fields" do
         expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true, normalize_ws: true)
@@ -233,33 +234,28 @@ RSpec.describe Activities::SummaryController, type: :controller do
       context "with partially self-attested credit hours" do
         let(:source) { :partially_self_attested }
         let(:status) { :less_than_half_time }
+        let(:school_table) { rendered.find("table", text: I18n.t("components.enrollment_term_table_component.student_name_label")) }
 
         it "shows fractional credits and engagement hours only in the term table" do
           expect(details).to have_no_text(term.school_name)
           expect(details).to have_selector("td", text: "3.5", exact_text: true)
           expect(details).to have_selector("td", text: "45.5", exact_text: true)
-          school_table = rendered.find("table", text: I18n.t("components.enrollment_term_table_component.student_name_label"))
           expect(school_table).to have_no_text(term.enrollment_status_display)
           expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
         end
 
         context "with two schools in the same term" do
+          let(:first_row) { details.find("tbody tr", text: term.school_name) }
+          let(:second_row) { details.find("tbody tr", text: "Other College") }
+
           before do
             create(:nsc_enrollment_term, :less_than_half_time, education_activity: education,
               school_name: "Other College", term_begin: term.term_begin, term_end: term.term_end, credit_hours: 2)
-            get :show
           end
 
           it "associates each school's status and hours with its term row" do
-            first_row = details.find("tbody tr", text: term.school_name)
-            second_row = details.find("tbody tr", text: "Other College")
-
-            expect(first_row).to have_text(term.enrollment_status_display)
-            expect(first_row).to have_selector("td", text: "3.5", exact_text: true)
-            expect(first_row).to have_selector("td", text: "45.5", exact_text: true)
-            expect(second_row).to have_text(term.enrollment_status_display)
-            expect(second_row).to have_selector("td", text: "2", exact_text: true)
-            expect(second_row).to have_selector("td", text: "26", exact_text: true)
+            expect(first_row).to have_text("#{term.enrollment_status_display} 3.5 45.5", normalize_ws: true)
+            expect(second_row).to have_text("#{term.enrollment_status_display} 2 26", normalize_ws: true)
           end
         end
 
