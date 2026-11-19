@@ -33,7 +33,8 @@
     <%= f.radio_button(:add_work_method, "enter_unpaid_manually", { label: tag.span(unpaid_label, class: "text-bold"), hint: t(".options.unpaid.hint") }) %>
   </fieldset>
 
-  <%= render SeasonalJobAccordionComponent.new(flow: @flow) %>
 
   <%= f.submit t("continue") %>
 <% end %>
+
+<%= render SeasonalJobAccordionComponent.new(flow: @flow, heading_level: 2) %>
