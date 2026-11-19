@@ -55,7 +55,10 @@ begin
           result.elements["details"]&.attributes&.[]("failedRules") == rules.length.to_s))
   end
   problems = []
-  problems << "veraPDF exited unsuccessfully." unless status.success?
+  # veraPDF exits 1 for completed validation with noncompliant PDFs.
+  # The report checks below still reject unexpected or incomplete results.
+  validation_exit = status.exitstatus == 1 && failed_rules.any?
+  problems << "veraPDF exited unsuccessfully (exit status: #{status.exitstatus.inspect})." unless status.success? || validation_exit
   problems << "Missing validation results: expected #{files.length}, received #{results.length}." unless results.length == files.length
   problems << "Incomplete or abnormal validation results." unless complete_results
   problems << "#{unexpected_rules.length} unexpected rule failures." unless unexpected_rules.empty?

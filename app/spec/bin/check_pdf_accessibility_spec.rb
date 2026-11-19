@@ -8,7 +8,8 @@ RSpec.describe "bin/check-pdf-accessibility" do # rubocop:disable RSpec/Describe
   let(:rules) { [] }
   let(:compliant) { rules.empty? ? "true" : "false" }
   let(:job_status) { "normal" }
-  let(:command_status) { instance_double(Process::Status, success?: true) }
+  let(:exit_status) { rules.empty? ? 0 : 1 }
+  let(:command_status) { instance_double(Process::Status, success?: exit_status == 0, exitstatus: exit_status) }
   let(:report) do
     rule_xml = rules.map do |clause, number|
       %(<rule specification="#{specification}" clause="#{clause}" testNumber="#{number}" status="failed" failedChecks="2"><description>Content | &lt;tag&gt; is untagged</description></rule>)
@@ -69,6 +70,24 @@ RSpec.describe "bin/check-pdf-accessibility" do # rubocop:disable RSpec/Describe
       expect(File.read(File.join(ENV.fetch("PDF_ACCESSIBILITY_REPORT_DIR"), "verapdf.xml"))).to eq(report)
     end
 
+    context "when veraPDF reports an execution error" do
+      let(:exit_status) { 2 }
+
+      it "fails even when the report contains only accepted violations" do
+        expect { run_check }.to raise_error(SystemExit)
+        expect(summary).to include("veraPDF exited unsuccessfully (exit status: 2)")
+      end
+    end
+
+    context "when veraPDF is terminated by a signal" do
+      let(:exit_status) { nil }
+
+      it "fails even when a report was produced" do
+        expect { run_check }.to raise_error(SystemExit)
+        expect(summary).to include("veraPDF exited unsuccessfully")
+      end
+    end
+
     context "with a different specification" do
       let(:specification) { "another standard" }
 
@@ -88,7 +107,7 @@ RSpec.describe "bin/check-pdf-accessibility" do # rubocop:disable RSpec/Describe
   end
 
   context "when veraPDF exits unsuccessfully" do
-    let(:command_status) { instance_double(Process::Status, success?: false) }
+    let(:exit_status) { 1 }
 
     it "fails even with a compliant report" do
       expect { run_check }.to raise_error(SystemExit)
