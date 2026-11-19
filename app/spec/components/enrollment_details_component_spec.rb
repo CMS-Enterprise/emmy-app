@@ -179,7 +179,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     end
 
     it "preserves the existing omission of enrolled history" do
-      expect(rendered).to have_no_button("View enrollment history")
+      expect(rendered).to have_no_button("Enrollment status history")
     end
   end
 
