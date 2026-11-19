@@ -117,6 +117,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     it "keeps other statuses in enrollment history" do
       expect(rendered).to have_button(I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(rendered).to have_selector(".usa-accordion__content", text: older.enrollment_status_display)
+      expect(rendered).to have_selector(".usa-accordion__content tr", text: I18n.t("components.enrollment_term_table_component.enrollment_history_status"))
     end
 
     context "when the previous status is also enrolled" do
