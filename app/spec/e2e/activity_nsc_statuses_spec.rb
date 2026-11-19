@@ -38,7 +38,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
   end
 
   it "expands previous enrollment and combines school and Clearinghouse withdrawals" do
-    expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+    expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 8))
 
     expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
     expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.leave_of_absence"))
@@ -60,7 +60,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y S] }
 
     it "lands on Enrollment Details with the same-term enrolled history expanded" do
-      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
       continue_without_supplemental_details
     end
@@ -69,7 +69,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
       let(:enrollment_codes) { %w[L S] }
 
       it "lands on Enrollment Details with history collapsed" do
-        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
         expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
         continue_without_supplemental_details
       end
@@ -80,7 +80,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y W] }
 
     it "lands on Enrollment Details with the same-term enrolled history expanded" do
-      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
       continue_without_supplemental_details
     end
@@ -89,7 +89,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
       let(:enrollment_codes) { %w[L W] }
 
       it "lands on Enrollment Details with history collapsed" do
-        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
         expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
         continue_without_supplemental_details
       end
@@ -100,7 +100,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y A] }
 
     it "lands on Enrollment Details with the same-term enrolled history expanded" do
-      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
       continue_without_supplemental_details
     end
@@ -109,7 +109,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
       let(:enrollment_codes) { %w[L A] }
 
       it "lands on Enrollment Details with history collapsed" do
-        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
         expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
         continue_without_supplemental_details
       end
@@ -120,7 +120,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y G] }
 
     it "lands on Enrollment Details with the same-term enrolled history expanded" do
-      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
       continue_without_supplemental_details
     end
@@ -129,7 +129,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
       let(:enrollment_codes) { %w[L G] }
 
       it "lands on Enrollment Details with history collapsed" do
-        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
         expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
         continue_without_supplemental_details
       end
@@ -140,7 +140,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y D] }
 
     it "lands on Enrollment Details with the same-term enrolled history expanded" do
-      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
       continue_without_supplemental_details
     end
@@ -149,7 +149,7 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
       let(:enrollment_codes) { %w[L D] }
 
       it "lands on Enrollment Details with history collapsed" do
-        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history", count: 1))
         expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
         continue_without_supplemental_details
       end
