@@ -70,7 +70,6 @@
           <% next if locale == I18n.locale %>
           <li class="usa-nav__primary-item">
           <%# Gated to only show on income side, will be added back to CE when translations completed %>
-            Flow id: <%= session[:flow_id] %>
             <% if !activity_flow? %>
               <%= switch_locale_link(locale) %>
             <% end %>
