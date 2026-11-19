@@ -37,4 +37,6 @@
   <%= f.submit t("continue") %>
 <% end %>
 
-<%= render SeasonalJobAccordionComponent.new(flow: @flow, heading_level: 2) %>
+<div class="maxw-mobile-lg">
+  <%= render SeasonalJobAccordionComponent.new(flow: @flow, heading_level: 2) %>
+</div>
