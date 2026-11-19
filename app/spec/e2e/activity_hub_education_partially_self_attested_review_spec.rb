@@ -13,8 +13,9 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
 
   it "renders mixed enrollment details and routes to review and submit when half-time coverage is present" do # rubocop:disable RSpec/ExampleLength,RSpec/MultipleExpectations
     # Start at the activity hub
-    visit URI(root_url).request_uri
-    visit activities_flow_entry_path(client_agency_id: "sandbox")
+    invitation = create(:activity_flow_invitation)
+    visit activities_flow_start_path(token: invitation.auth_token)
+    verify_page(page, title: I18n.t("activities.entries.show.title", benefit: "Medicaid"))
     click_link I18n.t("activities.entries.show.continue")
     verify_page(page, title: I18n.t("activities.hub.title"))
 
@@ -29,9 +30,11 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
 
     create(
       :nsc_enrollment_term,
-      :less_than_half_time,
+      :enrolled,
       education_activity: education_activity,
       school_name: "Riverside Community College",
+      supplemental_enrollment_status: "less_than_half_time",
+      school_certified_on: Date.new(2026, 9, 15),
       credit_hours: 4
     )
     create(
@@ -54,7 +57,11 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     expect(page).to have_content(
       I18n.t("activities.education.review.enrollment_information_numbered", number: 2)
     )
-    expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 1)
+    expect(page).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
+    expect(page).to have_text(I18n.t("activities.education.review.enrolled"))
+    expect(page).to have_text(I18n.t("activities.education.edit.status_as_of", date: I18n.l(Date.new(2026, 9, 15), format: :long)))
+    expect(page).to have_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
+    expect(page).to have_text(I18n.t("activities.education.review.credit_hours_self_attested"))
     expect(page).to have_content(I18n.t("activities.education.review.community_engagement_hours"))
     expect(page).to have_content(I18n.t("activities.education.review.ce_explainer_title"))
     expect(page).to have_content(

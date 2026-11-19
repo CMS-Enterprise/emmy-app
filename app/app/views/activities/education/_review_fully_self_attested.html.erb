@@ -15,7 +15,7 @@
 ])) %>
 
 <div class="display-flex flex-justify activity-review-edit-header">
-  <h2 class="margin-y-0"><%= t("activities.summary.education.term_details") %></h2>
+  <h3 class="margin-y-0"><%= t("activities.education.review.additional_details") %></h3>
   <%= link_to t("activities.hub.edit"),
         edit_activities_flow_education_add_your_term_path(education_id: @education_activity, from_review: 1, from_edit: params[:from_edit].presence),
         class: "usa-link",
@@ -27,6 +27,6 @@
         } %>
 </div>
 
-<%= render "activities/education/self_attested_term_table", activity: @education_activity %>
+<%= render "activities/education/self_attested_term_table", activity: @education_activity, self_attested_labels: true %>
 
 <%= render "activities/education/credit_hours_explainer" %>
