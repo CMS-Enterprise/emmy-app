@@ -101,22 +101,35 @@ RSpec.describe Launcher::FakeNscDataFetcherService do
         activity_flow.update!(reporting_window_months: 3)
       end
 
-      it "removes duplicate F and S records while preserving W and the distinct A record" do
+      it "removes duplicate Y and S records while preserving the earlier and later terms" do
         service.fetch
 
         expect(education_activity.nsc_enrollment_terms).to contain_exactly(
           have_attributes(
-            term_begin: reporting_window.begin, term_end: reporting_window.end,
-            enrollment_status: "full_time", school_certified_on: reporting_window.begin + 1.month
+            term_begin: reporting_window.begin, term_end: reporting_window.begin.end_of_month,
+            enrollment_status: "enrolled", school_certified_on: reporting_window.begin + 1.day
           ),
           have_attributes(
-            term_begin: reporting_window.begin, term_end: reporting_window.end,
-            enrollment_status: "withdrawn", school_certified_on: reporting_window.begin + 2.months
+            term_begin: reporting_window.begin.next_month, term_end: reporting_window.end,
+            enrollment_status: "withdrawn", school_certified_on: reporting_window.begin.next_month + 1.day
           ),
           have_attributes(
-            term_begin: reporting_window.begin, term_end: reporting_window.end,
-            enrollment_status: "leave_of_absence", school_certified_on: reporting_window.begin + 2.months
+            term_begin: reporting_window.begin.next_month, term_end: reporting_window.end,
+            enrollment_status: "enrolled", school_certified_on: reporting_window.begin.next_month
+          ),
+          have_attributes(
+            term_begin: reporting_window.begin.next_month, term_end: reporting_window.end,
+            enrollment_status: "leave_of_absence", school_certified_on: reporting_window.begin.next_month + 2.days
           )
+        )
+      end
+
+      it "requests supplemental details for only the earlier enrolled term" do
+        service.fetch
+
+        expect(education_activity.reload).to be_partially_self_attested
+        expect(education_activity.less_than_half_time_terms_in_reporting_window).to contain_exactly(
+          have_attributes(enrollment_status: "enrolled", term_end: reporting_window.begin.end_of_month)
         )
       end
     end

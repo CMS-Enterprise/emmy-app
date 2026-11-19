@@ -131,9 +131,10 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
   context "when the only historical status is enrolled" do
     before { older.update!(enrollment_status: :enrolled) }
 
-    it "shows the latest status without a history accordion" do
+    it "expands history and shows the previous enrolled status" do
       expect(rendered).to have_text(latest.enrollment_status_display)
-      expect(rendered).to have_no_button(I18n.t("activities.education.edit.enrollment_history"))
+      expect(rendered).to have_selector("button[aria-expanded='true']", text: "View enrollment history")
+      expect(rendered.css(".usa-accordion__content")).to have_text(older.enrollment_status_display)
     end
   end
 
@@ -144,9 +145,39 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     end
     let(:terms) { [ latest, enrolled_history, older ] }
 
-    it "shows other historical statuses and hides enrolled" do
+    it "expands history with both enrolled and other statuses" do
       expect(rendered).to have_selector(".usa-accordion__content", text: older.enrollment_status_display)
-      expect(rendered).to have_no_text(enrolled_history.enrollment_status_display)
+      expect(rendered.css(".usa-accordion__content")).to have_text(enrolled_history.enrollment_status_display)
+      expect(rendered).to have_selector("button[aria-expanded='true']", text: "View enrollment history")
+    end
+  end
+
+  context "when a previous enrolled status belongs to a different term" do
+    before do
+      older.update!(enrollment_status: :enrolled, term_begin: latest.term_begin - 1.year, term_end: latest.term_end - 1.year)
+    end
+
+    it "does not expand history for the current term" do
+      expect(rendered).to have_no_selector("button[aria-expanded='true']")
+    end
+  end
+
+  context "when a previous enrolled status belongs to a different school" do
+    before { older.update!(enrollment_status: :enrolled, school_name: "Other College") }
+
+    it "does not expand history for the current school" do
+      expect(rendered).to have_no_selector("button[aria-expanded='true']")
+    end
+  end
+
+  context "when the most recent status is full-time" do
+    before do
+      latest.update!(enrollment_status: :full_time)
+      older.update!(enrollment_status: :enrolled)
+    end
+
+    it "preserves the existing omission of enrolled history" do
+      expect(rendered).to have_no_button("View enrollment history")
     end
   end
 
