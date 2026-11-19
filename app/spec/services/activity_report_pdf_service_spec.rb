@@ -12,12 +12,11 @@ RSpec.describe ActivityReportPdfService do
       confirmation_code: "SANDBOX123"
     )
   end
-  let(:wicked_pdf) { instance_double(WickedPdf, pdf_from_string: "%PDF-1.4 report") }
   let(:first_report) { described_class.new(activity_flow).generate }
   let(:retry_report) { described_class.new(activity_flow.reload).generate }
 
   before do
-    allow(WickedPdf).to receive(:new).and_return(wicked_pdf)
+    allow(PdfRenderer).to receive(:render).and_return("%PDF-1.4 report")
   end
 
   it "uses the flow completion date in the filename" do
@@ -36,7 +35,7 @@ RSpec.describe ActivityReportPdfService do
   it "renders with the shared PDF margins" do
     first_report
 
-    expect(wicked_pdf).to have_received(:pdf_from_string)
+    expect(PdfRenderer).to have_received(:render)
       .with(kind_of(String), margin: described_class::PDF_MARGIN)
   end
 end
