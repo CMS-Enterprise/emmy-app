@@ -1,4 +1,4 @@
-<h3><%= t("activities.summary.education.details") %></h3>
+<h3><%= t(activity.activity_flow.tokenized? ? "activities.summary.education.enrollment_details" : "activities.summary.education.details") %></h3>
 <%= render(ContactInfoReviewTableComponent.new(field_header: t("shared.table_headers.education_information"), value_header: t("shared.table_headers.your_details"), rows: [
   { label: t("activities.summary.education.type"), value: activity.education_type_display },
   { label: t("activities.summary.education.school_name"), value: activity.school_name },
@@ -9,5 +9,9 @@
   { label: t("activities.summary.education.contact_phone"), value: number_to_phone(activity.contact_phone_number, area_code: true) }
 ])) %>
 
-<h3><%= t("activities.summary.education.term_details") %></h3>
-<%= render "activities/education/self_attested_term_table", activity: activity %>
+<% if activity.activity_flow.tokenized? %>
+  <%= render "activities/summary/education_term_table", activity: activity, term_groups: [ [ nil ] ] %>
+<% else %>
+  <h3><%= t("activities.summary.education.term_details") %></h3>
+  <%= render "activities/education/self_attested_term_table", activity: activity %>
+<% end %>

@@ -200,6 +200,71 @@ RSpec.describe Activities::SummaryController, type: :controller do
       expect(response.body).to include(ActiveSupport::NumberHelper.number_to_rounded(second_month.hours, precision: 2, strip_insignificant_zeros: true))
     end
 
+    context "with tokenized education details" do
+      let(:activity_flow) { create(:activity_flow, activity_flow_invitation: create(:activity_flow_invitation)) }
+      let(:status) { :half_time }
+      let(:source) { :validated }
+      let!(:education) { create(:education_activity, activity_flow: activity_flow, data_source: source, status: :succeeded, education_type: "college_or_university") }
+      let!(:term) { create(:nsc_enrollment_term, education_activity: education, enrollment_status: status, credit_hours: 3.5) }
+      let(:rendered) { Capybara.string(response.body) }
+      let(:details) { rendered.find("table", text: I18n.t("activities.summary.education.term_details")) }
+
+      before { get :show }
+
+      it "separates enrollment information from all term fields" do
+        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), exact_text: true)
+        expect(details).to have_text(term.enrollment_status_display)
+        expect(details).to have_text(I18n.t("activities.summary.education.term_credit_hours"))
+        expect(details).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
+        expect(details).to have_text(I18n.t("shared.not_applicable"))
+      end
+
+      context "with a non-enrolled status" do
+        let(:status) { :withdrawn }
+
+        it "still renders the term details and hours fields" do
+          expect(details).to have_text(term.enrollment_status_display)
+          expect(details).to have_text(I18n.t("activities.summary.education.term_credit_hours"))
+          expect(details).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
+        end
+      end
+
+      context "with partially self-attested credit hours" do
+        let(:source) { :partially_self_attested }
+        let(:status) { :less_than_half_time }
+
+        it "shows fractional credits and engagement hours only in the term table" do
+          expect(details).to have_selector("td", text: "3.5", exact_text: true)
+          expect(details).to have_selector("td", text: "45.5", exact_text: true)
+          school_table = rendered.find("table", text: I18n.t("components.enrollment_term_table_component.student_name_label"))
+          expect(school_table).to have_no_text(term.enrollment_status_display)
+          expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+        end
+
+        context "with Y status" do
+          let(:status) { :enrolled }
+
+          it "keeps the existing status wording and includes the term fields" do
+            expect(details).to have_text(term.enrollment_status_display)
+            expect(details).to have_selector("td", text: "3.5", exact_text: true)
+          end
+        end
+      end
+
+      context "with manual education" do
+        let!(:education) { create(:education_activity, :with_self_attested_term, activity_flow: activity_flow, credit_hours: 3.5) }
+        let!(:term) { nil }
+
+        it "includes dates, status, credits, and engagement hours" do
+          expect(details).to have_text(I18n.l(education.self_attested_term_start, format: :long))
+          expect(details).to have_text(education.self_attested_enrollment_status_display)
+          expect(details).to have_selector("td", text: "3.5", exact_text: true)
+          expect(details).to have_selector("td", text: "45.5", exact_text: true)
+        end
+      end
+    end
+
     context "with a self-attested education term" do
       let(:enrollment_status) { "less_than_half_time" }
       let(:credit_hours) { 3.5 }
