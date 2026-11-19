@@ -8,6 +8,8 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
   let(:flow) { invitation.activity_flows.order(:created_at).last }
   let(:education) { create(:education_activity, activity_flow: flow) }
   let(:enrollment_codes) { %w[F Q H L Y A W S G D] }
+  let(:other_school) { nil }
+  let(:other_term_end) { nil }
 
   before do
     visit activities_flow_start_path(token: invitation.auth_token)
@@ -17,24 +19,178 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     nsc_stub_request_education_search_response("lynette") do |response|
       enrollment = response.fetch("enrollmentDetails").first
       template = enrollment.fetch("enrollmentData").first
+      if other_school || other_term_end
+        additional = enrollment.deep_dup
+        additional["officialSchoolName"] = other_school if other_school
+        data = template.merge("enrollmentStatus" => "Y", "schoolCertifiedOnDate" => "2024-06-15")
+        data["termEndDate"] = other_term_end if other_term_end
+        additional["enrollmentData"] = [ data ]
+        response["enrollmentDetails"] << additional
+      end
       enrollment["enrollmentData"] = enrollment_codes.map do |code|
-        template.merge("enrollmentStatus" => code)
+        template.merge("enrollmentStatus" => code,
+          "schoolCertifiedOnDate" => code == "Y" || code == "L" ? "2024-06-01" : "2024-07-01")
       end
     end
     NscDataFetcherService.new(education_activity: education, environment: :test).fetch
-    visit edit_activities_flow_education_path(id: education)
-    verify_page(page, title: I18n.t("activities.education.edit.header"))
+    visit activities_flow_education_path(id: education)
+    verify_page(page, title: I18n.t("activities.education.edit.header"), wait: 10)
   end
 
-  it "hides enrolled, shows other statuses, and combines school and Clearinghouse withdrawals" do
-    click_button I18n.t("activities.education.edit.enrollment_history")
+  it "expands previous enrollment and combines school and Clearinghouse withdrawals" do
+    expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
 
-    expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+    expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
     expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.leave_of_absence"))
     expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.graduated"))
     expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.deceased"))
     expect(page).to have_selector("td", text: I18n.t("components.enrollment_term_table_component.status.withdrawn"), count: 1)
     expect(education.nsc_enrollment_terms.count).to eq(9)
+  end
+
+  def continue_without_supplemental_details
+    expect(education.reload).to be_validated
+    click_button I18n.t("activities.education.edit.continue")
+    verify_page(page, title: I18n.t("activities.hub.title"))
+    expect(page).to have_current_path(activities_flow_root_path)
+    expect(education.reload).not_to be_draft
+  end
+
+  context "when the latest status is Clearinghouse withdrawal" do
+    let(:enrollment_codes) { %w[Y S] }
+
+    it "lands on Enrollment Details with the same-term enrolled history expanded" do
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      continue_without_supplemental_details
+    end
+
+    context "without previous enrolled history" do
+      let(:enrollment_codes) { %w[L S] }
+
+      it "lands on Enrollment Details with history collapsed" do
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+        continue_without_supplemental_details
+      end
+    end
+  end
+
+  context "when the latest status is school withdrawal" do
+    let(:enrollment_codes) { %w[Y W] }
+
+    it "lands on Enrollment Details with the same-term enrolled history expanded" do
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      continue_without_supplemental_details
+    end
+
+    context "without previous enrolled history" do
+      let(:enrollment_codes) { %w[L W] }
+
+      it "lands on Enrollment Details with history collapsed" do
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+        continue_without_supplemental_details
+      end
+    end
+  end
+
+  context "when the latest status is leave of absence" do
+    let(:enrollment_codes) { %w[Y A] }
+
+    it "lands on Enrollment Details with the same-term enrolled history expanded" do
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      continue_without_supplemental_details
+    end
+
+    context "without previous enrolled history" do
+      let(:enrollment_codes) { %w[L A] }
+
+      it "lands on Enrollment Details with history collapsed" do
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+        continue_without_supplemental_details
+      end
+    end
+  end
+
+  context "when the latest status is graduation" do
+    let(:enrollment_codes) { %w[Y G] }
+
+    it "lands on Enrollment Details with the same-term enrolled history expanded" do
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      continue_without_supplemental_details
+    end
+
+    context "without previous enrolled history" do
+      let(:enrollment_codes) { %w[L G] }
+
+      it "lands on Enrollment Details with history collapsed" do
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+        continue_without_supplemental_details
+      end
+    end
+  end
+
+  context "when the latest status is deceased" do
+    let(:enrollment_codes) { %w[Y D] }
+
+    it "lands on Enrollment Details with the same-term enrolled history expanded" do
+      expect(page).to have_selector("button[aria-expanded='true']", text: I18n.t("activities.education.edit.enrollment_history"))
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+      continue_without_supplemental_details
+    end
+
+    context "without previous enrolled history" do
+      let(:enrollment_codes) { %w[L D] }
+
+      it "lands on Enrollment Details with history collapsed" do
+        expect(page).to have_selector("button[aria-expanded='false']", text: I18n.t("activities.education.edit.enrollment_history"))
+        expect(page).to have_no_text(I18n.t("components.enrollment_term_table_component.status.less_than_half_time"))
+        continue_without_supplemental_details
+      end
+    end
+  end
+
+  def complete_independent_enrollment
+    current = education.less_than_half_time_terms_in_reporting_window.sole
+    click_button I18n.t("activities.education.edit.continue")
+    verify_page(page, title: I18n.t("activities.education.term_credit_hours.heading", school_name: current.school_name.titlecase))
+    select I18n.t("activities.education.add_your_term.edit.enrollment_status_options.less_than_half_time"),
+      from: I18n.t("activities.education.add_your_term.edit.enrollment_status")
+    fill_in I18n.t("activities.education.add_your_term.edit.credit_hours"), with: "3"
+    click_button I18n.t("activities.education.term_credit_hours.continue")
+    # Match the existing document-upload specs' heading-order exception.
+    verify_page(page, title: I18n.t(education.document_upload_title_i18n_key, name: education.document_upload_object_title),
+      skip_axe_rules: %w[heading-order])
+    expect(page).to have_current_path(new_activities_flow_education_document_upload_path(education_id: education))
+    expect(current.reload.credit_hours).to eq(3)
+    calculator = EducationActivityProgressCalculator.new(education.reload)
+    expect(calculator.progress_hours_for_month(Date.new(2024, 6, 1))).to eq(3 * EducationActivity::CREDIT_HOUR_CE_MULTIPLIER)
+  end
+
+  context "with a newer withdrawal at one school and current enrollment at another" do
+    let(:enrollment_codes) { %w[Y W] }
+    let(:other_school) { "Other College" }
+
+    it "collects supplemental details only for the other school and credits its hours" do
+      expect(education.reload).to be_partially_self_attested
+      complete_independent_enrollment
+    end
+  end
+
+  context "with a newer withdrawal in one term and current enrollment in another" do
+    let(:enrollment_codes) { %w[Y W] }
+    let(:other_term_end) { "2024-10-31" }
+
+    it "collects supplemental details only for the other term and credits its hours" do
+      expect(education.reload).to be_partially_self_attested
+      complete_independent_enrollment
+    end
   end
 
   context "when NSC returns only enrolled" do
