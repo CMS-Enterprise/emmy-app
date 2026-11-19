@@ -47,6 +47,18 @@ class NscEnrollmentTerm < ApplicationRecord
     "unknown" => 0
   }.freeze
 
+  # Keep each school's term history separate, ordered by its latest certification.
+  def self.enrollment_histories(terms)
+    terms.group_by { |term| [ term.school_name, term.term_begin, term.term_end ] }
+      .values
+      .map { |history| history.sort_by { |term| [ term.school_certified_on || Date.new(1, 1, 1), term.id || 0 ] }.reverse }
+  end
+
+  # W and S share the withdrawn status after NSC normalization.
+  def non_enrolled?
+    enrollment_status.in?(%w[withdrawn leave_of_absence graduated deceased])
+  end
+
   def half_time_or_above?
     HALF_TIME_OR_ABOVE_STATUSES.include?(enrollment_status)
   end
