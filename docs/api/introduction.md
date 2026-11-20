@@ -9,9 +9,11 @@ Its component models include self-attested employment, validated payroll, and ed
 Your agency hosts this receiver.
 Examples use synthetic applicant data and nonfunctional tokens.
 
-Object schemas allow additional properties for forward compatibility. Integrations
-should tolerate unknown response fields so new fields can be added without breaking
-existing clients. Required fields and documented field types still apply.
+Emmy's API schemas restrict objects to their documented fields so validation
+can catch integration mistakes and unexpected changes in the data exchanged
+with your agency. Validate requests and responses against the published schemas
+to identify these issues before they affect report processing. Each schema
+defines the fields accepted for that part of the API.
 
 <!-- Remove this link-check exception after the first reviewed deployment. -->
 <!-- markdown-link-check-disable-next-line -->

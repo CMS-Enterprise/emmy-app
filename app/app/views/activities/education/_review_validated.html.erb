@@ -10,5 +10,10 @@
     <% end %>
   </h2>
 
-  <%= render(EnrollmentTermTableComponent.new(nsc_enrollment_term: enrollment_term)) %>
+  <%= render EnrollmentTermTableComponent.new(nsc_enrollment_term: enrollment_term) do |table| %>
+    <% table.with_enrollment_status do %>
+      <%= render "activities/education/enrollment_status", term: enrollment_term,
+        status: enrollment_term.enrollment_enrolled? ? t("activities.education.review.enrolled") : enrollment_term.enrollment_status_display %>
+    <% end %>
+  <% end %>
 <% end %>
