@@ -192,7 +192,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
     it "keeps both enrollments and shows only the other status row" do
       expect(rendered).to have_text(enrolled_term.school_name)
-      expect(rendered).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_status"), count: 1)
+      expect(rendered).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.most_recent_enrollment_status"), count: 1)
       expect(rendered).to have_text(latest.enrollment_status_display)
       expect(rendered).to have_no_text(enrolled_term.enrollment_status_display)
     end

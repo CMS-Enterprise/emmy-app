@@ -14,7 +14,7 @@ RSpec.describe EnrollmentTermTableComponent, type: :component do
     let(:status) { :full_time }
 
     it "shows the status without certification dates or enrollment history" do
-      expect(rendered).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_status"))
+      expect(rendered).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.most_recent_enrollment_status"))
       expect(rendered).to have_text(I18n.t("components.enrollment_term_table_component.status.full_time"))
       expect(rendered).to have_no_text("As of")
       expect(rendered).to have_no_button("Enrollment status history")
