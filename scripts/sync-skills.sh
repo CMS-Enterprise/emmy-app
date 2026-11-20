@@ -48,6 +48,7 @@ SKILLS=(
   "pr-review"
   "codebase-audit"
   "finding-adjudication"
+  "ruby-upgrade"
 )
 
 # ── Tool-to-destination mapping ────────────────────────────────────────────
