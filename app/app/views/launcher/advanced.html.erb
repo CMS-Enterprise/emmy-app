@@ -280,6 +280,24 @@
             <div class="usa-radio">
               <input class="usa-radio__input usa-radio__input--tile" type="radio" name="flow_type" id="flow_type_activity" value="activity" checked data-action="advanced-launcher#selectFlowType">
               <label class="usa-radio__label" for="flow_type_activity">CE</label>
+              <fieldset class="usa-fieldset margin-top-0" data-advanced-launcher-target="ceOnly" aria-describedby="ce-flow-variant-hint">
+                <legend class="usa-sr-only"><%= t(".ce_flow_variant.title") %></legend>
+                <p id="ce-flow-variant-hint" class="usa-sr-only"><%= t(".ce_flow_variant.hint") %></p>
+                <div class="advanced-launcher__variant-buttons margin-top-1">
+                  <div class="usa-radio">
+                    <input class="usa-sr-only" type="radio" name="ce_flow_variant" id="ce_flow_variant_standard" value="standard" checked>
+                    <label class="usa-button usa-button--outline" for="ce_flow_variant_standard"><%= t(".ce_flow_variant.standard") %></label>
+                  </div>
+                  <div class="usa-radio">
+                    <input class="usa-sr-only" type="radio" name="ce_flow_variant" id="ce_flow_variant_employment" value="employment_focused">
+                    <label class="usa-button usa-button--outline" for="ce_flow_variant_employment"><%= t(".ce_flow_variant.employment_focused") %></label>
+                  </div>
+                  <div class="usa-radio">
+                    <input class="usa-sr-only" type="radio" name="ce_flow_variant" id="ce_flow_variant_unpaid" value="unpaid_work_only">
+                    <label class="usa-button usa-button--outline" for="ce_flow_variant_unpaid"><%= t(".ce_flow_variant.unpaid_work_only") %></label>
+                  </div>
+                </div>
+              </fieldset>
             </div>
             <div class="usa-radio">
               <input class="usa-radio__input usa-radio__input--tile" type="radio" name="flow_type" id="flow_type_cbv" value="cbv" data-advanced-launcher-target="incomeFlowRadio" data-action="advanced-launcher#selectFlowType">
@@ -287,25 +305,6 @@
             </div>
           </div>
         <% end %>
-        <div data-advanced-launcher-target="ceOnly">
-          <%= render AdvancedLauncher::SettingComponent.new(title: t(".ce_flow_variant.title"), hint: t(".ce_flow_variant.hint")) do %>
-            <fieldset class="usa-fieldset">
-              <legend class="usa-sr-only"><%= t(".ce_flow_variant.title") %></legend>
-              <div class="usa-radio">
-                <input class="usa-radio__input" type="radio" name="ce_flow_variant" id="ce_flow_variant_standard" value="standard" checked>
-                <label class="usa-radio__label" for="ce_flow_variant_standard"><%= t(".ce_flow_variant.standard") %></label>
-              </div>
-              <div class="usa-radio">
-                <input class="usa-radio__input" type="radio" name="ce_flow_variant" id="ce_flow_variant_employment" value="employment_focused">
-                <label class="usa-radio__label" for="ce_flow_variant_employment"><%= t(".ce_flow_variant.employment_focused") %></label>
-              </div>
-              <div class="usa-radio">
-                <input class="usa-radio__input" type="radio" name="ce_flow_variant" id="ce_flow_variant_unpaid" value="unpaid_work_only">
-                <label class="usa-radio__label" for="ce_flow_variant_unpaid"><%= t(".ce_flow_variant.unpaid_work_only") %></label>
-              </div>
-            </fieldset>
-          <% end %>
-        </div>
         <%= render AdvancedLauncher::SettingComponent.new(title: "Agency", hint: "Select the agency the flow will use.") do %>
           <select class="usa-select" name="client_agency_id" id="client_agency_id">
             <% Rails.application.config.client_agencies.client_agency_ids.each do |agency_id| %>
