@@ -13,7 +13,7 @@
 #      > make release-build OPTS="--tag iv-cbv-payroll:latest"
 # 5. Verify Chromium is available:
 #      > docker run --entrypoint chromium iv-cbv-payroll:latest --version
-ARG RUBY_VERSION=3.4.12
+ARG RUBY_VERSION=3.4.13
 
 
 ##########################################################################################
