@@ -331,7 +331,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       end
 
       it "renders fractional credit hours" do
-        expect(term_table).to have_selector("td[data-label='Credit hours']", text: "3.5", exact_text: true)
+        expect(term_table).to have_selector("td[data-label='#{I18n.t('activities.summary.education.term_credit_hours')}']", text: "3.5", exact_text: true)
       end
 
       context "with full-time enrollment" do
@@ -340,7 +340,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
 
         it "marks credit hours as not applicable" do
           expect(term_table).to have_text(education_activity.self_attested_enrollment_status_display)
-          expect(term_table).to have_selector("td[data-label='Credit hours']", text: I18n.t("shared.not_applicable"), exact_text: true)
+          expect(term_table).to have_selector("td[data-label='#{I18n.t('activities.summary.education.term_credit_hours')}']", text: I18n.t("shared.not_applicable"), exact_text: true)
         end
       end
     end
