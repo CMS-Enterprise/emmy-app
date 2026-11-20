@@ -6,3 +6,7 @@ Income Report JSON POSTs include the agency's V1 agency_partner_metadata field s
 Income Report JSON POSTs include `confirmation_code` in the JSON body, but do
 not send the `X-IVAAS-Confirmation-Code` header. The `X-IVAAS-Timestamp` and
 `X-IVAAS-Signature` headers are included for signature verification.
+
+The Income Report schema uses `additionalProperties: false` for objects with
+documented fields, including nested employment and paystub records. The
+integration-defined `agency_partner_metadata` dictionary is exempt.

@@ -640,13 +640,14 @@ RSpec.describe Activities::EducationController, type: :controller do
         end
 
         it "renders enrollment status and separate term dates" do
-          expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.enrollment_status')} #{education_activity.self_attested_enrollment_status_display}", normalize_ws: true)
+          expect(rendered).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), exact_text: true)
+          expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.enrollment_status_self_attested')} #{education_activity.self_attested_enrollment_status_display}", normalize_ws: true)
           expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_start')} #{I18n.l(education_activity.self_attested_term_start, format: :month_year)}", normalize_ws: true)
           expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_end')} #{I18n.l(education_activity.self_attested_term_end, format: :month_year)}", normalize_ws: true)
         end
 
         it "renders fractional credit hours" do
-          expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(credit_hours)}", normalize_ws: true)
+          expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours_self_attested')} #{ApplicationHelper.format_decimal_amount(credit_hours)}", normalize_ws: true)
         end
 
         context "with an unsure enrollment status" do
@@ -654,7 +655,7 @@ RSpec.describe Activities::EducationController, type: :controller do
 
           it "renders the enrollment status and entered credits" do
             expect(term_table).to have_text(education_activity.self_attested_enrollment_status_display)
-            expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(credit_hours)}", normalize_ws: true)
+            expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours_self_attested')} #{ApplicationHelper.format_decimal_amount(credit_hours)}", normalize_ws: true)
           end
         end
 
@@ -742,7 +743,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include(I18n.t("activities.education.review.enrollment_information"))
         expect(response.body).to include(I18n.t("components.enrollment_term_table_component.school_or_program"))
-        expect(response.body).to include(I18n.t("activities.summary.education.term_details"))
+        expect(response.body).to include(I18n.t("activities.education.review.additional_details"))
         expect(response.body).to include(I18n.t("activities.education.review.community_engagement_hours"))
         expect(response.body).to include(I18n.t("activities.education.review.ce_explainer_title"))
         expect(doc).to have_text(
@@ -770,7 +771,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         get :review, params: { id: education_activity.id }
 
         doc = Capybara.string(response.body)
-        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 1)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
         expect(response.body).to include(I18n.t("activities.education.review.community_engagement_hours"))
       end
 
@@ -779,18 +780,46 @@ RSpec.describe Activities::EducationController, type: :controller do
         let(:credit_hours) { BigDecimal("2.5") }
         let!(:enrolled_term) do
           create(:nsc_enrollment_term, :enrolled, education_activity: education_activity,
-            supplemental_enrollment_status: supplemental_status, credit_hours: credit_hours)
+            supplemental_enrollment_status: supplemental_status, credit_hours: credit_hours, school_certified_on: Date.new(2026, 9, 15))
         end
         let(:review_content) { Capybara.string(response.body) }
 
         before { get :review, params: { id: education_activity.id, from_edit: 1 } }
 
+        it "shows the NSC enrolled status and certification date above the self-attested details" do
+          enrollment_table = review_content.all("table").first
+
+          expect(enrollment_table).to have_text(I18n.t("activities.education.review.enrolled"))
+          expect(enrollment_table).to have_text(I18n.t("activities.education.edit.status_as_of",
+            date: I18n.l(enrolled_term.school_certified_on, format: :long)))
+          expect(enrollment_table).to have_no_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+          expect(review_content).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), exact_text: true)
+        end
+
         it "renders the supplemental status and fractional hours in the term details" do
-          expect(review_content).to have_selector("td[data-label='#{I18n.t('components.enrollment_term_table_component.enrollment_status')}']",
+          expect(review_content).to have_selector("th", text: I18n.t("activities.education.review.enrollment_status_self_attested"), exact_text: true)
+          expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.enrollment_status_self_attested')}']",
             text: I18n.t("activities.education.add_your_term.edit.enrollment_status_options.unknown"))
-          expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours')}']", text: ApplicationHelper.format_decimal_amount(credit_hours).to_s, exact_text: true)
+          expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours_self_attested')}']", text: ApplicationHelper.format_decimal_amount(credit_hours).to_s, exact_text: true)
           expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.community_engagement_hours')}']",
             text: ApplicationHelper.format_decimal_amount(credit_hours * EducationActivity::CREDIT_HOUR_CE_MULTIPLIER).to_s, exact_text: true)
+        end
+
+        context "with an NSC-reported less-than-half-time status" do
+          before do
+            enrolled_term.update!(enrollment_status: :less_than_half_time, supplemental_enrollment_status: nil)
+            get :review, params: { id: education_activity.id, from_edit: 1 }
+          end
+
+          it "labels only credit hours as self-attested" do
+            details = review_content.find("table", text: I18n.t("activities.education.review.additional_details"))
+            status_label = I18n.t("components.enrollment_term_table_component.enrollment_status")
+
+            expect(details).to have_selector("th", text: status_label, exact_text: true)
+            expect(details).to have_selector("td[data-label='#{status_label}']", text: enrolled_term.enrollment_status_display)
+            expect(details).to have_no_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
+            expect(details).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours_self_attested')}']", text: "2.5")
+          end
         end
 
         context "with sufficient supplemental enrollment" do
@@ -799,7 +828,7 @@ RSpec.describe Activities::EducationController, type: :controller do
 
           it "shows the supplemental status and the monthly hours threshold" do
             expect(review_content).to have_text(I18n.t("activities.education.add_your_term.edit.enrollment_status_options.half_time"))
-            expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours')}']", text: I18n.t("shared.not_applicable"))
+            expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.credit_hours_self_attested')}']", text: I18n.t("shared.not_applicable"))
             expect(review_content).to have_selector("td[data-label='#{I18n.t('activities.education.review.community_engagement_hours')}']",
               text: ActivityFlowProgressCalculator::PER_MONTH_HOURS_THRESHOLD.to_s, exact_text: true)
           end
@@ -900,7 +929,7 @@ RSpec.describe Activities::EducationController, type: :controller do
             school_name: "Half Time School and Less Than Half School"
           )
         )
-        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 1)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
         expect(response.body.scan(I18n.t("activities.education.review.ce_explainer_title")).count).to eq(1)
         expect(response.body.scan(I18n.t("activities.education.review.community_engagement_hours")).count).to eq(2)
       end
@@ -937,7 +966,7 @@ RSpec.describe Activities::EducationController, type: :controller do
             school_name: "School One and School Two"
           )
         )
-        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 2)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 2)
         expect(response.body.scan(I18n.t("activities.education.review.community_engagement_hours")).count).to eq(4)
         expect(response.body.scan(I18n.t("activities.education.review.ce_explainer_title")).count).to eq(1)
       end

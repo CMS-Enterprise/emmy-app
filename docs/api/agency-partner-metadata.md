@@ -1,5 +1,6 @@
 Metadata links a submitted report to the agency's records. Select the schema
 for the API version, invitation type, and agency associated with your API key.
+Schema validation rejects fields outside the selected metadata schema.
 Some agency schemas overlap, so matching a schema alone does not identify the
 agency.
 
@@ -12,12 +13,12 @@ For Louisiana, use the following metadata fields for each Emmy flow:
 | Income | `POST /api/v1/invitations` | `doc_id` |
 
 For V1 income invitations, the response contains all accepted metadata fields
-for the agency, with `null` for omitted values. Unrecognized fields are
-ignored.
+for the agency, with `null` for omitted values. Unrecognized fields fail schema
+validation.
 
 For V2 invitations, the response echoes the accepted metadata fields supplied
-in the request. Unrecognized fields are ignored, and omitted optional fields
-are not added to the response. Select the agency's community engagement or
+in the request. Unrecognized fields fail schema validation, and omitted optional
+fields are not added to the response. Select the agency's community engagement or
 employment schema to see the accepted and required fields, including
 `individual_id`.
 
