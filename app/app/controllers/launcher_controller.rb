@@ -1,6 +1,7 @@
 class LauncherController < ApplicationController
   helper_method :session_timeout_enabled?, :agency_activity_types
   before_action :set_launcher_flow, only: [ :advanced, :launcher ]
+  before_action :validate_flow_variants, only: :create
 
   def advanced; end
 
@@ -105,6 +106,20 @@ class LauncherController < ApplicationController
 
   private
 
+  def validate_flow_variants
+    return unless launcher_params[:flow_type] == "activity"
+
+    raw_params = params.fetch(:launcher, params)
+    if raw_params.key?(:ce_flow_variant) && !raw_params[:ce_flow_variant].in?(%w[standard employment_focused unpaid_work_only])
+      return render_launcher_error(t("launcher.advanced.invalid_ce_flow_variant"))
+    end
+
+    boolean = ActiveModel::Type::Boolean.new
+    return unless boolean.cast(launcher_params[:employment_focused]) && boolean.cast(launcher_params[:unpaid_work_only])
+
+    render_launcher_error(t("launcher.advanced.invalid_ce_flow_variant"))
+  end
+
   def set_launcher_flow
     set_flow_session(nil, :activity)
   end
@@ -166,9 +181,15 @@ class LauncherController < ApplicationController
       :reporting_window_start,
       :employment_focused,
       :unpaid_work_only,
+      :ce_flow_variant,
       :launcher_timeout,
       :launch_type
-    )
+    ).tap do |permitted|
+      if permitted.key?(:ce_flow_variant)
+        permitted[:employment_focused] = permitted[:ce_flow_variant] == "employment_focused"
+        permitted[:unpaid_work_only] = permitted[:ce_flow_variant] == "unpaid_work_only"
+      end
+    end
   end
 
   def build_cbv_generic_url(client_agency_id, overrides)

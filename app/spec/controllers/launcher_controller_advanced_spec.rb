@@ -745,4 +745,98 @@ RSpec.describe LauncherController, type: :controller do
       expect(ActivityFlowInvitation.last.employment_focused).to be(false)
     end
   end
+
+  context "with a CE flow variant radio selection" do
+    let(:variant) { "standard" }
+    let(:launch_params) do
+      { flow_type: "activity", client_agency_id: "sandbox", launch_type: "tokenized", ce_flow_variant: variant }
+    end
+
+    it "creates standard CE without either flag" do
+      post :create, params: launch_params, format: :json
+
+      expect(response).to be_successful
+      expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: false)
+    end
+
+    context "with Employment-focused selected" do
+      let(:variant) { "employment_focused" }
+
+      it "sets only the Employment-focused flag" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: true, unpaid_work_only: false)
+      end
+    end
+
+    context "with unpaid work selected" do
+      let(:variant) { "unpaid_work_only" }
+
+      it "sets only the unpaid-work-only flag" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: true)
+      end
+    end
+
+    context "with multiple selections" do
+      let(:variant) { %w[standard employment_focused] }
+
+      it "rejects the request with the single-option error" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+
+    context "with an invalid selection" do
+      let(:variant) { "invalid" }
+
+      it "rejects the request before creating an invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+  end
+
+  context "with incompatible activity flow options" do
+    let(:launch_params) do
+      { flow_type: "activity", client_agency_id: "sandbox", launch_type: "tokenized",
+        employment_focused: "true", unpaid_work_only: "true" }
+    end
+
+    it "rejects JSON requests before creating an invitation" do
+      expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+    end
+
+    it "rejects nested launcher parameters" do
+      post :create, params: { launcher: launch_params }, format: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "redirects HTML requests with an explanation" do
+      post :create, params: launch_params
+
+      expect(response).to redirect_to("/launcher/advanced")
+      expect(flash[:alert]).to eq(I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+    end
+
+    context "when Employment-focused is explicitly false" do
+      let(:launch_params) { super().merge(employment_focused: "false") }
+
+      it "allows unpaid-work-only invitations" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: true)
+      end
+    end
+  end
 end
