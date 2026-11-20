@@ -221,15 +221,10 @@ html {
 .cbv-footer__links {
   @include u-font("sans", 3);
   @include u-margin-top(2);
-  border-top: 1px solid color("primary");
   padding-top: units(2);
 
   li a {
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
+    text-decoration: underline;
   }
 }
 
