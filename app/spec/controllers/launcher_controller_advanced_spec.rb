@@ -803,6 +803,32 @@ RSpec.describe LauncherController, type: :controller do
     end
   end
 
+  context "when flow_type is omitted" do
+    let(:launch_params) { { client_agency_id: "sandbox", launch_type: "tokenized" } }
+
+    context "with conflicting legacy flags" do
+      let(:launch_params) { super().merge(employment_focused: "true", unpaid_work_only: "true") }
+
+      it "rejects the request before creating an activity invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+
+    context "with an invalid CE flow variant" do
+      let(:launch_params) { super().merge(ce_flow_variant: "invalid") }
+
+      it "rejects the request before creating an activity invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+  end
+
   context "with incompatible activity flow options" do
     let(:launch_params) do
       { flow_type: "activity", client_agency_id: "sandbox", launch_type: "tokenized",

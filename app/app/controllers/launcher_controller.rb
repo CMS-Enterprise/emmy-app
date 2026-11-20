@@ -107,7 +107,7 @@ class LauncherController < ApplicationController
   private
 
   def validate_flow_variants
-    return unless launcher_params[:flow_type] == "activity"
+    return if launcher_params[:flow_type] == "cbv"
 
     raw_params = params.fetch(:launcher, params)
     if raw_params.key?(:ce_flow_variant) && !raw_params[:ce_flow_variant].in?(%w[standard employment_focused unpaid_work_only])
