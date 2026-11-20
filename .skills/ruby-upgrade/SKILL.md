@@ -48,13 +48,8 @@ Create a branch named `upgrade-ruby-<NEW>` from an up-to-date `main`.
 | `app/Gemfile.lock` | `RUBY VERSION` block -> `ruby <NEW>p<PATCHLEVEL>` |
 
 Don't hand-edit the lockfile line. Install Ruby first (step 3), then let Bundler
-write it (step 4) so the patchlevel is correct.
-
-Then check you missed nothing. `CHANGELOG.md` is written at release time, so leave
-its historical entries alone:
-```sh
-git grep -n '<OLD>' -- ':!CHANGELOG.md'   # should return nothing
-```
+write it (step 4) so the patchlevel is correct. Step 4 ends with a check that
+all four were updated.
 
 ## 3. Install the new Ruby locally
 
@@ -82,6 +77,22 @@ git diff Gemfile.lock       # expect ONLY the RUBY VERSION line to change
 The Dockerfile checklist also says to run `bin/update`. Run it, and commit
 whatever it changes. If gem versions change beyond the `RUBY VERSION` line, stop
 and decide whether those changes belong in this PR.
+
+Now that the lockfile is updated, check that all four declarations have the new
+version (expect one match per file):
+```sh
+cd ..
+grep -n '<NEW>' app/.ruby-version app/Dockerfile app/Gemfile app/Gemfile.lock
+```
+
+Then look for leftover references to the old version:
+```sh
+git grep -n '<OLD>' -- ':!CHANGELOG.md' ':!.skills/'
+```
+Update a match only if it's an active version declaration. Leave historical
+references alone, such as release notes or example upgrades in docs.
+`CHANGELOG.md` and this skill are excluded because they always contain past
+versions.
 
 ## 5. Re-check the Dockerfile OS package pins
 
@@ -113,7 +124,7 @@ docker run --rm ruby:<NEW> bash -c 'apt-get update -qq >/dev/null 2>&1;
 
 Also list what Trivy flags in the base image on its own:
 ```sh
-trivy image -q --pkg-types os --ignore-unfixed --severity HIGH,CRITICAL,MEDIUM ruby:<NEW>
+trivy image -q --pkg-types os --ignore-unfixed --severity HIGH,CRITICAL ruby:<NEW>
 ```
 A package flagged here may already be fixed in the final app image. For example,
 `libpq5` gets upgraded as a dependency of `postgresql-client-17`. Step 6 is the
@@ -133,13 +144,17 @@ docker run --rm --platform linux/amd64 --entrypoint dpkg-query \
   emmy-app:ruby-<NEW>-test -W <pinned packages...>
 ```
 
-Scan it the way CI does (see `.github/actions/trivy-image-scan/action.yml`):
+Scan it with the same criteria CI uses in
+`.github/actions/trivy-image-scan/action.yml`: OS packages only, HIGH and CRITICAL
+severity, fixable vulnerabilities only. If that action's settings change, update
+this command to match. You are still in `app/`, so the repo-root ignore file is
+`../.trivyignore`:
 ```sh
 trivy image -q --platform linux/amd64 --pkg-types os --ignore-unfixed \
-  --ignorefile .trivyignore emmy-app:ruby-<NEW>-test
+  --severity HIGH,CRITICAL --ignorefile ../.trivyignore emmy-app:ruby-<NEW>-test
 ```
-The target is **zero fixable OS vulnerabilities**. If removing a pin brings one
-back, restore the pin.
+The target is **zero findings**, which is what CI requires to pass. If removing a
+pin brings a finding back, restore the pin.
 
 ## 7. Run the app and tests
 
