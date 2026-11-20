@@ -1478,7 +1478,6 @@ en:
     advanced:
       ce_flow_variant:
         employment_focused: Employment-focused
-        hint: Select the CE flow variant you want to use.
         standard: Standard CE
         title: CE flow variant
         unpaid_work_only: Unpaid work only
