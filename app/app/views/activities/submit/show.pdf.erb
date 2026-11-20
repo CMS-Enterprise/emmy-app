@@ -167,11 +167,12 @@
     <section class="margin-top-4">
       <% @report.education_entries.each_with_index do |entry, index| %>
         <% activity = entry.activity %>
+        <% tokenized = activity.activity_flow.tokenized? %>
         <% if activity.fully_self_attested? %>
           <% columns = [
             t("activities.education.review.term"),
-            t("activities.education.review.enrollment_status_self_attested"),
-            t("activities.summary.education.credit_hours"),
+            tokenized ? t("activities.summary.education.enrollment_status_self_attested") : t("activities.education.review.enrollment_status_self_attested"),
+            tokenized ? t("activities.summary.education.credit_hours_self_attested") : t("activities.summary.education.credit_hours"),
             t("activities.summary.education.community_engagement_hours")
           ] %>
           <% row = [
@@ -200,7 +201,7 @@
           ] %>
           <% if show_credit_hours %>
             <% columns += [
-              t("activities.summary.education.credit_hours"),
+              tokenized ? t("activities.summary.education.credit_hours_self_attested") : t("activities.summary.education.credit_hours"),
               t("activities.summary.education.community_engagement_hours")
             ] %>
           <% end %>
@@ -212,14 +213,7 @@
           <% end %>
           <% rows = term_groups.map do |terms_for_range|
             status_lines = terms_for_range.map do |term|
-              enrollment_status = term.enrollment_enrolled? ? t("activities.submit.pdf.enrolled") : term.enrollment_status_display
-              if term.school_certified_on.present?
-                t("components.enrollment_term_table_component.status_as_of_date",
-                  status: enrollment_status,
-                  date: format_date(term.school_certified_on))
-              else
-                enrollment_status
-              end
+              education_summary_enrollment_status(term)
             end
 
             row = [

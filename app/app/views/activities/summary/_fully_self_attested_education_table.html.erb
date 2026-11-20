@@ -10,4 +10,4 @@
 ])) %>
 
 <h3><%= t("activities.summary.education.term_details") %></h3>
-<%= render "activities/education/self_attested_term_table", activity: activity %>
+<%= render "activities/education/self_attested_term_table", activity: activity, self_attested_labels: activity.activity_flow.tokenized? %>

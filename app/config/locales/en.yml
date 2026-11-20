@@ -774,8 +774,9 @@ en:
         contact_phone: School phone number
         contact_title: School official’s title
         credit_hours: Credit hours (self-attested)
+        credit_hours_self_attested: Credit hours (self-attested)
         details: Education details
-        enrollment_details: Enrollment details
+        enrollment_status_self_attested: Enrollment status (self-attested)
         school_name: School or program
         term_credit_hours: Credit hours
         term_details: Term details
