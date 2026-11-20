@@ -171,7 +171,7 @@ class LauncherController < ApplicationController
   end
 
   def launcher_params
-    params.fetch(:launcher, params).permit(
+    @launcher_params ||= params.fetch(:launcher, params).permit(
       :test_scenario,
       :flow_type,
       :client_agency_id,
