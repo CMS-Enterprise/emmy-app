@@ -257,6 +257,34 @@ describe("DocumentUploadController", () => {
     expect(signedIdValues()).toEqual(["signed-id-1"])
   })
 
+  it("keeps Continue disabled while the uploaded file's scan is still pending", async () => {
+    const form = document.querySelector("form")
+    form.dataset.documentUploadScanStatusPathValue = "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
+    form.dataset.documentUploadScanPollIntervalValue = "10"
+    form.dataset.documentUploadScanTimeoutValue = "5000"
+
+    let resolveScanStatus
+    const pendingScanStatus = new Promise((resolve) => {
+      resolveScanStatus = resolve
+    })
+
+    fetch
+      .mockResolvedValueOnce(
+        jsonResponse({ uploads: [presignedUploadFor("verification.pdf", "signed-id-1")] })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockImplementationOnce(() => pendingScanStatus)
+
+    await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
+
+    expect(submitButton().disabled).toBe(true)
+
+    resolveScanStatus(jsonResponse({ status: "clean", error: null }))
+    await flush()
+
+    expect(submitButton().disabled).toBe(false)
+  })
+
   it("re-enables Continue when the upload fails", async () => {
     fetch
       .mockResolvedValueOnce(

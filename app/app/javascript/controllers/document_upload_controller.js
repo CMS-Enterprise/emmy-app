@@ -101,7 +101,8 @@ export default class extends Controller {
       results.forEach((result, index) => {
         if (result.status === "fulfilled") {
           this.#record(uploads[index])
-          ths.#watchScanStatus(uploads[index])
+          this.pendingScans.add(uploads[index].signed_id)
+          this.#watchScanStatus(uploads[index])
         }
       })
 
@@ -126,9 +127,6 @@ export default class extends Controller {
   // of whether the client polled long enough to see the result.
   async #watchScanStatus(upload) {
     const signedId = upload.signed_id
-    this.pendingScans.add(signedId)
-    this.#updateSubmitState()
-
     const url = this.scanStatusPathValue.replace("SIGNED_ID_PLACEHOLDER", encodeURIComponent(signedId))
     const deadline = Date.now() + this.scanTimeoutValue
 
@@ -167,7 +165,7 @@ export default class extends Controller {
 
   #updateSubmitState() {
     const blocked = this.uploading || this.pendingScans.size > 0
-    this.element.querySelector("input[type=submit], button[type=submit]").forEach((button) => {
+    this.element.querySelectorAll("input[type=submit], button[type=submit]").forEach((button) => {
       button.disabled = blocked
     })
   }
