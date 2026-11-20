@@ -29,6 +29,13 @@ RSpec.describe "Unpaid-only community engagement", :js, type: :feature do
     choose "ce_flow_variant_standard", allow_label_click: true
     expect(page).to have_checked_field("ce_flow_variant_standard", visible: :all)
     expect(page).to have_unchecked_field("ce_flow_variant_unpaid", visible: :all)
+
+    choose "flow_type_cbv", allow_label_click: true
+    expect(page).to have_no_selector('label[for="ce_flow_variant_standard"]')
+
+    choose "flow_type_activity", allow_label_click: true
+    expect(page).to have_selector('label[for="ce_flow_variant_standard"]')
+    expect(page).to have_checked_field("ce_flow_variant_standard", visible: :all)
   end
 
   it "launches and completes unpaid work using the employment activity flow" do
