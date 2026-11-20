@@ -1,9 +1,11 @@
 require "rails_helper"
 
 RSpec.describe "activities/submit/show.pdf.erb", type: :view do
+  let(:invitation) { nil }
   let(:flow) do
     create(:activity_flow, volunteering_activities_count: 0, job_training_activities_count: 0,
-      education_activities_count: 0, employment_activities_count: 0, reporting_window_months: 3)
+      education_activities_count: 0, employment_activities_count: 0, reporting_window_months: 3,
+      activity_flow_invitation: invitation)
   end
   let(:enrollment_status) { "less_than_half_time" }
   let(:credit_hours) { 3.5 }
@@ -45,6 +47,15 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
     expect(term_table).to have_selector("thead th", text: I18n.t("components.enrollment_term_table_component.enrollment_status"))
     expect(term_table).to have_selector("thead th", text: I18n.t("activities.summary.education.credit_hours"))
     expect(term_table).to have_selector("thead th", text: I18n.t("activities.summary.education.community_engagement_hours"))
+  end
+
+  context "with a tokenized manual education flow" do
+    let(:invitation) { create(:activity_flow_invitation) }
+
+    it "labels both self-attested fields in the PDF" do
+      expect(term_table).to have_selector("th", text: I18n.t("activities.summary.education.enrollment_status_self_attested"), exact_text: true)
+      expect(term_table).to have_selector("th", text: I18n.t("activities.summary.education.credit_hours_self_attested"), exact_text: true)
+    end
   end
 
   context "with a withdrawal following enrolled status in the same term" do
@@ -153,6 +164,14 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
     it "preserves fractional credits and calculated community engagement hours" do
       expect(term_row).to have_selector("td", exact_text: "3.5")
       expect(term_row).to have_selector("td", exact_text: "45.5")
+    end
+
+    context "with a tokenized flow" do
+      let(:invitation) { create(:activity_flow_invitation) }
+
+      it "labels manually entered credit hours as self-attested" do
+        expect(term_table).to have_selector("th", text: I18n.t("activities.summary.education.credit_hours_self_attested"), exact_text: true)
+      end
     end
 
     context "with supplied full-time enrollment" do
