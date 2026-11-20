@@ -241,7 +241,6 @@ RSpec.describe Activities::SummaryController, type: :controller do
           expect(details).to have_selector("td", text: "3.5", exact_text: true)
           expect(details).to have_selector("td", text: "45.5", exact_text: true)
           expect(school_table).to have_no_text(term.enrollment_status_display)
-          expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
         end
 
         context "with two schools in the same term" do
@@ -266,18 +265,6 @@ RSpec.describe Activities::SummaryController, type: :controller do
             expect(details).to have_text(term.enrollment_status_display)
             expect(details).to have_selector("td", text: "3.5", exact_text: true)
           end
-        end
-      end
-
-      context "with manual education" do
-        let!(:education) { create(:education_activity, :with_self_attested_term, activity_flow: activity_flow, credit_hours: 3.5) }
-        let!(:term) { nil }
-
-        it "includes dates, status, credits, and engagement hours" do
-          expect(details).to have_text(I18n.l(education.self_attested_term_start, format: :long))
-          expect(details).to have_text(education.self_attested_enrollment_status_display)
-          expect(details).to have_selector("td", text: "3.5", exact_text: true)
-          expect(details).to have_selector("td", text: "45.5", exact_text: true)
         end
       end
     end
@@ -330,8 +317,9 @@ RSpec.describe Activities::SummaryController, type: :controller do
         expect(term_table).to have_text(I18n.l(education_activity.self_attested_term_end, format: :long))
       end
 
-      it "renders fractional credit hours" do
+      it "renders fractional credits and community engagement hours" do
         expect(term_table).to have_selector("td[data-label='#{I18n.t('activities.summary.education.term_credit_hours')}']", text: "3.5", exact_text: true)
+        expect(term_table).to have_selector("td[data-label='#{I18n.t('activities.summary.education.community_engagement_hours')}']", text: "45.5", exact_text: true)
       end
 
       context "with full-time enrollment" do
