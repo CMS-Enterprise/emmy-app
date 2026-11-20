@@ -293,7 +293,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
           contact_phone_number: "2175550100", self_attested_enrollment_status: enrollment_status, credit_hours: credit_hours)
       end
       let(:rendered) { Capybara.string(response.body) }
-      let(:term_table) { rendered.find("table", text: I18n.t("activities.education.add_your_term.edit.term_start")) }
+      let(:term_table) { rendered.find("table", text: I18n.t("activities.summary.education.term_details")) }
 
       before do
         activity_flow.update!(reporting_window_months: 2)
@@ -309,7 +309,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       it "renders school information and the term details heading" do
         expect(rendered).to have_selector("tr", text: "#{I18n.t('activities.summary.education.school_name')} #{education_activity.school_name}", normalize_ws: true)
         expect(rendered).to have_selector("tr", text: "#{I18n.t('activities.summary.education.address')} #{education_activity.formatted_address}", normalize_ws: true)
-        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.details"))
+        expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"))
         expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"))
       end
 
@@ -324,23 +324,23 @@ RSpec.describe Activities::SummaryController, type: :controller do
         expect(rendered).to have_selector("tr", text: "#{I18n.t('activities.summary.education.contact_phone')} #{phone_number}", normalize_ws: true)
       end
 
-      it "renders enrollment status and separate term dates" do
-        expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.enrollment_status')} #{education_activity.self_attested_enrollment_status_display}", normalize_ws: true)
-        expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_start')} #{I18n.l(education_activity.self_attested_term_start, format: :month_year)}", normalize_ws: true)
-        expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_end')} #{I18n.l(education_activity.self_attested_term_end, format: :month_year)}", normalize_ws: true)
+      it "renders enrollment status and term dates" do
+        expect(term_table).to have_text(education_activity.self_attested_enrollment_status_display)
+        expect(term_table).to have_text(I18n.l(education_activity.self_attested_term_start, format: :long))
+        expect(term_table).to have_text(I18n.l(education_activity.self_attested_term_end, format: :long))
       end
 
       it "renders fractional credit hours" do
-        expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(credit_hours)}", normalize_ws: true)
+        expect(term_table).to have_selector("td[data-label='Credit hours']", text: "3.5", exact_text: true)
       end
 
       context "with full-time enrollment" do
         let(:enrollment_status) { "full_time" }
         let(:credit_hours) { nil }
 
-        it "hides credit hours" do
+        it "marks credit hours as not applicable" do
           expect(term_table).to have_text(education_activity.self_attested_enrollment_status_display)
-          expect(term_table).to have_no_text(I18n.t("activities.education.review.credit_hours"))
+          expect(term_table).to have_selector("td[data-label='Credit hours']", text: I18n.t("shared.not_applicable"), exact_text: true)
         end
       end
     end
@@ -418,10 +418,10 @@ RSpec.describe Activities::SummaryController, type: :controller do
       expect(contact_info_rows.map(&:text).grep(/River College/).size).to eq(1)
       expect(contact_info_rows.filter_map { |row|
         row if row.first("th")&.text&.strip == I18n.t("components.enrollment_term_table_component.enrollment_term")
-      }.size).to eq(2)
+      }.size).to eq(0)
       expect(contact_info_rows.filter_map { |row|
         row if row.first("th")&.text&.strip == I18n.t("components.enrollment_term_table_component.enrollment_status")
-      }.size).to eq(2)
+      }.size).to eq(0)
 
       monthly_details_headers = doc.all("table").last.all("thead th").map { |cell| cell.text.strip }
       expect(monthly_details_headers).to include(I18n.t("components.enrollment_term_table_component.enrollment_status"))
@@ -506,7 +506,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
 
       education_info_tables = doc.all("table").select { |table| table.has_text?(I18n.t("shared.table_headers.education_information")) }
       expect(education_info_tables.size).to eq(2)
-      expect(education_info_tables.first.all("tbody tr").first).to have_text(I18n.t("components.enrollment_term_table_component.student_name_label"), normalize_ws: true)
+      expect(education_info_tables.first.all("tbody tr").first).to have_text(I18n.t("activities.summary.education.type"), normalize_ws: true)
 
       expect(response.body).to include(half_time_school_name)
       expect(response.body).to include(less_than_half_time_school_name)
@@ -549,7 +549,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       get :show
       doc = Capybara.string(response.body)
 
-      enrollment_table = doc.all("table").find { |table| table.has_text?(I18n.t("activities.summary.education.enrollment_details")) }
+      enrollment_table = doc.all("table").find { |table| table.has_text?(I18n.t("activities.summary.education.term_details")) }
       term_row = enrollment_table.all("tbody tr").first
 
       expect(term_row).to have_text(I18n.t("components.enrollment_term_table_component.status.full_time"), normalize_ws: true)
