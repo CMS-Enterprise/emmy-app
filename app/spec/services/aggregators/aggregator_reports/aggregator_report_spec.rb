@@ -102,7 +102,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           argyle_report.fetch
 
           expect {
-            argyle_report.send(:pick_employment, argyle_report.employments, argyle_report.paystubs, account)
+            argyle_report.send(:pick_employment_income_only, argyle_report.employments, argyle_report.paystubs, account)
           }.to raise_error(Aggregators::AggregatorReports::AggregatorReport::NoMatchingEmploymentError, /No employments found that match account_id/)
 
           # income_report should not crash and should return valid data
@@ -120,27 +120,34 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           argyle_report.fetch
         end
 
+        def find_summary_by_employer(summary, account_id, employer_name)
+          summary.values.find { |v| v[:employment]&.employer_name == employer_name }
+        end
+
         it 'selects the correct employer' do
           summary = argyle_report.summarize_by_employer
-          expect(summary[account][:employment].employer_name).to eq("Aramark")
+          expect(find_summary_by_employer(summary, account, "Aramark")).not_to be_nil
         end
 
         it 'filters to the correct paystubs for that employer' do
           summary = argyle_report.summarize_by_employer
-          expect(summary[account][:paystubs].count).to eq(2)
-          for paystub in summary[account][:paystubs]
-            expect(paystub.employment_id).to eq(summary[account][:employment].employment_matching_id)
+          aramark_summary = find_summary_by_employer(summary, account, "Aramark")
+          expect(aramark_summary[:paystubs].count).to eq(2)
+          for paystub in aramark_summary[:paystubs]
+            expect(paystub.employment_id).to eq(aramark_summary[:employment].employment_matching_id)
           end
         end
 
         it 'filters to the correct income for that employer' do
           summary = argyle_report.summarize_by_employer
-          expect(summary[account][:income].employment_id).to eq(summary[account][:employment].employment_matching_id)
+          aramark_summary = find_summary_by_employer(summary, account, "Aramark")
+          expect(aramark_summary[:income].employment_id).to eq(aramark_summary[:employment].employment_matching_id)
         end
 
         it 'filters to the correct identity for that employer' do
           summary = argyle_report.summarize_by_employer
-          expect(summary[account][:identity].employment_id).to eq(summary[account][:employment].employment_matching_id)
+          aramark_summary = find_summary_by_employer(summary, account, "Aramark")
+          expect(aramark_summary[:identity].employment_id).to eq(aramark_summary[:employment].employment_matching_id)
         end
       end
 
@@ -161,7 +168,74 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
         it 'selects the correct employer' do
           summary = argyle_report.summarize_by_employer
-          expect(summary[account][:employment].employer_name).to eq("Aramark")
+          aramark_summary = summary.values.find { |v| v[:employment]&.employer_name == "Aramark" }
+          expect(aramark_summary).not_to be_nil
+        end
+      end
+
+      describe '#pick_employments' do
+        it 'picks all employments relevant to the time period for a non-CbvFlow' do
+          cbv_flow = instance_double(ActivityFlow)
+          allow(argyle_report).to receive(:flow).and_return(cbv_flow)
+
+          employments = [
+            { account_id: account, start_date: "2023-01-01", termination_date: "2023-03-01", employment_matching_id: "1" }, # Relevant
+            { account_id: account, start_date: "2023-05-01", termination_date: nil, employment_matching_id: "2" },          # Relevant
+            { account_id: account, start_date: "2024-01-01", termination_date: nil, employment_matching_id: "3" },          # Not relevant (starts after to_date)
+            { account_id: "other", start_date: "2023-01-01", termination_date: nil, employment_matching_id: "4" }          # Not relevant (wrong account)
+          ]
+
+          # Mocking from_date and to_date
+          allow(argyle_report).to receive(:from_date).and_return(Date.parse("2023-02-01"))
+          allow(argyle_report).to receive(:to_date).and_return(Date.parse("2023-06-01"))
+
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked.map { |e| e[:employment_matching_id] }).to contain_exactly("1", "2")
+        end
+
+        it 'picks only the most recent employment for a CbvFlow' do
+          cbv_flow = instance_double(CbvFlow, created_at: Time.current)
+          allow(argyle_report).to receive(:flow).and_return(cbv_flow)
+
+          employments = [
+            { account_id: account, start_date: "2023-01-01", termination_date: "2023-03-01", employment_matching_id: "1" },
+            { account_id: account, start_date: "2023-05-01", termination_date: nil, employment_matching_id: "2" } # More recent
+          ]
+
+          # Even though both are relevant, pick_employments for CbvFlow should only return the most recent one
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked.count).to eq(1)
+          expect(picked.first[:employment_matching_id]).to eq("2")
+        end
+
+        it 'handles nil dates for non-CbvFlow' do
+          cbv_flow = instance_double(ActivityFlow)
+          allow(argyle_report).to receive(:flow).and_return(cbv_flow)
+          employments = [
+            { account_id: account, start_date: nil, termination_date: nil, employment_matching_id: "1" },
+            { account_id: account, start_date: "2023-01-01", termination_date: nil, employment_matching_id: "2" }
+          ]
+          allow(argyle_report).to receive(:from_date).and_return(Date.parse("2023-02-01"))
+          allow(argyle_report).to receive(:to_date).and_return(Date.parse("2023-06-01"))
+
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked.map { |e| e[:employment_matching_id] }).to contain_exactly("1", "2")
+        end
+
+        it 'picks multiple relevant employments for the same account for non-CbvFlow' do
+          cbv_flow = instance_double(ActivityFlow)
+          allow(argyle_report).to receive(:flow).and_return(cbv_flow)
+          employments = [
+            { account_id: account, start_date: "2023-01-01", termination_date: "2023-02-15", employment_matching_id: "1" }, # Relevant
+            { account_id: account, start_date: "2023-03-01", termination_date: "2023-04-15", employment_matching_id: "2" }, # Relevant
+            { account_id: account, start_date: "2023-05-01", termination_date: nil, employment_matching_id: "3" },          # Relevant
+          ]
+          allow(argyle_report).to receive(:from_date).and_return(Date.parse("2023-01-01"))
+          allow(argyle_report).to receive(:to_date).and_return(Date.parse("2023-06-01"))
+
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked.count).to eq(3)
+          expect(picked.map { |e| e[:employment_matching_id] }).to contain_exactly("1", "2", "3")
         end
       end
     end
