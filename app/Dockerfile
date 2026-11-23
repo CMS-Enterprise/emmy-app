@@ -38,9 +38,33 @@ COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
+      krb5-multidev \
+      libc-bin \
+      libc-dev-bin \
+      libc6 \
+      libc6-dev \
+      libfreetype-dev \
+      libfreetype6 \
+      libgpgme11t64 \
+      libgssapi-krb5-2 \
+      libgssrpc4t64 \
+      libk5crypto3 \
+      libkadm5clnt-mit12 \
+      libkadm5srv-mit12 \
+      libkdb5-10t64 \
+      libkrb5-3 \
+      libkrb5-dev \
+      libkrb5support0 \
+      libmariadb-dev \
+      libmariadb-dev-compat \
+      libmariadb3 \
+      libnghttp2-14 \
+      libnghttp2-dev \
       libopenexr-3-1-30 \
       libopenexr-dev \
       linux-libc-dev \
+      mariadb-common \
+      patch \
       zlib1g \
       zlib1g-dev \
     && \
