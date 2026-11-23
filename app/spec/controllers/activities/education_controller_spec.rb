@@ -640,7 +640,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         end
 
         it "renders enrollment status and separate term dates" do
-          expect(rendered).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), exact_text: true)
+          expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), exact_text: true)
           expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.review.enrollment_status_self_attested')} #{education_activity.self_attested_enrollment_status_display}", normalize_ws: true)
           expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_start')} #{I18n.l(education_activity.self_attested_term_start, format: :month_year)}", normalize_ws: true)
           expect(term_table).to have_selector("tr", text: "#{I18n.t('activities.education.add_your_term.edit.term_end')} #{I18n.l(education_activity.self_attested_term_end, format: :month_year)}", normalize_ws: true)
@@ -743,7 +743,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include(I18n.t("activities.education.review.enrollment_information"))
         expect(response.body).to include(I18n.t("components.enrollment_term_table_component.school_or_program"))
-        expect(response.body).to include(I18n.t("activities.education.review.additional_details"))
+        expect(response.body).to include(I18n.t("activities.summary.education.term_details"))
         expect(response.body).to include(I18n.t("activities.education.review.community_engagement_hours"))
         expect(response.body).to include(I18n.t("activities.education.review.ce_explainer_title"))
         expect(doc).to have_text(
@@ -771,7 +771,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         get :review, params: { id: education_activity.id }
 
         doc = Capybara.string(response.body)
-        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 1)
         expect(response.body).to include(I18n.t("activities.education.review.community_engagement_hours"))
       end
 
@@ -786,14 +786,14 @@ RSpec.describe Activities::EducationController, type: :controller do
 
         before { get :review, params: { id: education_activity.id, from_edit: 1 } }
 
-        it "shows the NSC enrolled status and certification date above the self-attested details" do
-          enrollment_table = review_content.all("table").first
+        it "shows the NSC status and certification date alongside the self-attested term details" do
+          enrollment_table = review_content.all("table")[1]
 
           expect(enrollment_table).to have_text(I18n.t("activities.education.review.enrolled"))
           expect(enrollment_table).to have_text(I18n.t("activities.education.edit.status_as_of",
             date: I18n.l(enrolled_term.school_certified_on, format: :long)))
           expect(enrollment_table).to have_no_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
-          expect(review_content).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), exact_text: true)
+          expect(review_content).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), exact_text: true)
         end
 
         it "renders the supplemental status and fractional hours in the term details" do
@@ -812,7 +812,7 @@ RSpec.describe Activities::EducationController, type: :controller do
           end
 
           it "labels only credit hours as self-attested" do
-            details = review_content.find("table", text: I18n.t("activities.education.review.additional_details"))
+            details = review_content.find("table", text: I18n.t("activities.summary.education.term_details"))
             status_label = I18n.t("components.enrollment_term_table_component.enrollment_status")
 
             expect(details).to have_selector("th", text: status_label, exact_text: true)
@@ -898,7 +898,7 @@ RSpec.describe Activities::EducationController, type: :controller do
         expect(links).to all(have_text(I18n.t("activities.education.review.edit")))
       end
 
-      it "renders multiple enrollments and only shows term-hours table for less-than-half-time terms" do
+      it "renders term details for every enrollment and supplemental hours where applicable" do
         create(
           :nsc_enrollment_term,
           education_activity: education_activity,
@@ -929,9 +929,9 @@ RSpec.describe Activities::EducationController, type: :controller do
             school_name: "Half Time School and Less Than Half School"
           )
         )
-        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 2)
         expect(response.body.scan(I18n.t("activities.education.review.ce_explainer_title")).count).to eq(1)
-        expect(response.body.scan(I18n.t("activities.education.review.community_engagement_hours")).count).to eq(2)
+        expect(response.body.scan(I18n.t("activities.education.review.community_engagement_hours")).count).to eq(4)
       end
 
       it "renders term-hours tables for each enrollment when all enrollments are less-than-half-time" do
@@ -966,7 +966,7 @@ RSpec.describe Activities::EducationController, type: :controller do
             school_name: "School One and School Two"
           )
         )
-        expect(doc).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 2)
+        expect(doc).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 2)
         expect(response.body.scan(I18n.t("activities.education.review.community_engagement_hours")).count).to eq(4)
         expect(response.body.scan(I18n.t("activities.education.review.ce_explainer_title")).count).to eq(1)
       end

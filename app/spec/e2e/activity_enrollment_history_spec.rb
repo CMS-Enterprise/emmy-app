@@ -34,12 +34,26 @@ RSpec.describe "Student enrollment history", :js, type: :feature do
     page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
 
+  it "separates enrollment and term details for every status on review" do
+    visit review_activities_flow_education_path(id: education)
+    verify_page(page, title: I18n.t("activities.education.review.title_no_school_name"))
+
+    expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), count: 4)
+    expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 4)
+    term_tables = page.all("table", text: I18n.t("activities.summary.education.term_details"), count: 4)
+    expect(term_tables).to all(have_text(I18n.t("components.enrollment_term_table_component.enrollment_status")))
+    expect(term_tables).to all(have_no_text("Harborview College"))
+    expect(page).to have_text("Leave of absence")
+    expect(page).to have_text("Withdrawn")
+    expect(page).to have_text(I18n.t("activities.education.review.enrolled"))
+  end
+
   it "uses horizontal rules without boxes or column headings in the enrollment and history tables" do
     visit edit_activities_flow_education_path(id: education)
     verify_page(page, title: I18n.t("activities.education.edit.header"))
 
     expect(page).to have_no_selector("table.details-table thead", visible: true)
-    page.all("table.details-table", count: 3).each do |table|
+    page.all("table.details-table", count: 5).each do |table|
       borders = page.evaluate_script(<<~JS, table)
         [getComputedStyle(arguments[0]).borderLeftWidth,
          getComputedStyle(arguments[0].querySelector("tbody td")).borderLeftWidth,

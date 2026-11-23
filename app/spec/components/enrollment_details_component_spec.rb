@@ -15,13 +15,13 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
   let(:terms) { [ latest, older ] }
 
   it "shows the latest certified status in the main enrollment table" do
-    expect(rendered.css("table").first).to have_text("Withdrawn (As of September 15, 2026)", normalize_ws: true)
-    expect(rendered.css("table").first).to have_no_text("Full-time")
+    expect(rendered.css("table")[1]).to have_text("Withdrawn (As of September 15, 2026)", normalize_ws: true)
+    expect(rendered.css("table")[1]).to have_no_text("Full-time")
   end
 
   it "shows the actual term dates rather than the certification date as the term" do
-    expect(rendered.css("table").first).to have_text(I18n.l(latest.term_begin, format: :long))
-    expect(rendered.css("table").first).to have_text(I18n.l(latest.term_end, format: :long))
+    expect(rendered.css("table")[1]).to have_text(I18n.l(latest.term_begin, format: :long))
+    expect(rendered.css("table")[1]).to have_text(I18n.l(latest.term_end, format: :long))
   end
 
   it "puts previous statuses in a collapsed history accordion" do
@@ -31,11 +31,11 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
   end
 
   it "uses the shared details-table style for the current enrollment and its history" do
-    expect(rendered).to have_selector("table.details-table", count: 2)
+    expect(rendered).to have_selector("table.details-table", count: 3)
   end
 
   it "italicizes the parenthesized certification dates in the current status and history" do
-    expect(rendered.css("table").first).to have_selector("em", text: "(As of September 15, 2026)")
+    expect(rendered.css("table")[1]).to have_selector("em", text: "(As of September 15, 2026)")
     expect(rendered.css(".usa-accordion__content")).to have_selector("em", text: "(As of September 1, 2026)")
   end
 
@@ -48,7 +48,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     end
 
     it "still selects the latest certification" do
-      expect(rendered.css("table").first).to have_text("Withdrawn")
+      expect(rendered.css("table")[1]).to have_text("Withdrawn")
     end
   end
 
@@ -106,10 +106,11 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
     it "shows the enrollment details without a status row" do
       enrollment_table = rendered.css("table").first
+      term_table = rendered.css("table")[1]
 
       expect(enrollment_table).to have_text(latest.school_name.titlecase)
-      expect(enrollment_table).to have_text(I18n.l(latest.term_begin, format: :long))
-      expect(enrollment_table).to have_text(I18n.l(latest.term_end, format: :long))
+      expect(term_table).to have_text(I18n.l(latest.term_begin, format: :long))
+      expect(term_table).to have_text(I18n.l(latest.term_end, format: :long))
       expect(enrollment_table).to have_no_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_status"))
     end
 
@@ -207,7 +208,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     before { older.update_columns(school_certified_on: nil) }
 
     it "prefers the dated record without inventing a historical certification date" do
-      expect(rendered.css("table").first).to have_text("Withdrawn")
+      expect(rendered.css("table")[1]).to have_text("Withdrawn")
       expect(rendered.css(".usa-accordion__content")).to have_text("Full-time")
       expect(rendered.css(".usa-accordion__content")).to have_no_text("As of")
     end

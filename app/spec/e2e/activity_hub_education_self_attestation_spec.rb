@@ -150,7 +150,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     expect(page).to have_content "601 E John St, Champaign, IL"
 
     # Edit the term from review
-    within(".activity-review-edit-header", text: I18n.t("activities.education.review.additional_details")) do
+    within(".activity-review-edit-header", text: I18n.t("activities.summary.education.term_details")) do
       click_link I18n.t("activities.hub.edit")
     end
     verify_page(page, title: I18n.t("activities.education.add_your_term.edit.title", school_name: "Updated University of Illinois"))

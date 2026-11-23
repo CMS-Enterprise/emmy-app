@@ -3,11 +3,29 @@ require "rails_helper"
 RSpec.describe EnrollmentTermTableComponent, type: :component do
   subject(:rendered) { render_inline(described_class.new(nsc_enrollment_term: term)) }
 
+  let(:status) { :half_time }
+
   let(:term) do
     NscEnrollmentTerm.new(
       enrollment_status: status, school_name: "Test College", first_name: "Test", last_name: "Student",
       term_begin: Date.new(2024, 1, 1), term_end: Date.new(2024, 6, 30)
     )
+  end
+
+  it "keeps school information separate from all term-related fields" do
+    school_table = rendered.css("table").first
+    term_table = rendered.css("table")[1]
+
+    expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"))
+    expect(rendered).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"))
+    expect(school_table).to have_text(term.school_name)
+    expect(school_table).to have_no_text(I18n.l(term.term_begin, format: :long))
+    expect(school_table).to have_no_text(term.enrollment_status_display)
+    expect(term_table).to have_text(I18n.l(term.term_begin, format: :long))
+    expect(term_table).to have_text(term.enrollment_status_display)
+    expect(term_table).to have_text(I18n.t("activities.summary.education.term_credit_hours"))
+    expect(term_table).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
+    expect(term_table).to have_no_text(term.school_name)
   end
 
   context "with full-time enrollment on review pages" do
