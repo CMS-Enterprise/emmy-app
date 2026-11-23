@@ -167,12 +167,11 @@
     <section class="margin-top-4">
       <% @report.education_entries.each_with_index do |entry, index| %>
         <% activity = entry.activity %>
-        <% tokenized = activity.activity_flow.tokenized? %>
         <% if activity.fully_self_attested? %>
           <% columns = [
             t("activities.education.review.term"),
-            tokenized ? t("activities.summary.education.enrollment_status_self_attested") : t("activities.education.review.enrollment_status_self_attested"),
-            tokenized ? t("activities.summary.education.credit_hours_self_attested") : t("activities.summary.education.credit_hours"),
+            t("activities.education.review.enrollment_status_self_attested"),
+            t("activities.summary.education.credit_hours"),
             t("activities.summary.education.community_engagement_hours")
           ] %>
           <% row = [
@@ -201,7 +200,7 @@
           ] %>
           <% if show_credit_hours %>
             <% columns += [
-              tokenized ? t("activities.summary.education.credit_hours_self_attested") : t("activities.summary.education.credit_hours"),
+              t("activities.summary.education.credit_hours"),
               t("activities.summary.education.community_engagement_hours")
             ] %>
           <% end %>
