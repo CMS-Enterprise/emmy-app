@@ -92,6 +92,7 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     within("table", text: I18n.t("activities.summary.education.term_details")) do
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
           status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(Date.new(2026, 9, 15), format: :long)))
+      expect(page).to have_selector("em", exact_text: "(as of September 15, 2026)")
     end
   end
 

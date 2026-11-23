@@ -223,6 +223,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
         expect(school_table).to have_no_text(status_label)
         expect(details).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
           status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(certified_on, format: :long)))
+        expect(details).to have_selector("em", exact_text: "(as of September 15, 2026)")
         expect(details).to have_selector("td[data-label='#{self_attested_status_label}']", text: term.supplemental_enrollment_status_display)
         expect(details).to have_selector("td[data-label='#{credit_hours_label}']", text: "3.5", exact_text: true)
       end

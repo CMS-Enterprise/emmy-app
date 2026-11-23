@@ -157,6 +157,8 @@ RSpec.describe "activities/submit/show.pdf.erb", type: :view do
       status_cell = term_row.find("td", text: I18n.t("activities.submit.pdf.enrolled"))
       expect(status_cell).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
         status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(school_certified_on, format: :long)))
+      expect(status_cell).to have_selector("em", exact_text: I18n.t("activities.summary.education.certification_date",
+        date: I18n.l(school_certified_on, format: :long)))
       expect(status_cell).to have_text(I18n.t("activities.submit.pdf.supplemental_enrollment_status",
         status: enrollment_terms.first.supplemental_enrollment_status_display))
     end

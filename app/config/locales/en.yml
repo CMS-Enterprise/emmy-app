@@ -768,6 +768,7 @@ en:
       description: "%{agency_name} will determine your final eligibility based on the activities you've added to your report."
       education:
         address: School address
+        certification_date: "(as of %{date})"
         community_engagement_hours: Community engagement hours
         contact_email: School official’s email
         contact_name: School official’s name
