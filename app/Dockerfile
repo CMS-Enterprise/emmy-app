@@ -181,19 +181,11 @@ ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
 # Install packages needed for deployment
-# Keep libvips unpinned so this stage preserves security updates from BASE.
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.4.9 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
+# Keep packages unpinned so this stage preserves security updates from BASE.
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-        libgpgme11t64=1.24.2-3 \
+        libgpgme11t64 \
         libvips42t64 \
         postgresql-client-17 \
         && \
