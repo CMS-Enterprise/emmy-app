@@ -45,7 +45,7 @@
       <%= row.with_data_cell(is_header: true) do %>
         <%= t("components.enrollment_term_table_component.most_recent_enrollment_status") %>
       <% end %>
-      <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_status")) do %>
+      <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.most_recent_enrollment_status")) do %>
         <%= enrollment_status.presence || enrollment_status_text(@nsc_enrollment_term.enrollment_status) %>
       <% end %>
     <% end %>
