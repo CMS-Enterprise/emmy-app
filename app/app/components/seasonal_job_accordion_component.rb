@@ -7,6 +7,6 @@ class SeasonalJobAccordionComponent < ViewComponent::Base
   end
 
   def render?
-    @flow.employment_focused? && @flow.reporting_window_months < 12
+    @flow.reporting_window_months < 12
   end
 end

@@ -152,7 +152,7 @@ RSpec.describe LauncherController, type: :controller do
     it "renders the option in the advanced launcher" do
       get :advanced
 
-      expect(Capybara.string(response.body)).to have_unchecked_field(I18n.t("launcher.advanced.unpaid_work_only.label"))
+      expect(Capybara.string(response.body)).to have_unchecked_field(I18n.t("launcher.advanced.ce_flow_variant.unpaid_work_only"))
     end
 
     it "stores the restriction on the invitation instead of the URL" do

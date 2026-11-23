@@ -51,12 +51,21 @@
       url: save_review_activities_flow_income_employment_path(id: @employment_activity, from_edit: params[:from_edit].presence),
       method: :patch,
       class: "usa-form usa-form--large" do |form| %>
-  <h2><%= t("activities.employment.review.additional_comments_title") %></h2>
-  <%= form.label :additional_comments,
-        t(unpaid ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description_unpaid" : other ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description" : "activities.employment.review.additional_comments_description",
-          agency_name: agency_translation("shared.agency_full_name")),
-        class: "usa-label" %>
-  <%= form.text_area :additional_comments, class: "usa-textarea", rows: 5 %>
+  <% if @flow.employment_focused? %>
+    <h2><%= t("activities.employment.additional_comments_heading") %></h2>
+    <p id="employment-additional-comments-hint">
+      <%= t("activities.employment.additional_comments_description", agency_initials: agency_translation("shared.agency_acronym")) %>
+    </p>
+    <%= form.label :additional_comments, t("activities.employment.review.additional_comments_title"), class: "usa-label text-bold" %>
+  <% else %>
+    <h2><%= t("activities.employment.review.additional_comments_title") %></h2>
+    <%= form.label :additional_comments,
+          t(unpaid ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description_unpaid" : other ? "activities.employment.review.unpaid_or_in_kind.additional_comments_description" : "activities.employment.review.additional_comments_description",
+            agency_name: agency_translation("shared.agency_full_name")),
+          class: "usa-label" %>
+  <% end %>
+  <%= form.text_area :additional_comments, class: "usa-textarea", rows: 5,
+        aria: { describedby: @flow.employment_focused? ? "employment-additional-comments-hint" : nil } %>
 
   <% submit_label = params[:from_edit].present? ? t("activities.hub.save") : t("activities.employment.review.save") %>
   <%= form.submit submit_label, class: "usa-button usa-button--primary" %>
