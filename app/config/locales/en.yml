@@ -213,6 +213,7 @@ en:
           upload_failed: We could not upload that file. Check your connection and try again.
         input_hint: Select %{types} files
         input_label: Add documents
+        scanning_status: We're checking your documents for security issues. This may take a moment.
         suggestion_text_html: "<ul><li>Document Type Placeholder 1</li><li>Document Type Placeholder 2</li><li>Document Type Placeholder 3</li></ul>"
         suggestion_title: Suggested documents
         title: Upload supporting documents for %{name}

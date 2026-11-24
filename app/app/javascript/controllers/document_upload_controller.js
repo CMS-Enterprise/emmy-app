@@ -13,6 +13,7 @@ export default class extends Controller {
     "signedIds",
     "emptyUploadTrigger",
     "submit",
+    "scanningStatus",
   ]
 
   static values = {
@@ -211,6 +212,7 @@ export default class extends Controller {
     this.element.querySelectorAll("input[type=submit], button[type=submit]").forEach((button) => {
       button.disabled = blocked
     })
+    this.scanningStatusTarget.hidden = !blocked
   }
 
   remove(event) {

@@ -63,3 +63,13 @@
   line-height: line-height("sans", 1);
   padding: units(0.5) units(1);
 }
+.document-uploads__scanning-status {
+  align-items: center;
+  display: flex;
+  gap: units(1);
+  margin-bottom: units(2);
+}
+.document-uploads__scanning-icon {
+  color: color("primary");
+  flex-shrink: 0;
+}

@@ -16,6 +16,7 @@ const MULTIPLE_FAILED = "We could not upload one or more files. Check the files 
 const SCAN_TIMED_OUT = "We could not confirm that this file passed a security check in time."
 const REJECTED_MESSAGE =
   "We could not process that file. It may be encrypted, password protected, or in a format we do not support."
+const SCANNING_STATUS = "Scanning for security threats..."
 
 const setFiles = (input, files) =>
   Object.defineProperty(input, "files", { value: files, configurable: true })
@@ -79,6 +80,7 @@ describe("DocumentUploadController", () => {
                data-document-upload-target="input"
                data-action="change->document-upload#select">
         <div class="usa-error-message" hidden data-document-upload-target="error"></div>
+        <p hidden data-document-upload-target="scanningStatus">${SCANNING_STATUS}</p>
         <input type="submit" id="upload-continue" value="Continue" data-document-upload-target="submit">
       </form>
     `
@@ -106,6 +108,7 @@ describe("DocumentUploadController", () => {
     )
   const listItems = () => document.querySelectorAll("[data-document-upload-target=list] li")
   const submitButton = () => document.querySelector("input[type=submit]")
+  const scanningStatus = () => document.querySelector("[data-document-upload-target=scanningStatus]")
 
   describe("empty upload confirmation", () => {
     let controller
@@ -262,6 +265,8 @@ describe("DocumentUploadController", () => {
   })
 
   it("keeps Continue disabled while the uploaded file's scan is still pending", async () => {
+    expect(scanningStatus().hidden).toBe(true)
+
     const form = document.querySelector("form")
     form.dataset.documentUploadScanStatusPathValue = "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
     form.dataset.documentUploadScanPollIntervalValue = "10"
@@ -282,11 +287,14 @@ describe("DocumentUploadController", () => {
     await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
 
     expect(submitButton().disabled).toBe(true)
+    expect(scanningStatus().hidden).toBe(false)
+    expect(scanningStatus().textContent).toBe(SCANNING_STATUS)
 
     resolveScanStatus(jsonResponse({ status: "clean", error: null }))
     await flush()
 
     expect(submitButton().disabled).toBe(false)
+    expect(scanningStatus().hidden).toBe(true)
   })
 
   it("re-enables Continue when the upload fails", async () => {

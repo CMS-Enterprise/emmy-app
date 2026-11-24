@@ -108,6 +108,13 @@
     <%= render "selected_uploads" %>
   <% end %>
 
+  <p class="document_uploads__scanning-status" hidden data-document-upload-target="scanningStatus" aria-live="polite">
+    <svg class="usa-icon usa-icon--size-3 document-uploads__scanning-icon rotate" aria-hidden="true" focusable="false" role="img">
+      <use xlink:href="<%= uswds_sprite_icon_href("autorenew") %>"></use>
+    </svg>
+    <%= t(".scanning_status") %>
+  </p>
+
   <% submit_label = params[:from_review].present? ? t("activities.hub.save") : t(".continue") %>
   <%= f.submit submit_label, id: "document-upload-continue", data: { document_upload_target: "submit" } %>
   <% if @flow.activity_flow_invitation_id.present? %>
