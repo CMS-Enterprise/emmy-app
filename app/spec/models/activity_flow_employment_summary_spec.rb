@@ -101,6 +101,7 @@ RSpec.describe ActivityFlowEmploymentSummary, type: :model do
         :activity_flow_employment_summary,
         activity_flow: flow,
         payroll_account: payroll_account,
+        employer_id: "emp-1",
         employer_name: "REDACTED",
         redacted_at: 1.day.ago
       )

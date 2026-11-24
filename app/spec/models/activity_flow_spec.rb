@@ -417,6 +417,8 @@ RSpec.describe ActivityFlow, type: :model do
       }
         .to change { flow.activity_flow_monthly_summaries.count }.by(flow.reporting_months.size)
         .and change { flow.activity_flow_employment_summaries.count }.by(1)
+
+      expect(payroll_account.flow).to eq(flow)
     end
   end
 
@@ -464,6 +466,7 @@ RSpec.describe ActivityFlow, type: :model do
     it "returns summaries grouped by account and employer" do
       summary = flow.monthly_summaries_by_account_employer_with_fallback
 
+      expect(payroll_account.aggregator_account_id).to eq("acct-1")
       expect(summary).to have_key("acct-1")
       expect(summary["acct-1"]).to have_key(month_string)
       expect(summary["acct-1"][month_string]).to include(

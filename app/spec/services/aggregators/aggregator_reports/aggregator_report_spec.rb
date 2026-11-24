@@ -176,9 +176,9 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         )
       end
 
-      let(:emp1) { { account_id: account, employment_matching_id: 'emp1', start_date: '2020-01-01', termination_date: nil } }
-      let(:emp2) { { account_id: account, employment_matching_id: 'emp2', start_date: '2021-01-01', termination_date: nil } }
-      let(:employments) { [ emp1, emp2 ] }
+      let(:employment_early) { { account_id: account, employment_matching_id: 'emp1', start_date: '2020-01-01', termination_date: nil } }
+      let(:employment_late) { { account_id: account, employment_matching_id: 'emp2', start_date: '2021-01-01', termination_date: nil } }
+      let(:employments) { [ employment_early, employment_late ] }
 
       before do
         # Use allow_any_instance_of or just pass them to the method since it's private but we use send
@@ -187,7 +187,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
       it "picks the employment with the latest date (start_date)" do
         picked = argyle_report.send(:pick_employments, employments, account)
-        expect(picked).to eq([ emp2 ])
+        expect(picked).to eq([ employment_late ])
       end
 
       it "picks the employment with the latest paystub date" do
@@ -195,7 +195,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         argyle_report.instance_variable_set(:@paystubs, [ paystub1 ])
 
         picked = argyle_report.send(:pick_employments, employments, account)
-        expect(picked).to eq([ emp1 ])
+        expect(picked).to eq([ employment_early ])
       end
 
       it "handles nil dates by defaulting to an early date" do
