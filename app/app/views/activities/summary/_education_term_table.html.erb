@@ -1,9 +1,17 @@
 <% term_details = t("activities.summary.education.term_details") %>
 <% show_school_names = term_groups.flatten.compact.map(&:school_name).uniq.many? %>
+<% tokenized = activity.activity_flow.tokenized? %>
+<% self_attested = activity.fully_self_attested? %>
+<% show_supplemental_status = tokenized && term_groups.flatten.compact.any? { |term| term.enrollment_enrolled? && term.supplemental_enrollment_status.present? } %>
+<% status_label = tokenized && self_attested ? t("activities.summary.education.enrollment_status_self_attested") : t("components.enrollment_term_table_component.enrollment_status") %>
+<% credit_hours_label = tokenized && !activity.validated? ? t("activities.summary.education.credit_hours_self_attested") : t("activities.summary.education.term_credit_hours") %>
 <% columns = [
   t("activities.education.review.term"),
-  t("components.enrollment_term_table_component.enrollment_status"),
-  t("activities.summary.education.term_credit_hours"),
+  status_label
+] %>
+<% columns << t("activities.summary.education.enrollment_status_self_attested") if show_supplemental_status %>
+<% columns += [
+  credit_hours_label,
   t("activities.summary.education.community_engagement_hours")
 ] %>
 <h3><%= term_details %></h3>
@@ -16,7 +24,7 @@
     <% if term %>
       <% dates = safe_join([ format_date(term.term_begin), format_date(term.term_end) ], " – ") %>
       <% dates = safe_join([ term.school_name.to_s.titlecase.presence || t("shared.not_applicable"), dates ], tag.br) if show_school_names %>
-      <% status = safe_join(terms.map { |entry| local_assigns[:status_text] ? status_text.call(entry) : entry.enrollment_status_display }, tag.br) %>
+      <% status = safe_join(terms.map { |entry| education_summary_enrollment_status(entry, use_enrolled_label: tokenized) }, tag.br) %>
       <% credits_applicable = activity.partially_self_attested? && term.less_than_half_time? && !term.supplemental_sufficient_enrollment? %>
       <% credits = term.credit_hours %>
     <% else %>
@@ -25,7 +33,9 @@
       <% credits_applicable = activity.self_attested_credit_hours_applicable? %>
       <% credits = activity.credit_hours %>
     <% end %>
-    <% values = [ dates, status,
+    <% values = [ dates, status ] %>
+    <% values << (term&.enrollment_enrolled? ? term.supplemental_enrollment_status_display : t("shared.not_applicable")) if show_supplemental_status %>
+    <% values += [
       credits_applicable ? format_decimal_amount(credits || 0) : t("shared.not_applicable"),
       credits_applicable ? format_decimal_amount(activity.community_engagement_hours(credits)) : t("shared.not_applicable")
     ] %>

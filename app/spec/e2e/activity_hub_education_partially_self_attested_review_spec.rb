@@ -91,9 +91,14 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     verify_page(page, title: I18n.t("activities.summary.title"))
     expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
     details = page.find("table", text: I18n.t("activities.summary.education.term_details"))
-    expect(details.find("tbody tr", text: "Riverside Community College")).to have_text(I18n.t("components.enrollment_term_table_component.status.enrolled"))
+    expect(details.find("tbody tr", text: "Riverside Community College")).to have_text(I18n.t("activities.submit.pdf.enrolled"))
     expect(details.find("tbody tr", text: "Pine Valley College")).to have_text(I18n.t("components.enrollment_term_table_component.status.half_time"))
     expect(details).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
+    within("table", text: I18n.t("activities.summary.education.term_details")) do
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
+          status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(Date.new(2026, 9, 15), format: :long)))
+      expect(page).to have_selector("em", exact_text: "(as of September 15, 2026)")
+    end
   end
 
   it "shows same-school less-than-half-time enrollments in one collapsed table on review and submit" do

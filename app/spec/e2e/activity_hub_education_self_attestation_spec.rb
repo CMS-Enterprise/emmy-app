@@ -174,7 +174,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     within("table", text: I18n.t("activities.summary.education.term_details")) do
       expect(page).to have_text(I18n.l(education_activity.self_attested_term_start, format: :long))
       expect(page).to have_text(I18n.l(education_activity.self_attested_term_end, format: :long))
-      expect(page).to have_selector("td[data-label='#{I18n.t('activities.summary.education.term_credit_hours')}']",
+      expect(page).to have_selector("td[data-label='#{I18n.t('activities.summary.education.credit_hours_self_attested')}']",
         text: ApplicationHelper.format_decimal_amount(education_activity.credit_hours).to_s, exact_text: true)
     end
   end

@@ -1,15 +1,5 @@
 <% first_term = enrollment_terms.first %>
 <% student_name = [ first_term&.first_name, first_term&.middle_name, first_term&.last_name ].compact_blank.join(" ") %>
-<% enrollment_status_text = lambda do |term|
-  if term.school_certified_on.present?
-    t("components.enrollment_term_table_component.status_as_of_date",
-      status: term.enrollment_status_display,
-      date: I18n.l(term.school_certified_on, format: :long))
-  else
-    term.enrollment_status_display
-  end
-end %>
-
 <h3>
   <%= t("activities.summary.education.enrollment_details") %>
 </h3>
@@ -20,4 +10,4 @@ end %>
 ])) %>
 
 <% enrollment_term_groups = enrollment_terms.group_by { |term| [ term.term_begin, term.term_end ] }.values %>
-<%= render "activities/summary/education_term_table", activity: activity, term_groups: enrollment_term_groups, status_text: enrollment_status_text %>
+<%= render "activities/summary/education_term_table", activity: activity, term_groups: enrollment_term_groups %>
