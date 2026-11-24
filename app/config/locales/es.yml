@@ -673,6 +673,8 @@ es:
       sandbox: Medicaid
     footer:
       feedback: Compartir comentarios
+      privacy_policy: Política de privacidad
+      terms_of_service: Términos de servicio
     header:
       aria_label: Menú principal
       cbv_flow_title:
