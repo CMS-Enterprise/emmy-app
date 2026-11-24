@@ -41,13 +41,13 @@ RSpec.describe Activities::DocumentScanStatusesController, type: :controller do
     end
 
     it "reports a rejected scan with a user-facing message" do
-      stub_scan_result(DocumentScanStatusService::REJECTED, :encrypted)
+      stub_scan_result(DocumentScanStatusService::REJECTED, "UNSUPPORTED")
 
       get :show, params: { signed_id: blob.signed_id }, format: :json
 
       json = response.parsed_body
       expect(json["status"]).to eq("rejected")
-      expect(json["error"]).to eq(I18n.t("activities.document_uploads.new.errors.encrypted"))
+      expect(json["error"]).to eq(I18n.t("activities.document_uploads.new.errors.unsupported"))
     end
 
     it "404s for an unknown signed id" do

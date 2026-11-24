@@ -44,12 +44,12 @@ RSpec.describe DocumentScanStatusService do
     end
 
     it "reports rejected with the tagged reason" do
-      s3_client.stub_responses(:get_object_tagging, tag_set: [ { key: "RejectionReason", value: "encrypted" } ])
+      s3_client.stub_responses(:get_object_tagging, tag_set: [ { key: "RejectionReason", value: "UNSUPPORTED" } ])
 
       result = call
 
       expect(result.status).to eq(described_class::REJECTED)
-      expect(result.rejection_reason).to eq("encrypted")
+      expect(result.rejection_reason).to eq("UNSUPPORTED")
       expect(result).to be_rejected
     end
 
@@ -61,6 +61,12 @@ RSpec.describe DocumentScanStatusService do
 
     it "reports pending when the object no longer exists in the unscanned bucket" do
       s3_client.stub_responses(:get_object_tagging, "NoSuchKey")
+
+      expect(call.status).to eq(described_class::PENDING)
+    end
+
+    it "reports pending, without raising, when the tag can't be read yet (e.g. IAM not granted)" do
+      s3_client.stub_responses(:get_object_tagging, "AccessDenied")
 
       expect(call.status).to eq(described_class::PENDING)
     end

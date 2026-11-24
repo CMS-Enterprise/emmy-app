@@ -12,11 +12,13 @@ class DocumentScanStatusService
   REJECTION_TAG_KEY = "RejectionReason"
 
   # Known values the GuardDuty-result lambda in emmy-infra's
-  # upload_processing module write to the RejectionReason tag.
-  # Rails doesn't branch on these, see ActivitiesHelper#document_upload_error_message,
-  # which falls back to a generic message if the tag value is unrecognized.
-  REJECTION_REASON_ENCRYPTED = "encrypted"
-  REJECTION_REASON_MALFORMED = "malformed"
+  # upload_processing module writes to the RejectionReason tag.
+  # GuardDuty reports UNSUPPORTED for any file it couldn't scan at all --
+  # this covers encrypted/password-protected PDFs and malformed files alike,
+  # not just encryption specifically. Rails doesn't branch on these, see
+  # ActivitiesHelper#document_upload_error_message, which falls back to a
+  # generic message if the tag value is unrecognized.
+  REJECTION_REASON_UNSUPPORTED = "UNSUPPORTED"
   REJECTION_REASON_GUARDDUTY_THREAT = "guardduty_threat_found"
 
   PENDING = "pending"
@@ -69,6 +71,10 @@ class DocumentScanStatusService
 
     tags.find { |tag| tag.key == REJECTION_TAG_KEY }&.value
   rescue Aws::Errors::ServiceError => e
+    # Treat any failure to read the tag (a missing object, a permission gap
+    # while infra changes roll out, a transient AWS error) as "we can't
+    # confirm a rejection yet" rather than letting it crash document upload
+    # or report generation, which run this check synchronously.
     Rails.logger.warn("DocumentScanStatusService: could not check RejectionReason tag (#{e.class}: #{e.message})")
     nil
   end

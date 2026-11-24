@@ -62,14 +62,9 @@ RSpec.describe ActivitiesHelper do
       )
     end
 
-    it "renders the encrypted-PDF message" do
-      expect(helper.document_upload_error_message(client_agency, :encrypted))
-        .to eq(I18n.t("activities.document_uploads.new.errors.encrypted"))
-    end
-
-    it "renders the malformed-PDF message" do
-      expect(helper.document_upload_error_message(client_agency, :malformed))
-        .to eq(I18n.t("activities.document_uploads.new.errors.malformed"))
+    it "renders the unsupported-file message for AWS's upper-cased reason" do
+      expect(helper.document_upload_error_message(client_agency, "UNSUPPORTED"))
+        .to eq(I18n.t("activities.document_uploads.new.errors.unsupported"))
     end
 
     it "renders the GuardDuty threat message" do
