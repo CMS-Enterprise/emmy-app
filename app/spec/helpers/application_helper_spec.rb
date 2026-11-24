@@ -74,12 +74,13 @@ RSpec.describe ApplicationHelper do
       let(:flow) { ActivityFlow.new }
       let(:required) { true }
       let(:include_second_field) { true }
+      let(:name_label) { "Name" }
       let(:notice) { I18n.t("us_form_with.required_fields_notice_html", asterisk: "*") }
       let(:rendered) do
         html = helper.uswds_form_with(scope: :example, url: "/example") do |form|
           helper.concat(helper.tag.p("Original form content"))
           helper.concat(form.hidden_field(:record_id, value: "123"))
-          helper.concat(form.text_field(:name, label: "Name", required: required, value: "Taylor Example"))
+          helper.concat(form.text_field(:name, label: name_label, required: required, value: "Taylor Example"))
           helper.concat(form.text_field(:nickname, label: "Nickname")) if include_second_field
           helper.concat(form.submit("Continue"))
         end
@@ -91,6 +92,8 @@ RSpec.describe ApplicationHelper do
       it "renders the notice once with a styled asterisk for a qualifying activity form" do
         expect(rendered).to have_selector("p", exact_text: notice, count: 1)
         expect(rendered).to have_selector("p .usa-hint--required", exact_text: "*")
+        expect(rendered).to have_selector("label .usa-hint--required[aria-hidden='true']", exact_text: "*", count: 1)
+        expect(rendered).to have_selector("input[required]")
       end
 
       it "places the notice immediately before the form" do
@@ -112,7 +115,30 @@ RSpec.describe ApplicationHelper do
 
         it "omits the notice despite the hidden field and submit button" do
           expect(rendered).to have_no_text(notice)
+          expect(rendered).to have_no_selector(".usa-hint--required")
+          expect(rendered).to have_selector("input[required]")
           expect(rendered).to have_field("Name", with: "Taylor Example")
+        end
+      end
+
+      context "with an HTML-safe label" do
+        let(:name_label) { helper.tag.strong("Name") }
+
+        it "preserves label markup and renders the required indicator" do
+          expect(rendered).to have_selector("label strong", exact_text: "Name")
+          expect(rendered).to have_selector("label .usa-hint--required", exact_text: "*")
+          expect(rendered).to have_no_text(UswdsFormBuilder::REQUIRED_FIELD_INDICATOR_PLACEHOLDER)
+        end
+
+        context "with a single required field" do
+          let(:include_second_field) { false }
+
+          it "omits both the indicator and its placeholder" do
+            expect(rendered).to have_selector("label strong", exact_text: "Name")
+            expect(rendered).to have_no_selector(".usa-hint--required")
+            expect(rendered).to have_no_text(UswdsFormBuilder::REQUIRED_FIELD_INDICATOR_PLACEHOLDER)
+            expect(rendered).to have_selector("input[required]")
+          end
         end
       end
 
@@ -121,6 +147,7 @@ RSpec.describe ApplicationHelper do
 
         it "omits the notice" do
           expect(rendered).to have_no_text(notice)
+          expect(rendered).to have_no_selector(".usa-hint--required")
         end
       end
 
@@ -137,6 +164,7 @@ RSpec.describe ApplicationHelper do
 
         it "omits the notice and preserves the form content" do
           expect(rendered).to have_no_text(notice)
+          expect(rendered).to have_no_selector(".usa-hint--required")
           expect(rendered.find("form")).to have_text("Original form content")
         end
       end
@@ -146,6 +174,7 @@ RSpec.describe ApplicationHelper do
 
         it "omits the notice" do
           expect(rendered).to have_no_text(notice)
+          expect(rendered).to have_no_selector(".usa-hint--required")
         end
       end
     end

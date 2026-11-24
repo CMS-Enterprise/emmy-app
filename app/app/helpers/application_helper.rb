@@ -137,7 +137,10 @@ module ApplicationHelper
         capture(form, &block)
       end
 
-      if form_builder.required_fields_notice? && @flow.is_a?(ActivityFlow)
+      show_required_fields_notice = form_builder.required_fields_notice? && @flow.is_a?(ActivityFlow)
+      form_html = form_builder.render_required_field_indicators(form_html, show: show_required_fields_notice)
+
+      if show_required_fields_notice
         notice = tag.p(t("us_form_with.required_fields_notice_html",
           asterisk: tag.span("*", class: "usa-hint--required")),
           class: "margin-top-2 margin-bottom-4")
