@@ -70,7 +70,7 @@
 
   // -- Flow type radios --
   .advanced-launcher__flow-type-radios {
-    .usa-radio + .usa-radio {
+    > .usa-radio + .usa-radio {
       margin-top: units(1);
     }
   }
@@ -219,6 +219,39 @@
       flex-basis: 100%;
       margin-top: 0;
       margin-bottom: units(1);
+    }
+  }
+
+  .advanced-launcher__variant-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: units(0.5);
+
+    .usa-radio {
+      display: flex;
+      min-width: 0;
+      background: transparent;
+    }
+
+    .usa-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin: 0;
+      padding: units(1.5) units(0.5);
+      font-size: 0.875rem;
+      overflow-wrap: normal;
+    }
+
+    input:checked + .usa-button {
+      background-color: color("primary");
+      color: color("white");
+    }
+
+    input:focus-visible + .usa-button {
+      outline: 0.25rem solid color("blue-40v");
+      outline-offset: 0.25rem;
     }
   }
 

@@ -1,4 +1,4 @@
-<% @enrollment_groups.each_with_index do |(latest, *history), index| %>
+<% @enrollment_groups.each_with_index do |(latest, history, expanded), index| %>
   <h2>
     <%= t("activities.education.edit.enrollment_information_numbered", number: index + 1) %>
   </h2>
@@ -15,7 +15,7 @@
 
   <% if history.any? %>
     <div class="maxw-table">
-      <%= render AccordionComponent.new(id: "enrollment-history-#{latest.id}") do |accordion| %>
+      <%= render AccordionComponent.new(id: "enrollment-history-#{latest.id}", expanded: expanded) do |accordion| %>
         <% accordion.with_title { t("activities.education.edit.enrollment_history") } %>
         <% accordion.with_body do %>
           <%= render TableComponent.new(

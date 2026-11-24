@@ -125,6 +125,14 @@ RSpec.describe InvitationSchemas do
     expect(described_class.schemas["AgencyMetadataLouisiana"][:properties].keys).to contain_exactly(:doc_id)
   end
 
+  it "keeps Louisiana response-only metadata separate from invitation inputs" do
+    response_metadata = louisiana.merge("case_number" => nil, "date_of_birth" => nil)
+
+    expect(document.schema("AgencyMetadataLouisiana").valid?(response_metadata)).to be(false)
+    expect(document.schema("AgencyMetadataLouisianaResponse").validate(response_metadata).to_a).to be_empty
+    expect(document.schema("AgencyPartnerMetadataResponse").valid?(response_metadata.merge("undocumented" => true))).to be(false)
+  end
+
   it "requires first and last names specifically for New Hampshire" do
     schema = document.schema("AgencyMetadataNewHampshire")
     expect(schema.valid?(sandbox)).to be(true)
@@ -257,6 +265,43 @@ RSpec.describe InvitationSchemas do
 
     it "rejects a string restriction" do
       expect(schema.valid?(request.merge("unpaid_work_only" => "true"))).to be(false)
+    end
+  end
+
+  describe "undocumented metadata" do
+    let(:v2_metadata) { { "individual_id" => "INDIVIDUAL-123", "first_name" => "Jane", "last_name" => "Doe", "date_of_birth" => "01/15/1990" } }
+
+    it "rejects extra fields in every concrete agency variant" do
+      described_class.schemas.each do |name, definition|
+        next unless name.to_s.start_with?("AgencyMetadata")
+
+        metadata = sandbox.merge(v2_metadata).merge(louisiana).slice(*definition.fetch(:properties).keys.map(&:to_s))
+        schema = document.schema(name.to_s)
+        expect(schema.validate(metadata).to_a).to be_empty, name.to_s
+        expect(schema.valid?(metadata.merge("undocumented" => true))).to be(false), name.to_s
+      end
+    end
+
+    it "rejects extra metadata through the shared V1 schema" do
+      expect(document.schema("AgencyPartnerMetadata").valid?(sandbox.merge("undocumented" => true))).to be(false)
+    end
+
+    it "rejects extra metadata through the shared V2 schema" do
+      schema = document.schema("AgencyPartnerMetadataV2")
+
+      expect(schema.validate(v2_metadata).to_a).to be_empty
+      expect(schema.valid?(v2_metadata.merge("undocumented" => true))).to be(false)
+    end
+
+    it "rejects extra metadata inside invitation requests and responses" do
+      request = { "language" => "en", "agency_partner_metadata" => sandbox }
+      response = request.merge("tokenized_url" => "https://example.org/start/token", "expiration_date" => "2026-10-07T23:59:59-04:00")
+
+      expect(document.schema("InvitationRequest").validate(request).to_a).to be_empty
+      expect(document.schema("InvitationResponse").validate(response).to_a).to be_empty
+      sandbox["undocumented"] = true
+      expect(document.schema("InvitationRequest").valid?(request)).to be(false)
+      expect(document.schema("InvitationResponse").valid?(response)).to be(false)
     end
   end
 

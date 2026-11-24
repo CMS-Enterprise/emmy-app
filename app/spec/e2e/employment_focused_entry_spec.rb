@@ -20,6 +20,8 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     click_link I18n.t("activities.entries.show.employment_focused.get_started")
 
     verify_page(page, title: "Choose how you want to add your job")
+    expect(page).to have_text(I18n.t("activities.employment.add_your_work.show.employment_focused.description"))
+    expect(page).to have_text(I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.hint"))
     expect(page).to have_selector("fieldset legend", text: I18n.t("activities.employment.add_your_work.show.legend"))
     expect(page).to have_text(reporting_for_text, count: 1)
     choose I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.label"), allow_label_click: true
@@ -51,6 +53,7 @@ RSpec.describe "Employment-focused entry navigation", :js, type: :feature do
     verify_page(page, title: I18n.t("activities.employment.review.title", employer_name: "Example Employer"))
     expect(page).to have_text(I18n.t("activities.employment.review.gross_income"))
     expect(page).to have_text("$125.00")
+    expect(page).to have_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
     click_button I18n.t("activities.employment.review.save")
 
     verify_page(page, title: I18n.t("activities.employment.add_your_work.add_jobs.header"))

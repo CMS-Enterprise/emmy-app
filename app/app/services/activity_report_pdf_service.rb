@@ -27,7 +27,7 @@ class ActivityReportPdfService
     end
 
     Report.new(
-      content: WickedPdf.new.pdf_from_string(html, margin: PDF_MARGIN),
+      content: PdfRenderer.render(html, margin: PDF_MARGIN),
       file_name: self.class.file_name_for(@activity_flow),
       document_id: self.class.document_id_for(@activity_flow)
     )

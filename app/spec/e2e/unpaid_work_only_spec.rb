@@ -13,13 +13,38 @@ RSpec.describe "Unpaid-only community engagement", :js, type: :feature do
   let(:renewal_instructions) { I18n.t("activities.success.show.head_of_household_description_html", agency_website: agency_website) }
   let(:agency_website_link_text) { Capybara.string(renewal_instructions).find("a").text }
 
+  it "allows only one CE flow variant in the launcher" do
+    visit launcher_advanced_path
+    verify_page(page, title: "Emmy Launcher", skip_axe_rules: %w[heading-order label select-name])
+    expect(page).to have_checked_field("ce_flow_variant_standard", visible: :all)
+
+    choose "ce_flow_variant_employment", allow_label_click: true
+    expect(page).to have_checked_field("ce_flow_variant_employment", visible: :all)
+    expect(page).to have_unchecked_field("ce_flow_variant_standard", visible: :all)
+
+    choose "ce_flow_variant_unpaid", allow_label_click: true
+    expect(page).to have_checked_field("ce_flow_variant_unpaid", visible: :all)
+    expect(page).to have_unchecked_field("ce_flow_variant_employment", visible: :all)
+
+    choose "ce_flow_variant_standard", allow_label_click: true
+    expect(page).to have_checked_field("ce_flow_variant_standard", visible: :all)
+    expect(page).to have_unchecked_field("ce_flow_variant_unpaid", visible: :all)
+
+    choose "flow_type_cbv", allow_label_click: true
+    expect(page).to have_no_selector('label[for="ce_flow_variant_standard"]')
+
+    choose "flow_type_activity", allow_label_click: true
+    expect(page).to have_selector('label[for="ce_flow_variant_standard"]')
+    expect(page).to have_checked_field("ce_flow_variant_standard", visible: :all)
+  end
+
   it "launches and completes unpaid work using the employment activity flow" do
     # Launcher: create a tokenized unpaid-work flow.
     visit launcher_advanced_path
     # Existing advanced-launcher headings and controls lack accessible labels.
     verify_page(page, title: "Emmy Launcher", skip_axe_rules: %w[heading-order label select-name])
     click_button "1 month"
-    check I18n.t("launcher.advanced.unpaid_work_only.label"), allow_label_click: true
+    choose I18n.t("launcher.advanced.ce_flow_variant.unpaid_work_only"), allow_label_click: true
     launched_window = window_opened_by { click_button "Open in new tab" }
 
     within_window launched_window do

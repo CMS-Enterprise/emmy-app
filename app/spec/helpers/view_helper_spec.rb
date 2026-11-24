@@ -1,47 +1,25 @@
-require 'rails_helper'
-RSpec.describe ViewHelper, type: :helper do
-  describe "#switch_locale_link" do
-    before do
-      allow(helper).to receive(:t).and_return("Language Name")
-      allow(helper.request).to receive_messages(path: "/en/activities", query_parameters: {})
-    end
+require "rails_helper"
 
-    it "generates a link with the new locale" do
-      link = helper.switch_locale_link(:es)
-      expect(link).to include("href=\"/es/activities\"")
-    end
+RSpec.describe "Language switcher link", type: :request do
+  def switch_locale_href
+    Nokogiri::HTML(response.body).at_css("a[data-locale]")["href"]
+  end
 
-    it "preserves query parameters" do
-      allow(helper.request).to receive(:query_parameters).and_return({ "foo" => "bar" })
-      link = helper.switch_locale_link(:es)
-      expect(link).to include("href=\"/es/activities?foo=bar\"")
-    end
+  it "adds the locale prefix when switching to a non-default locale" do
+    get "/"
+    expect(switch_locale_href).to eq("/es")
+  end
 
-    it "does not allow host injection via query_parameters" do
-      malicious_params = ActionController::Parameters.new({ "foo" => "bar", "host" => "evil.com" })
-      allow(helper.request).to receive(:query_parameters).and_return(malicious_params)
+  it "preserves query parameters, including nested ones" do
+    get "/es", params: { foo: "bar", a: [ "1", "2" ] }
+    expect(switch_locale_href).to eq("/en?#{{ "a" => [ "1", "2" ], "foo" => "bar" }.to_query}")
+  end
 
-      link = helper.switch_locale_link(:es)
-      expect(link).not_to include("evil.com")
-      expect(link).to include("href=\"/es/activities?foo=bar\"")
-    end
-
-    it "handles path without initial locale" do
-      allow(helper.request).to receive(:path).and_return("/activities")
-      link = helper.switch_locale_link(:es)
-      expect(link).to include("href=\"/es/activities\"")
-    end
-
-    it "handles root path with locale" do
-      allow(helper.request).to receive(:path).and_return("/en")
-      link = helper.switch_locale_link(:es)
-      expect(link).to include("href=\"/es\"")
-    end
-
-    it "handles root path without locale" do
-      allow(helper.request).to receive(:path).and_return("/")
-      link = helper.switch_locale_link(:es)
-      expect(link).to include("href=\"/es\"")
+  %w[host protocol port script_name].each do |option|
+    it "does not treat a #{option} query param as a url_for option" do
+      get "/", params: { option => "//evil.com" }
+      expect(switch_locale_href).to start_with("/es?")
+      expect(switch_locale_href).not_to include("://")
     end
   end
 end
