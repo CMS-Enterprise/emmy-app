@@ -1,5 +1,8 @@
 Grover.configure do |config|
   config.options = {
+    # Grover intercepts this navigation to supply the report HTML. Start with
+    # HTTPS to avoid an upgrade request bypassing that one-time interception.
+    display_url: "https://emmy-pdf.invalid/",
     format: "A4",
     tagged: true,
     outline: true,
