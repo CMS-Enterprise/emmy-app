@@ -35,7 +35,7 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
                         .unredacted
                         .where(payroll_account_id: payroll_accounts.map(&:id))
                         .includes(:payroll_account)
-    return nil unless rows.size == payroll_accounts.size
+    return nil unless rows.size >= payroll_accounts.size
 
     rows.index_by { |row| row.payroll_account.aggregator_account_id }.transform_values do |row|
       {
@@ -48,7 +48,8 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
         employment_termination_date: row.employment_termination_date,
         pay_frequency: row.pay_frequency,
         compensation_amount: row.compensation_amount,
-        compensation_unit: row.compensation_unit
+        compensation_unit: row.compensation_unit,
+        employer_id: row.employer_id
       }
     end
   end

@@ -21,6 +21,7 @@ class PersistedReportAdapter
         compensation_amount: source[:compensation_amount],
         compensation_unit: source[:compensation_unit]
       ),
+      employment_matching_id: source[:employer_id],
       identity: nil,
       employment: Employment.new(
         employer_name: source[:employer_name],
@@ -29,7 +30,7 @@ class PersistedReportAdapter
         employer_address: source[:employer_address],
         status: source[:employment_status],
         start_date: source[:employment_start_date],
-        termination_date: source[:employment_termination_date]
+        termination_date: source[:employment_termination_date],
       )
     )
   end
@@ -78,5 +79,5 @@ class PersistedReportAdapter
     :compensation_unit,
     keyword_init: true
   )
-  AccountReport = Struct.new(:paystubs, :income, :identity, :employment, keyword_init: true)
+  AccountReport = Struct.new(:paystubs, :income, :identity, :employment, :employment_matching_id, keyword_init: true)
 end

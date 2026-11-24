@@ -144,6 +144,26 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         end
       end
 
+      context "when there are multiple employers for an account" do
+        let(:activity_flow) { create(:activity_flow) }
+        before do
+          payroll_account.update!(flow: activity_flow)
+          argyle_report.fetch
+        end
+
+        it "summarize_by_month returns data keyed by account and employer" do
+          summary = argyle_report.summarize_by_month
+          expect(summary.keys.all? { |k| k.start_with?("#{account}_") }).to be_truthy
+          expect(summary.keys.size).to eq(2)
+        end
+
+        it "summarize_by_employer returns data keyed by account and employer" do
+          summary = argyle_report.summarize_by_employer
+          expect(summary.keys.all? { |k| k.start_with?("#{account}_") }).to be_truthy
+          expect(summary.keys.size).to eq(2)
+        end
+      end
+
       context "when a paystub has a nil pay date" do
         let(:paystubs_json) do
           paystubs = argyle_load_relative_json_file('busy_joe', 'request_paystubs.json').deep_dup
@@ -188,6 +208,18 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       it "picks the employment with the latest date (start_date)" do
         picked = argyle_report.send(:pick_employments, employments, account)
         expect(picked).to eq([ employment_late ])
+      end
+
+      context "when it is an activity flow" do
+        let(:activity_flow) { create(:activity_flow) }
+        before do
+          payroll_account.update!(flow: activity_flow)
+        end
+
+        it "returns all matching employments" do
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked).to match_array([ employment_early, employment_late ])
+        end
       end
 
       it "picks the employment with the latest paystub date" do

@@ -137,26 +137,37 @@ module Aggregators::AggregatorReports
     def summarize_by_employer
       @payroll_accounts.each_with_object({}) do |payroll_account, hash|
         account_id = payroll_account.aggregator_account_id
-        account_report = find_account_report(account_id)
+        account_reports = find_account_reports(account_id)
 
-        next if account_report.nil?
+        account_reports.each do |account_report|
+          report_key = if account_reports.size > 1 && account_report.employment_matching_id.present?
+                         "#{account_id}_#{account_report.employment_matching_id}"
+                       else
+                         account_id
+                       end
 
-        has_income_data = payroll_account.job_succeeded?("income")
-        has_employment_data = payroll_account.job_succeeded?("employment")
-        has_identity_data = payroll_account.job_succeeded?("identity")
-        has_paystubs_data = payroll_account.job_succeeded?("paystubs")
-        hash[account_id] ||= {
-          total: account_report.paystubs.sum { |paystub| paystub.gross_pay_amount || 0 },
-          has_income_data: has_income_data,
-          has_employment_data: has_employment_data,
-          has_identity_data: has_identity_data,
-          employment: has_employment_data ? account_report.employment : nil,
-          income: has_income_data ? account_report.income : nil,
-          identity: has_identity_data ? account_report.identity : nil,
-          paystubs: has_paystubs_data ? account_report.paystubs : nil,
-          gigs: account_report.gigs
-        }
+          has_income_data = payroll_account.job_succeeded?("income")
+          has_employment_data = payroll_account.job_succeeded?("employment")
+          has_identity_data = payroll_account.job_succeeded?("identity")
+          has_paystubs_data = payroll_account.job_succeeded?("paystubs")
+
+          hash[report_key] ||= {
+            total: account_report.paystubs.sum { |paystub| paystub.gross_pay_amount || 0 },
+            has_income_data: has_income_data,
+            has_employment_data: has_employment_data,
+            has_identity_data: has_identity_data,
+            employment: has_employment_data ? account_report.employment : nil,
+            income: has_income_data ? account_report.income : nil,
+            identity: has_identity_data ? account_report.identity : nil,
+            paystubs: has_paystubs_data ? account_report.paystubs : nil,
+            gigs: account_report.gigs
+          }
+        end
       end
+    end
+
+    def report_account_name
+
     end
 
     def summarize_by_month(from_date: nil, to_date: nil)
@@ -166,34 +177,40 @@ module Aggregators::AggregatorReports
       @payroll_accounts
         .each_with_object({}) do |payroll_account, hash|
           account_id = payroll_account.aggregator_account_id
-          account_report = find_account_report(account_id)
+          account_reports = find_account_reports(account_id)
 
-          next if account_report.nil?
+          account_reports.each do |account_report|
+            report_key = if account_reports.size > 1 && account_report.employment_matching_id.present?
+                           "#{account_id}_#{account_report.employment_matching_id}"
+                         else
+                           account_id
+                         end
 
-          paystubs = account_report.paystubs
-          gigs = account_report.gigs
-          extracted_dates = extract_dates(paystubs, gigs)
-          months = unique_months(extracted_dates)
+            paystubs = account_report.paystubs
+            gigs = account_report.gigs
+            extracted_dates = extract_dates(paystubs, gigs)
+            months = unique_months(extracted_dates)
 
-          # Group paystubs and gigs by month
-          hash[account_id] ||= months.each_with_object({}) do |month, result|
-            month_string = month.strftime("%Y-%m")
-            month_beginning = month.beginning_of_month
-            month_end = month.end_of_month
+            # Group paystubs and gigs by month
+            hash[report_key] ||= months.each_with_object({}) do |month, result|
+              month_string = month.strftime("%Y-%m")
+              month_beginning = month.beginning_of_month
+              month_end = month.end_of_month
 
-            paystubs_in_month = paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(month_beginning, month_end) }
-            gigs_in_month = gigs.select { |gig| parse_date_safely(gig.end_date)&.between?(month_beginning, month_end) }
-            extracted_dates_in_month = extract_dates(paystubs_in_month, gigs_in_month)
+              paystubs_in_month = paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(month_beginning, month_end) }
+              gigs_in_month = gigs.select { |gig| parse_date_safely(gig.end_date)&.between?(month_beginning, month_end) }
+              extracted_dates_in_month = extract_dates(paystubs_in_month, gigs_in_month)
 
-            result[month_string] = {
-              paystubs: paystubs_in_month,
-              gigs: gigs_in_month,
-              accrued_gross_earnings: paystubs_in_month.sum { |paystub| paystub.gross_pay_amount || 0 },
-              total_gig_hours: gigs_in_month.sum { |gig| gig.hours || 0 },
-              total_w2_hours: paystubs_in_month.sum { | paystub | paystub.hours.to_f },
-              total_mileage: total_miles(gigs_in_month),
-              partial_month_range: partial_month_details(month, extracted_dates_in_month, from_date, to_date)
-            }
+              result[month_string] = {
+                paystubs: paystubs_in_month,
+                gigs: gigs_in_month,
+                accrued_gross_earnings: paystubs_in_month.sum { |paystub| paystub.gross_pay_amount || 0 },
+                total_gig_hours: gigs_in_month.sum { |gig| gig.hours || 0 },
+                total_w2_hours: paystubs_in_month.sum { |paystub| paystub.hours.to_f },
+                total_mileage: total_miles(gigs_in_month),
+                partial_month_range: partial_month_details(month, extracted_dates_in_month, from_date, to_date)
+              }
+            end
           end
         end
     end
@@ -268,6 +285,11 @@ module Aggregators::AggregatorReports
         Rails.logger.error("No employments found that match account_id #{account_id} out of #{employments.count} employments")
         raise NoMatchingEmploymentError, "No employments found that match account_id #{account_id}"
       end
+
+      # For Activity flows, we want to return ALL employments so they can be summarized by employer.
+      # For other flows (like CBV), we still want the "latest" one for some UI displays,
+      # but even then we're moving towards pluralization.
+      return relevant_employments if flow.is_a?(ActivityFlow)
 
       # Pick the employment with the latest update when considering the start_date,
       # terminated_at, and any related paystub's pay_date properties.
