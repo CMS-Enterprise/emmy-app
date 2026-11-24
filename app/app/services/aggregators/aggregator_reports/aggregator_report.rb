@@ -167,7 +167,6 @@ module Aggregators::AggregatorReports
     end
 
     def report_account_name
-
     end
 
     def summarize_by_month(from_date: nil, to_date: nil)

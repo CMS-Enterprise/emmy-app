@@ -39,34 +39,34 @@ module ActivitiesHelper
     )
 
     payroll_accounts.flat_map do |account|
-      account_reports = aggregator_report.find_account_reports(account.aggregator_account_id)
-      account_reports.map do |account_report|
-        employer_name = account_report&.employment&.employer_name || t("activities.employment.title")
-        account_report_identifier = if account_reports.size > 1 && account_report.employment_matching_id.present?
-                                      "#{account.aggregator_account_id}_#{account_report.employment_matching_id}"
-                                    else
-                                      account.aggregator_account_id
-                                    end
-        account_months = monthly_summaries[account_report_identifier] || {}
-      months = account_months
-        .sort_by { |month_key, _| month_key }
-        .filter_map do |month_key, month_data|
-        next unless active_employment_month?(month_data)
+    account_reports = aggregator_report.find_account_reports(account.aggregator_account_id)
+    account_reports.map do |account_report|
+    employer_name = account_report&.employment&.employer_name || t("activities.employment.title")
+    account_report_identifier = if account_reports.size > 1 && account_report.employment_matching_id.present?
+                                  "#{account.aggregator_account_id}_#{account_report.employment_matching_id}"
+                                else
+                                  account.aggregator_account_id
+                                end
+    account_months = monthly_summaries[account_report_identifier] || {}
+    months = account_months
+      .sort_by { |month_key, _| month_key }
+      .filter_map do |month_key, month_data|
+      next unless active_employment_month?(month_data)
 
-        month_date = Date.parse("#{month_key}-01")
-        {
-          month: month_date,
-          gross_earnings: month_data[:accrued_gross_earnings].to_i,
-          hours: format_decimal_amount(total_employment_hours(month_data))
-        }
-      end
-
+      month_date = Date.parse("#{month_key}-01")
       {
-        name: employer_name,
-        months: months,
-        edit_path: activities_flow_income_payment_details_path(user: { account_id: account.aggregator_account_id }, from_edit: 1)
+        month: month_date,
+        gross_earnings: month_data[:accrued_gross_earnings].to_i,
+        hours: format_decimal_amount(total_employment_hours(month_data))
       }
     end
+
+    {
+      name: employer_name,
+      months: months,
+      edit_path: activities_flow_income_payment_details_path(user: { account_id: account.aggregator_account_id }, from_edit: 1)
+    }
+  end
   end
 end
 

@@ -146,6 +146,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
       context "when there are multiple employers for an account" do
         let(:activity_flow) { create(:activity_flow) }
+
         before do
           payroll_account.update!(flow: activity_flow)
           argyle_report.fetch
@@ -153,13 +154,13 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
         it "summarize_by_month returns data keyed by account and employer" do
           summary = argyle_report.summarize_by_month
-          expect(summary.keys.all? { |k| k.start_with?("#{account}_") }).to be_truthy
+          expect(summary.keys).to be_all { |k| k.start_with?("#{account}_") }
           expect(summary.keys.size).to eq(2)
         end
 
         it "summarize_by_employer returns data keyed by account and employer" do
           summary = argyle_report.summarize_by_employer
-          expect(summary.keys.all? { |k| k.start_with?("#{account}_") }).to be_truthy
+          expect(summary.keys).to be_all { |k| k.start_with?("#{account}_") }
           expect(summary.keys.size).to eq(2)
         end
       end
@@ -212,13 +213,14 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
       context "when it is an activity flow" do
         let(:activity_flow) { create(:activity_flow) }
+
         before do
           payroll_account.update!(flow: activity_flow)
         end
 
         it "returns all matching employments" do
           picked = argyle_report.send(:pick_employments, employments, account)
-          expect(picked).to match_array([ employment_early, employment_late ])
+          expect(picked).to contain_exactly(employment_early, employment_late)
         end
       end
 
