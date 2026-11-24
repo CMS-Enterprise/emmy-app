@@ -102,7 +102,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           argyle_report.fetch
 
           expect {
-            argyle_report.send(:pick_employment, argyle_report.employments, argyle_report.paystubs, account)
+            argyle_report.send(:pick_employment, argyle_report.employments, account)
           }.to raise_error(Aggregators::AggregatorReports::AggregatorReport::NoMatchingEmploymentError, /No employments found that match account_id/)
 
           # income_report should not crash and should return valid data
@@ -163,6 +163,51 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           summary = argyle_report.summarize_by_employer
           expect(summary[account][:employment].employer_name).to eq("Aramark")
         end
+      end
+    end
+
+    describe "#pick_employments" do
+      let(:argyle_report) do
+        Aggregators::AggregatorReports::ArgyleReport.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+      end
+
+      let(:emp1) { { account_id: account, employment_matching_id: 'emp1', start_date: '2020-01-01', termination_date: nil } }
+      let(:emp2) { { account_id: account, employment_matching_id: 'emp2', start_date: '2021-01-01', termination_date: nil } }
+      let(:employments) { [emp1, emp2] }
+
+      before do
+        # Use allow_any_instance_of or just pass them to the method since it's private but we use send
+        argyle_report.instance_variable_set(:@paystubs, [])
+      end
+
+      it "picks the employment with the latest date (start_date)" do
+        picked = argyle_report.send(:pick_employments, employments, account)
+        expect(picked).to eq([emp2])
+      end
+
+      it "picks the employment with the latest paystub date" do
+        paystub1 = { employment_id: 'emp1', pay_date: '2022-01-01' }
+        argyle_report.instance_variable_set(:@paystubs, [paystub1])
+
+        picked = argyle_report.send(:pick_employments, employments, account)
+        expect(picked).to eq([emp1])
+      end
+
+      it "handles nil dates by defaulting to an early date" do
+        emp3 = { account_id: account, employment_matching_id: 'emp3', start_date: nil, termination_date: nil }
+        picked = argyle_report.send(:pick_employments, [emp3], account)
+        expect(picked).to eq([emp3])
+      end
+
+      it "raises NoMatchingEmploymentError if no employments match account_id" do
+        expect {
+          argyle_report.send(:pick_employments, employments, 'other-account')
+        }.to raise_error(Aggregators::AggregatorReports::AggregatorReport::NoMatchingEmploymentError)
       end
     end
   end

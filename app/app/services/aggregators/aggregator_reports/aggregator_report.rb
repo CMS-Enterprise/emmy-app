@@ -58,9 +58,9 @@ module Aggregators::AggregatorReports
       find_account_reports(account_id).first
     end
     def find_account_reports(account_id)
-      relevant_employments = pick_employments(@employments, account_id)
-
-      if relevant_employments.empty?
+      begin
+        relevant_employments = pick_employments(@employments, account_id)
+      rescue NoMatchingEmploymentError
         Rails.logger.warn("Skipping account #{account_id}: No relevant employments found")
         return []
       end
@@ -231,7 +231,7 @@ module Aggregators::AggregatorReports
 
     def fetched_days_for_account(account_id)
       begin
-        account_employment = pick_employment(@employments, @paystubs, account_id)
+        account_employment = pick_employment(@employments, account_id)
       rescue NoMatchingEmploymentError => e
         return @fetched_days
       end
@@ -270,20 +270,22 @@ module Aggregators::AggregatorReports
 
       # Pick the employment with the latest update when considering the start_date,
       # terminated_at, and any related paystub's pay_date properties.
-      relevant_employments
-    end
-
-    def pick_employment(employments, paystubs, account_id)
-      pick_employments(employments, account_id).max_by do |emp|
-        relevant_paystubs = paystubs.select { |p| p[:employment_id] == emp.employment_matching_id }
+      chosen = relevant_employments.max_by do |emp|
+        relevant_paystubs = @paystubs.select { |p| p[:employment_id] == (emp.respond_to?(:employment_matching_id) ? emp.employment_matching_id : emp[:employment_matching_id]) }
         all_dates = [
-                      emp[:start_date],
-                      emp[:termination_date]
+                      emp.respond_to?(:start_date) ? emp.start_date : emp[:start_date],
+                      emp.respond_to?(:termination_date) ? emp.termination_date : emp[:termination_date]
                     ] + relevant_paystubs.map { |p| p[:pay_date] }
 
         # In case an employment has no non-nil dates, default to something really early.
         all_dates.compact.max || "1900-01-01"
       end
+
+      [chosen]
+    end
+
+    def pick_employment(employments, account_id)
+      pick_employments(employments, account_id).first
     end
   end
 end
