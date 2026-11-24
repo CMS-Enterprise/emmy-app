@@ -57,6 +57,7 @@ module Aggregators::AggregatorReports
     def find_account_report(account_id)
       find_account_reports(account_id).first
     end
+
     def find_account_reports(account_id)
       begin
         relevant_employments = pick_employments(@employments, account_id)
@@ -281,7 +282,7 @@ module Aggregators::AggregatorReports
         all_dates.compact.max || "1900-01-01"
       end
 
-      [chosen]
+      [ chosen ]
     end
 
     def pick_employment(employments, account_id)

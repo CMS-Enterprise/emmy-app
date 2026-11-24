@@ -178,7 +178,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
       let(:emp1) { { account_id: account, employment_matching_id: 'emp1', start_date: '2020-01-01', termination_date: nil } }
       let(:emp2) { { account_id: account, employment_matching_id: 'emp2', start_date: '2021-01-01', termination_date: nil } }
-      let(:employments) { [emp1, emp2] }
+      let(:employments) { [ emp1, emp2 ] }
 
       before do
         # Use allow_any_instance_of or just pass them to the method since it's private but we use send
@@ -187,21 +187,21 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
       it "picks the employment with the latest date (start_date)" do
         picked = argyle_report.send(:pick_employments, employments, account)
-        expect(picked).to eq([emp2])
+        expect(picked).to eq([ emp2 ])
       end
 
       it "picks the employment with the latest paystub date" do
         paystub1 = { employment_id: 'emp1', pay_date: '2022-01-01' }
-        argyle_report.instance_variable_set(:@paystubs, [paystub1])
+        argyle_report.instance_variable_set(:@paystubs, [ paystub1 ])
 
         picked = argyle_report.send(:pick_employments, employments, account)
-        expect(picked).to eq([emp1])
+        expect(picked).to eq([ emp1 ])
       end
 
       it "handles nil dates by defaulting to an early date" do
         emp3 = { account_id: account, employment_matching_id: 'emp3', start_date: nil, termination_date: nil }
-        picked = argyle_report.send(:pick_employments, [emp3], account)
-        expect(picked).to eq([emp3])
+        picked = argyle_report.send(:pick_employments, [ emp3 ], account)
+        expect(picked).to eq([ emp3 ])
       end
 
       it "raises NoMatchingEmploymentError if no employments match account_id" do

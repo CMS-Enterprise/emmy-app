@@ -4,7 +4,7 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
   belongs_to :activity_flow
   belongs_to :payroll_account
 
-  validates :activity_flow_id, uniqueness: { scope: [:payroll_account_id, :employer_id] }
+  validates :activity_flow_id, uniqueness: { scope: [ :payroll_account_id, :employer_id ] }
 
   has_redactable_fields(
     employer_name: :string,
