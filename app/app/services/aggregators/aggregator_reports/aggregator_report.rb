@@ -53,25 +53,33 @@ module Aggregators::AggregatorReports
       @has_fetched = all_successful
     end
 
-    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs)
+    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs, :employment_matching_id)
     def find_account_report(account_id)
-      begin
-        account_employment = pick_employment(@employments, @paystubs, account_id)
-      rescue NoMatchingEmploymentError => e
-        Rails.logger.warn("Skipping account #{account_id}: #{e.message}")
-        return
-      end
-      employment_filter = employment_filter_for(account_id, account_employment&.employment_matching_id)
+      find_account_reports(account_id).first
+    end
+    def find_account_reports(account_id)
+      relevant_employments = pick_employments(@employments, account_id)
 
-      # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
-      # incomes or identities at this time. We just take the first.
-      AccountReportStruct.new(
-        @identities.filter(&employment_filter).first,
-        @incomes.filter(&employment_filter).first,
-        account_employment,
-        @paystubs.filter(&employment_filter),
-        @gigs.find_all { |gig| gig.account_id == account_id }
-      )
+      if relevant_employments.empty?
+        Rails.logger.warn("Skipping account #{account_id}: No relevant employments found")
+        return []
+      end
+
+      relevant_employments.map do |employment|
+        employment_matching_id = employment&.employment_matching_id
+        employment_filter = employment_filter_for(account_id, employment_matching_id)
+
+        # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
+        # incomes or identities at this time. We just take the first.
+        AccountReportStruct.new(
+          @identities.filter(&employment_filter).first,
+          @incomes.filter(&employment_filter).first,
+          employment,
+          @paystubs.filter(&employment_filter),
+          @gigs.find_all { |gig| gig.account_id == account_id },
+          employment_matching_id
+        )
+      end
     end
 
     def income_report
@@ -250,7 +258,7 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def pick_employment(employments, paystubs, account_id)
+    def pick_employments(employments, account_id)
       # In Argyle, the employments endpoint can return more than one employment.
       # This method chooses the employment we want to use. Later, we must filter related
       # data sets to make sure we're only using ones that match the employment ID we chose here.
@@ -262,13 +270,16 @@ module Aggregators::AggregatorReports
 
       # Pick the employment with the latest update when considering the start_date,
       # terminated_at, and any related paystub's pay_date properties.
-      relevant_employments.max_by do |emp|
-        relevant_paystubs = paystubs.select { |p| p[:employment_id] == emp.employment_matching_id }
+      relevant_employments
+    end
 
+    def pick_employment(employments, paystubs, account_id)
+      pick_employments(employments, account_id).max_by do |emp|
+        relevant_paystubs = paystubs.select { |p| p[:employment_id] == emp.employment_matching_id }
         all_dates = [
-          emp[:start_date],
-          emp[:termination_date]
-        ] + relevant_paystubs.map { |p| p[:pay_date] }
+                      emp[:start_date],
+                      emp[:termination_date]
+                    ] + relevant_paystubs.map { |p| p[:pay_date] }
 
         # In case an employment has no non-nil dates, default to something really early.
         all_dates.compact.max || "1900-01-01"

@@ -151,6 +151,10 @@ class ActivityFlow < Flow
     ActivityFlowMonthlySummary.by_account_with_fallback(activity_flow: self)
   end
 
+  def monthly_summaries_by_account_employer_with_fallback
+    ActivityFlowMonthlySummary.by_account_employer_with_fallback(activity_flow: self)
+  end
+
   def employment_summaries_by_account_with_fallback
     ActivityFlowEmploymentSummary.by_account_with_fallback(activity_flow: self)
   end
