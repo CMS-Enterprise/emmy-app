@@ -7,6 +7,26 @@ All notable changes to Emmy App are documented here. Each entry is classified
 MAJOR entries mean states should expect to update training materials or
 integrations, and are accompanied by a notification.
 
+## 0.20.0
+
+### User facing changes to Emmy Income + Emmy CE
+- No ticket: Improve CE variant selection in launcher [(#125)](https://github.com/CMS-Enterprise/emmy-app/pull/125) - Jake Wheeler
+- Add helper text to job details pages for Emmy Employment flows [(#115)](https://github.com/CMS-Enterprise/emmy-app/pull/115) - Jake Wheeler [[FFS-4970]](https://jiraent.cms.gov/browse/FFS-4970)
+
+### Emmy Income only user facing changes
+- No changes, nothing to review!
+
+### Emmy CE only user facing changes
+- Add enrollment details sub-header and display all term-related information in term details table [(#120)](https://github.com/CMS-Enterprise/emmy-app/pull/120) - krista-skylight [[FFS-5105]](https://jiraent.cms.gov/browse/FFS-5105)
+- Display "Enrolled" with certification date and self-attested labels in term details table for enrollment status Y [(#121)](https://github.com/CMS-Enterprise/emmy-app/pull/121) - krista-skylight [[FFS-5104]](https://jiraent.cms.gov/browse/FFS-5104)
+
+### Other/Maintenance (Not user facing)
+- Bump puppeteer, view_component, aws-sdk-s3, webmock, datadog, net-ssh, jsdom, vitest, postcss, autoprefixer, actions/setup-java
+- fix: patch Ruby/JS dependencies for CVEs flagged by bundler-audit/npm audit [(#108)](https://github.com/CMS-Enterprise/emmy-app/pull/108) - github-actions[bot]
+- fix: refresh container OS and Node security updates [(#99)](https://github.com/CMS-Enterprise/emmy-app/pull/99) - github-actions[bot]
+- tweak prior query to optimize [(#126)](https://github.com/CMS-Enterprise/emmy-app/pull/126) - iannorriswork [[FFS-5117]](https://jiraent.cms.gov/browse/FFS-5117)
+- tweak to accommodate all employment cases not just one [(#123)](https://github.com/CMS-Enterprise/emmy-app/pull/123) - iannorriswork [[FFS-4969]](https://jiraent.cms.gov/browse/FFS-4969)
+
 ## 0.19.0
 
 ### Emmy Income only user facing changes
