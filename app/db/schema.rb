@@ -62,7 +62,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_23_222041) do
     t.string "employer_id"
     t.boolean "selected", default: true, null: false
     t.index ["activity_flow_id", "payroll_account_id", "employer_id"], name: "index_activity_flow_employment_summaries_on_flow_acc_emp", unique: true
-    t.index ["activity_flow_id", "payroll_account_id"], name: "index_activity_flow_employment_summaries_on_flow_account", unique: true
     t.index ["activity_flow_id"], name: "index_activity_flow_employment_summaries_on_activity_flow_id"
     t.index ["payroll_account_id"], name: "index_activity_flow_employment_summaries_on_payroll_account_id"
   end
