@@ -19,7 +19,7 @@ ARG RUBY_VERSION=3.4.13
 ##########################################################################################
 # BASE: Shared base docker image
 ##########################################################################################
-FROM registry.docker.com/library/node:24.22.1-bookworm-slim AS node-runtime
+FROM registry.docker.com/library/node:24.22.3-bookworm-slim AS node-runtime
 
 FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
@@ -38,9 +38,33 @@ COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
+      krb5-multidev \
+      libc-bin \
+      libc-dev-bin \
+      libc6 \
+      libc6-dev \
+      libfreetype-dev \
+      libfreetype6 \
+      libgpgme11t64 \
+      libgssapi-krb5-2 \
+      libgssrpc4t64 \
+      libk5crypto3 \
+      libkadm5clnt-mit12 \
+      libkadm5srv-mit12 \
+      libkdb5-10t64 \
+      libkrb5-3 \
+      libkrb5-dev \
+      libkrb5support0 \
+      libmariadb-dev \
+      libmariadb-dev-compat \
+      libmariadb3 \
+      libnghttp2-14 \
+      libnghttp2-dev \
       libopenexr-3-1-30 \
       libopenexr-dev \
       linux-libc-dev \
+      mariadb-common \
+      patch \
       zlib1g \
       zlib1g-dev \
     && \
@@ -157,19 +181,11 @@ ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
 # Install packages needed for deployment
-# Keep libvips unpinned so this stage preserves security updates from BASE.
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.4.9 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
+# Keep packages unpinned so this stage preserves security updates from BASE.
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-        libgpgme11t64=1.24.2-3 \
+        libgpgme11t64 \
         libvips42t64 \
         postgresql-client-17 \
         && \
