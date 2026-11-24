@@ -39,6 +39,8 @@ RSpec.describe Transmitters::JsonTransmitter do
   describe "#payload" do
     let(:schema_path) { Rails.root.join("spec/fixtures/income-report-2026-06-18.json") }
     let(:schema) { JSON.parse(schema_path.read) }
+    let(:transmitter) { described_class.new(cbv_flow, mock_client_agency, schema_report) }
+    let(:payload) { JSON.parse(transmitter.payload) }
     let(:schema_report) { build(:pinwheel_report, :hydrated, :with_pinwheel_account) }
 
     before do
@@ -61,6 +63,35 @@ RSpec.describe Transmitters::JsonTransmitter do
       expect(payload["agency_partner_metadata"]).not_to have_key("individual_id")
     end
 
+    it "rejects undocumented fields in the report and nested income records" do
+      validator = JSONSchemer.schema(schema)
+      expect(validator.validate(payload).to_a).to be_empty
+      paths = [ [], [ "income_report" ], [ "income_report", "employments", 0 ],
+        [ "income_report", "employments", 0, "paystubs", 0 ] ]
+
+      paths.each do |path|
+        invalid_payload = payload.deep_dup
+        object = path.empty? ? invalid_payload : invalid_payload.dig(*path)
+        object["undocumented"] = true
+
+        expect(validator.valid?(invalid_payload)).to be(false), path.inspect
+      end
+    end
+
+    it "rejects extra deduction and gross-pay fields without changing valid records" do
+      paystub_schema = schema.dig("properties", "income_report", "properties", "employments", "items", "properties", "paystubs", "items")
+      records = {
+        "deductions" => { "category" => nil, "tax" => "unknown", "amount" => nil },
+        "gross_pay_list" => { "type" => "base", "amount" => 12345 }
+      }
+
+      records.each do |field, record|
+        validator = JSONSchemer.schema(paystub_schema.dig("properties", field, "items"))
+        expect(validator.validate(record).to_a).to be_empty
+        expect(validator.valid?(record.merge("undocumented" => true))).to be(false), field
+      end
+    end
+
     it "matches the legacy income report contract" do
       expect(JSONSchemer.validate_schema(schema).to_a).to be_empty
       payload = JSON.parse(described_class.new(cbv_flow, mock_client_agency, schema_report).payload)
@@ -69,6 +100,31 @@ RSpec.describe Transmitters::JsonTransmitter do
       end
 
       expect(errors).to eq([])
+      expect(payload).not_to have_key("report_pdf")
+    end
+
+    context "when the report PDF is included" do
+      let(:income_transmission_method_configuration) { super().merge("include_report_pdf" => true) }
+      let(:pdf_content) { "synthetic PDF content" }
+      let(:pdf_output) { instance_double(PdfService::PdfGenerationResult, content: pdf_content) }
+      let(:validator) { JSONSchemer.schema(schema) }
+
+      before do
+        allow(transmitter).to receive(:pdf_output).and_return(pdf_output)
+      end
+
+      it "accepts the transmitter's Base64-encoded report PDF" do
+        expect(Base64.strict_decode64(payload.fetch("report_pdf"))).to eq(pdf_content)
+        expect(validator.validate(payload).to_a).to be_empty
+      end
+
+      it "rejects a non-string report PDF" do
+        expect(validator.valid?(payload.merge("report_pdf" => 123))).to be(false)
+      end
+
+      it "still rejects undocumented fields" do
+        expect(validator.valid?(payload.merge("undocumented" => true))).to be(false)
+      end
     end
   end
 

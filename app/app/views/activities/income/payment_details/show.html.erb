@@ -76,13 +76,21 @@
 <% end %>
 
 <div class="usa-form-group margin-top-5">
-  <h2><%= t(".additional_information_header") %></h2>
+  <h2><%= @flow.employment_focused? ? t("activities.employment.additional_comments_heading") : t(".additional_information_header") %></h2>
   <%= form_with(model: @payroll_account, scope: :payroll_account, url: @payment_details_path, method: :patch, class: "usa-form usa-form--large") do |form| %>
     <%= hidden_field_tag "user[account_id]", params[:user][:account_id] %>
 
-    <% additional_information_label = t(".additional_information_label", agency_acronym: agency_translation("shared.agency_acronym")) %>
-    <%= form.label :additional_information, additional_information_label, class: "usa-label" %>
-    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5 %>
+    <% if @flow.employment_focused? %>
+      <p id="employment-additional-information-hint">
+        <%= t("activities.employment.additional_comments_description", agency_initials: agency_translation("shared.agency_acronym")) %>
+      </p>
+      <%= form.label :additional_information, t(".additional_information_header"), class: "usa-label text-bold" %>
+    <% else %>
+      <% additional_information_label = t(".additional_information_label", agency_acronym: agency_translation("shared.agency_acronym")) %>
+      <%= form.label :additional_information, additional_information_label, class: "usa-label" %>
+    <% end %>
+    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5,
+        aria: { describedby: @flow.employment_focused? ? "employment-additional-information-hint" : nil } %>
     <%= form.submit t(".continue"), class: "usa-button usa-button--primary" %>
   <% end %>
 </div>

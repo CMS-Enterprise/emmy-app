@@ -90,7 +90,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
       expect(page).to have_text(education_activity.self_attested_enrollment_status_display)
       expect(page).to have_text(I18n.l(education_activity.self_attested_term_start, format: :month_year))
       expect(page).to have_text(I18n.l(education_activity.self_attested_term_end, format: :month_year))
-      expect(page).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(education_activity.credit_hours)}", normalize_ws: true)
+      expect(page).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours_self_attested')} #{ApplicationHelper.format_decimal_amount(education_activity.credit_hours)}", normalize_ws: true)
     end
     click_button I18n.t("activities.education.review.ce_explainer_title")
     expect(page).to have_text(I18n.t("activities.education.review.ce_explainer_body"))
@@ -117,13 +117,27 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     # --- Step 3: Edit from the hub card → review (no back button) → edit school info → review ---
     visit activities_flow_root_path
     within("[data-activity-type='education']") do
-      click_link I18n.t("activities.hub.edit")
+      edit_link = find("a.usa-link", text: I18n.t("activities.hub.edit"), exact_text: true)
+
+      expect(edit_link["aria-label"]).to eq(
+        I18n.t(
+          "activities.hub.edit_activity",
+          activity_type: I18n.t("activities.education.title"),
+          activity_name: "University of Illinois"
+        )
+      )
+
+      edit_link.click
     end
     verify_page(page, title: I18n.t("activities.education.review.title", school_name: "University of Illinois"))
     expect(page).to have_button I18n.t("activities.hub.save")
 
     # Edit school info from review
     within(".activity-review-edit-header", text: I18n.t("activities.education.review.school_info")) do
+      edit_link = find("a.usa-link", text: I18n.t("activities.hub.edit"), exact_text: true)
+      expect(edit_link["aria-label"]).to eq(
+        I18n.t("activities.education.review.edit_school_information", school_name: "University of Illinois")
+      )
       click_link I18n.t("activities.hub.edit")
     end
     verify_page(page, title: I18n.t("activities.education.new.edit_title"))
@@ -136,7 +150,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     expect(page).to have_content "601 E John St, Champaign, IL"
 
     # Edit the term from review
-    within(".activity-review-edit-header", text: I18n.t("activities.summary.education.term_details")) do
+    within(".activity-review-edit-header", text: I18n.t("activities.education.review.additional_details")) do
       click_link I18n.t("activities.hub.edit")
     end
     verify_page(page, title: I18n.t("activities.education.add_your_term.edit.title", school_name: "Updated University of Illinois"))
@@ -146,7 +160,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
 
     verify_page(page, title: I18n.t("activities.education.review.title", school_name: "Updated University of Illinois"))
     expect(education_activity.reload.credit_hours).to eq(6)
-    expect(page).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(education_activity.credit_hours)}", normalize_ws: true)
+    expect(page).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours_self_attested')} #{ApplicationHelper.format_decimal_amount(education_activity.credit_hours)}", normalize_ws: true)
 
     # --- Step 4: Save and return to the hub ---
     click_button I18n.t("activities.hub.save")

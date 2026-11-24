@@ -34,6 +34,14 @@ RSpec.describe Activities::EmploymentController, type: :controller do
         end
       end
 
+      it "omits unpaid-work help when entering in-kind employment" do
+        get :new, params: { compensation_type: "unpaid_or_in_kind" }
+
+        rendered = Capybara.string(response.body)
+        expect(rendered).to have_text(I18n.t("activities.employment_info.title"))
+        expect(rendered).to have_no_button(I18n.t("activities.employment_info.unpaid_or_in_kind.accordion.title"))
+      end
+
       it "bolds the unpaid_or_in_kind field labels and preserves the employer name requirement" do
         get :new, params: { compensation_type: "unpaid_or_in_kind" }
 
@@ -85,6 +93,12 @@ RSpec.describe Activities::EmploymentController, type: :controller do
       get :new
 
       expect(response.body).to include(I18n.t("activities.employment_info.employer_name"))
+    end
+
+    it "omits the unpaid work accordion for paid work" do
+      get :new, params: { compensation_type: "paid" }
+
+      expect(Capybara.string(response.body)).to have_no_selector("#unpaid-or-in-kind-work-button")
     end
 
     it "associates the self-employed instructions with their fields" do
@@ -561,6 +575,17 @@ RSpec.describe Activities::EmploymentController, type: :controller do
     context "with an employment-focused flow" do
       before { activity_flow.update!(employment_focused: true) }
 
+      it "shows the hint above the comments field for Employment-focused flows" do
+        get :review, params: { id: employment_activity.id }
+
+        rendered = Capybara.string(response.body)
+        expect(rendered).to have_selector("h2", text: "Have anything else to share?", exact_text: true)
+        expect(rendered).to have_field("Additional comments (optional)")
+        expect(rendered).to have_selector('h2 + p#employment-additional-comments-hint',
+          text: I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
+        expect(rendered).to have_selector('p#employment-additional-comments-hint + label.text-bold + textarea[aria-describedby="employment-additional-comments-hint"]')
+      end
+
       it "shows the employer and agency comment prompt with a blank line between them" do
         get :review, params: { id: employment_activity.id }
 
@@ -581,6 +606,12 @@ RSpec.describe Activities::EmploymentController, type: :controller do
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(employment_activity.employer_name)
+    end
+
+    it "omits the Employment-focused comments hint for Community Engagement" do
+      get :review, params: { id: employment_activity.id }
+
+      expect(Capybara.string(response.body)).to have_no_text(I18n.t("activities.employment.additional_comments_description", agency_initials: I18n.t("shared.agency_acronym.sandbox")))
     end
 
     it "displays employment activity months" do
@@ -608,6 +639,24 @@ RSpec.describe Activities::EmploymentController, type: :controller do
       expect(response.body).to include(
         edit_activities_flow_income_employment_month_path(employment_id: employment_activity, id: 0, from_review: 1)
       )
+    end
+
+    it "gives each month edit link a month-specific accessible name" do
+      get :review, params: { id: employment_activity.id }
+
+      month = employment_activity.employment_activity_months.order(:month).first.month
+      edit_path = edit_activities_flow_income_employment_month_path(
+        employment_id: employment_activity,
+        id: 0,
+        from_review: 1
+      )
+      expected_label = I18n.t("shared.edit_month", month: I18n.l(month, format: :month_year))
+
+      links = Capybara.string(response.body).all("a[href='#{edit_path}']")
+
+      expect(links.size).to eq(2)
+      expect(links).to all(have_text(I18n.t("activities.hub.edit")))
+      expect(links.map { |link| link["aria-label"] }).to all(eq(expected_label))
     end
 
     context "with selected months" do
@@ -690,6 +739,23 @@ RSpec.describe Activities::EmploymentController, type: :controller do
             agency_name: I18n.t("shared.agency_full_name.sandbox")
           )
         )
+      end
+
+      it "gives each month edit link a month-specific accessible name" do
+        first_month, _second_month, third_month = activity_flow.reporting_months
+        employment_activity.update!(selected_months: [ third_month, first_month ])
+
+        get :review, params: { id: employment_activity.id }
+
+        table = Capybara.string(response.body).find("table.activity-review-hours-table")
+        links = table.all("a.usa-link")
+        expected_labels = [ first_month, third_month ].map do |month|
+          I18n.t("shared.edit_month", month: I18n.l(month, format: :month_year))
+        end
+
+        expect(links.size).to eq(4)
+        expect(links.map { |link| link["aria-label"] }).to eq(expected_labels.flat_map { |label| [ label, label ] })
+        expect(links).to all(have_text(I18n.t("activities.hub.edit")))
       end
     end
 

@@ -57,7 +57,7 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
     end
 
     context "with a three-month reporting period" do
-      let(:activity_flow) { create(:activity_flow, reporting_window_months: 3) }
+      let(:activity_flow) { create(:activity_flow, reporting_window_months: 3, employment_focused: true) }
 
       it "renders the reporting period beneath the header" do
         get :show
@@ -69,6 +69,22 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
           text: "#{reporting_period_label} #{activity_flow.reporting_window_display}",
           normalize_ws: true
         )
+      end
+
+      it "renders the seasonal job accordion" do
+        get :show
+
+        expect(response.body).to include(I18n.t("activities.employment.add_your_work.show.seasonal_job_accordion.title"))
+      end
+    end
+
+    context "with a twelve-month reporting period" do
+      let(:activity_flow) { create(:activity_flow, reporting_window_months: 12, employment_focused: true) }
+
+      it "does not render the seasonal job accordion" do
+        get :show
+
+        expect(response.body).not_to include(I18n.t("activities.employment.add_your_work.show.seasonal_job_accordion.title"))
       end
     end
 
@@ -125,7 +141,9 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
         get :show
 
         rendered = Capybara.string(response.body)
-        expect(rendered).to have_selector("label .text-bold", text: "Enter in-kind work", exact_text: true)
+        expect(rendered).to have_selector("label .text-bold", text: I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.label"), exact_text: true)
+        expect(rendered).to have_text(I18n.t("activities.employment.add_your_work.show.employment_focused.options.unpaid.hint"))
+        expect(rendered).to have_no_text(I18n.t("activities.employment.add_your_work.show.options.unpaid.hint"))
         expect(rendered).to have_no_text("Enter unpaid or in-kind work")
       end
 
@@ -172,8 +190,14 @@ RSpec.describe Activities::Employment::AddYourWorkController, type: :controller 
     context "with an employment-focused flow" do
       let(:activity_flow) { create(:activity_flow, employment_focused: true) }
 
-      it "routes in-kind work to manual income and hours entry" do
+      it "preserves the in-kind compensation type for manual entry" do
         post :create, params: { add_work_method: "enter_unpaid_manually" }
+
+        expect(response).to redirect_to(new_activities_flow_income_employment_path(compensation_type: "unpaid_or_in_kind"))
+      end
+
+      it "preserves the paid compensation type for manual entry" do
+        post :create, params: { add_work_method: "enter_paid_manually" }
 
         expect(response).to redirect_to(new_activities_flow_income_employment_path(compensation_type: "paid"))
       end

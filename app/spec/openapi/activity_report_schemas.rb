@@ -1,4 +1,5 @@
 require_relative "invitation_documentation"
+require_relative "report_metadata_schemas"
 
 module ActivityReportSchemas
   def self.schemas
@@ -36,10 +37,7 @@ module ActivityReportSchemas
         confirmation_code: { type: :string, description: "Unique code assigned when the report was completed, shared with the applicant and used to debug report processing errors." },
         completed_at: { type: :string, format: :"date-time", description: "UTC time the applicant completed the report, in ISO 8601 format." },
         agency_partner_metadata: {
-          anyOf: [
-            ref("AgencyPartnerMetadata"),
-            ref("AgencyPartnerMetadataV2")
-          ],
+          "$ref" => "#/components/schemas/ReportAgencyPartnerMetadata",
           description: "Agency-specific fields used to associate the report with the correct case. The accepted fields depend on the agency and invitation version."
         },
       ce_report: { "$ref" => "#/components/schemas/CeReport", description: "Community engagement report containing the review period, document metadata, and activities." }
@@ -101,9 +99,9 @@ module ActivityReportSchemas
         data_source: { type: :string, enum: %w[self_attested] },
         employer_name: { type: :string, description: "Name of the employer or business." },
         employer_address: nullable_string.merge(description: "Combined address, also supplied as individual address fields."),
-        employment_type: { type: :null, description: "Always null for self-attested employment. Populated only for Argyle-sourced employment." },
+        employment_type: nullable_enum(%w[paid in_kind]).merge(description: "Populated only for Emmy Employment reports: paid for paid work (including manual fallback), in_kind for in-kind work. Null for Community Engagement reports."),
         is_self_employed: { type: :boolean, description: "Whether the applicant marked the work as self-employment. Employer contact fields are null when true." },
-        gross_income: { type: %w[number null], minimum: 0, description: "Optional self-attested monthly gross income in dollars, including cents as a decimal. Null for unpaid or in-kind work because the applicant is not prompted to enter income." }
+        gross_income: { type: %w[number null], minimum: 0, description: "Optional self-attested monthly gross income in dollars, including cents as a decimal. Collected for paid work and Employment-focused in-kind work; not collected for hours-only Community Engagement entries." }
       )).merge(description: "Published self-attested work appears once per reported month, including months with zero hours or income. Draft activities are excluded. Includes address components, applicant comments, monthly hours, and supporting document IDs. Employer contact details are null for self-employment."),
       CeValidatedEmploymentActivity: activity(%w[applicant_full_name employer_name paystubs], {
         type: { type: :string, enum: %w[employment] },
@@ -174,7 +172,7 @@ module ActivityReportSchemas
         type: { type: :string, enum: %w[base benefits bereavement bonus commission disability double_overtime employer_contribution fare holiday hourly life_insurance meal_comp medical other overtime parental premium pto retirement retro_pay salary shift_differential sick stock tips unpaid vacation] },
         amount: cents
       })
-    }
+    }.merge(ReportMetadataSchemas.schemas)
   end
 
   def self.object(required, properties, **options)
@@ -207,6 +205,7 @@ module ActivityReportSchemas
   def self.months(name)
     {
       type: :object,
+      additionalProperties: false,
       description: "Map of YYYY-MM calendar months to activity arrays. Months with no reported activity are omitted; no activities is an empty object.",
       patternProperties: { '^\d{4}-\d{2}$' => { type: :array, items: ref(name) } }
     }

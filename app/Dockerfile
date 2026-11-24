@@ -11,15 +11,18 @@
 #      * Remove manual security upgrades (if any)
 # 4. Ensure that docker build pasess:
 #      > make release-build OPTS="--tag iv-cbv-payroll:latest"
-# 5. Ensure that `wkhtmltopdf` runs:
-#      > docker run iv-cbv-payroll:latest bundle exec wkhtmltopdf --version
-ARG RUBY_VERSION=3.4.12
+# 5. Verify Chromium is available:
+#      > docker run --entrypoint chromium iv-cbv-payroll:latest --version
+ARG RUBY_VERSION=3.4.13
 
 
 ##########################################################################################
 # BASE: Shared base docker image
 ##########################################################################################
+FROM registry.docker.com/library/node:24.22.3-bookworm-slim AS node-runtime
+
 FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 
 # Upgrade packages in base image to address security issues.
 # We should be able to remove these after upgrading the base image to a version
@@ -35,13 +38,50 @@ FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
+      krb5-multidev \
+      libc-bin \
+      libc-dev-bin \
+      libc6 \
+      libc6-dev \
+      libfreetype-dev \
+      libfreetype6 \
+      libgpgme11t64 \
+      libgssapi-krb5-2 \
+      libgssrpc4t64 \
+      libk5crypto3 \
+      libkadm5clnt-mit12 \
+      libkadm5srv-mit12 \
+      libkdb5-10t64 \
+      libkrb5-3 \
+      libkrb5-dev \
+      libkrb5support0 \
+      libmariadb-dev \
+      libmariadb-dev-compat \
+      libmariadb3 \
+      libnghttp2-14 \
+      libnghttp2-dev \
       libopenexr-3-1-30 \
       libopenexr-dev \
       linux-libc-dev \
+      mariadb-common \
+      patch \
       zlib1g \
       zlib1g-dev \
     && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Grover needs Node and Chromium in development, CI images, and deployed workers.
+# Debian supplies Chromium for both amd64 and arm64; Puppeteer uses this binary.
+# hadolint ignore=DL3008
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends chromium fonts-liberation && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    GROVER_NO_SANDBOX=true \
+    XDG_CONFIG_HOME=/rails/tmp/chromium-config \
+    XDG_CACHE_HOME=/rails/tmp/chromium-cache
 
 # Rails app lives here
 WORKDIR /rails
@@ -76,18 +116,7 @@ RUN apt-get update -qq && \
 # Copy application code
 COPY . .
 
-# chromium is not available for arm64, this could be problematic when developing locally on an arm64 machine
-# and running tests that require puppeteer.
-# Set default value for PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# Detect architecture and skip the installation of chromium if the architecture is arm64
-# see https://github.com/puppeteer/puppeteer/issues/7740#issuecomment-1016083451
-RUN if [ "$(uname -m)" = "arm64" ]; then \
-      export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false; \
-    fi
-
-RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=$PUPPETEER_SKIP_CHROMIUM_DOWNLOAD npm install
+RUN npm ci
 
 ##########################################################################################
 # DEV: Used for development and test
@@ -152,24 +181,13 @@ ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
 # Install packages needed for deployment
-# Keep libvips unpinned so this stage preserves security updates from BASE.
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.4.9 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
+# Keep packages unpinned so this stage preserves security updates from BASE.
 # hadolint ignore=DL3008
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-        libgpgme11t64=1.24.2-3 \
+        libgpgme11t64 \
         libvips42t64 \
         postgresql-client-17 \
-        python-is-python3=3.13.3-1 \
-        python3-venv=3.13.5-1 \
-        python3-pip=25.1.1+dfsg-1 \
         && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -184,11 +202,6 @@ COPY --from=release-build /rails /rails
 # Clean up any unused gems and ensure we have the correct versions
 RUN bundle clean --force && \
     bundle install --no-cache
-
-# Pre-decompress the wkhtmltopdf binary so it doesn't need to happen at runtime
-# Prevents sporadic 500s on report generation, similar to known issue documented here:
-# https://github.com/zakird/wkhtmltopdf_binary_gem/issues/57
-RUN bundle exec wkhtmltopdf --version
 
 # Ensure all necessary directories exist
 RUN mkdir -p /rails/tmp/pids /rails/log /rails/db

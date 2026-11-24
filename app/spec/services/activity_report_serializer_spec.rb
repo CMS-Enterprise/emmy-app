@@ -348,6 +348,51 @@ RSpec.describe ActivityReportSerializer do
       expect(education_entries["2026-06"].sole).to include("contact_title" => nil)
     end
 
+    context "with a withdrawal following enrolled status in the same term" do
+      let(:education) { create(:education_activity, activity_flow: activity_flow, status: :succeeded) }
+
+      before do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education,
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month)
+        create(:nsc_enrollment_term, education_activity: education, enrollment_status: :withdrawn,
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month + 10.days)
+        education.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          education.nsc_enrollment_terms, reporting_months: activity_flow.reporting_months))
+      end
+
+      it "retains both current and historical statuses in the JSON report" do
+        expect(education_entries.fetch("2026-06").map { |entry| entry.fetch("enrollment_status") }).to contain_exactly("enrolled", "withdrawn")
+      end
+
+      it "exports validated NSC data without supplemental credit hours" do
+        expect(education_entries.fetch("2026-06")).to all(include("data_source" => "verified", "credit_hours" => nil))
+        expect(education_entries.fetch("2026-06").flat_map(&:keys)).not_to include("supplemental_enrollment_status")
+      end
+    end
+
+    context "with a newer withdrawal at another school" do
+      let(:education) { create(:education_activity, activity_flow: activity_flow, status: :succeeded) }
+
+      before do
+        create(:nsc_enrollment_term, :enrolled, education_activity: education, school_name: "Current College",
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month,
+          supplemental_enrollment_status: "less_than_half_time", credit_hours: 3)
+        create(:nsc_enrollment_term, education_activity: education, enrollment_status: :withdrawn, school_name: "Former College",
+          term_begin: first_month, term_end: first_month.end_of_month, school_certified_on: first_month + 10.days)
+        education.update!(data_source: EducationActivity.data_source_from_nsc_results(
+          education.nsc_enrollment_terms, reporting_months: activity_flow.reporting_months))
+      end
+
+      it "exports the independent enrollment's supplemental details and the withdrawal" do
+        expect(education_entries.fetch("2026-06")).to contain_exactly(
+          include("school_name" => "Current College", "enrollment_status" => "enrolled",
+            "supplemental_enrollment_status" => "less_than_half_time", "credit_hours" => 3.0,
+            "data_source" => "verified_enrollment_only"),
+          include("school_name" => "Former College", "enrollment_status" => "withdrawn", "credit_hours" => nil)
+        )
+      end
+    end
+
     it "reports verified NSC terms in each overlapping reporting month" do
       education = create(
         :education_activity,
@@ -650,7 +695,7 @@ RSpec.describe ActivityReportSerializer do
       expect(employment_months["2026-07"].sole).to include(
         "type" => "employment", "month" => "2026-07", "data_source" => "self_attested",
         "employer_name" => "Gainesville Wrecking", "is_self_employed" => false,
-        "employer_address" => "942 W Harlan Ave, Gainesville, FL 32611", "employment_type" => nil,
+        "employer_address" => "942 W Harlan Ave, Gainesville, FL 32611", "employment_type" => "paid",
         "hours" => 12.75, "gross_income" => 123.45, "additional_comments" => "Seasonal work",
         "document_ids" => [ "DOC-#{document.id}" ]
       )
@@ -658,7 +703,7 @@ RSpec.describe ActivityReportSerializer do
       expect(report.dig("ce_report", "documents").sole["document_id"]).to eq("DOC-#{document.id}")
     end
 
-    it "includes self-employed and unpaid work with null employment types" do
+    it "classifies self-employed paid work and in-kind work" do
       self_employed = create(:employment_activity, activity_flow: activity_flow, is_self_employed: true)
       unpaid = create(:employment_activity, activity_flow: activity_flow, compensation_type: :unpaid_or_in_kind)
       [ self_employed, unpaid ].each do |employment|
@@ -666,10 +711,38 @@ RSpec.describe ActivityReportSerializer do
       end
 
       expect(employment_months["2026-06"].first).to include(
-        "employment_type" => nil, "is_self_employed" => true,
+        "employment_type" => "paid", "is_self_employed" => true,
         "contact_name" => nil, "contact_email" => nil, "contact_phone_number" => nil
       )
-      expect(employment_months["2026-06"].last).to include("employment_type" => nil, "is_self_employed" => false, "gross_income" => 0.0)
+      expect(employment_months["2026-06"].last).to include("employment_type" => "in_kind", "is_self_employed" => false, "gross_income" => 0.0)
+    end
+
+    context "with manual fallback after an unsuccessful payroll connection" do
+      let(:employment) { create(:employment_activity, activity_flow: activity_flow) }
+
+      before do
+        create(:payroll_account, flow: activity_flow, synchronization_status: :failed)
+        create(:employment_activity_month, employment_activity: employment, month: first_month)
+      end
+
+      it "reports the default compensation type as paid" do
+        expect(employment_months.fetch("2026-06").sole).to include("employment_type" => "paid")
+      end
+    end
+
+    context "with a Community Engagement flow" do
+      let(:employment_focused) { false }
+      let!(:paid) { create(:employment_activity, activity_flow: activity_flow, compensation_type: :paid) }
+      let!(:unpaid) { create(:employment_activity, activity_flow: activity_flow, compensation_type: :unpaid_or_in_kind) }
+
+      before do
+        create(:employment_activity_month, employment_activity: paid, month: first_month)
+        create(:employment_activity_month, employment_activity: unpaid, month: first_month)
+      end
+
+      it "keeps both self-attested employment types null" do
+        expect(employment_months.fetch("2026-06").map { |entry| entry.fetch("employment_type") }).to eq([ nil, nil ])
+      end
     end
 
     it "excludes drafts and does not fetch unsuccessful or unpublished payroll connections" do
@@ -749,6 +822,16 @@ RSpec.describe ActivityReportSerializer do
         expect(entries.map { |entry| entry["employer_name"] }).to eq([ "Cool Company", "Argyle Test Corp." ])
         expect(entries.map { |entry| entry["employment_type"] }).to eq([ nil, "w2" ])
         expect(entries.map { |entry| entry["paystubs"].sole["pay_date"] }).to eq(%w[2026-07-01 2026-07-02])
+      end
+
+      it "preserves Argyle gig classification alongside Pinwheel null" do
+        account = create(:payroll_account, :argyle_fully_synced, flow: activity_flow, aggregator_account_id: "argyle_report1")
+        gig_report = build(:argyle_report, payroll_accounts: [ account ], has_fetched: true)
+        gig_report.employments.first.employment_type = :gig
+        gig_report.paystubs.first.pay_date = "2026-07-02"
+        allow(fetcher).to receive(:report_for_payroll_account).with(account).and_return(gig_report)
+
+        expect(employment_months.fetch("2026-07").map { |entry| entry.fetch("employment_type") }).to eq([ nil, "gig" ])
       end
 
       it "omits payroll employers with no payments in the reporting period" do

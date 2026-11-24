@@ -69,18 +69,17 @@ RSpec.describe LauncherController, type: :controller do
         expect(rendered).to have_text(I18n.t("#{copy_scope}.description"))
       end
 
-      it "lists the five input records and which ones should remain" do
-        rows = details.all("tbody tr", visible: :all).map { |row| row.text(:all).squish }
-        full_time = I18n.t("components.enrollment_term_table_component.status.full_time")
-        keep = I18n.t("#{copy_scope}.keep")
+      it "lists six input records across two terms with their deduplication results" do
+        rows = details.all("tbody tr", visible: :all)
 
-        expect(rows).to eq([
-          "#{I18n.t("#{copy_scope}.withdrawn")} (W) #{I18n.t("#{copy_scope}.certified_after_start", count: 2)} #{keep}",
-          "#{full_time} (F) #{I18n.t("#{copy_scope}.certified_after_start", count: 1)} #{keep}",
-          "#{full_time} (F) #{I18n.t("#{copy_scope}.certified_after_start", count: 0)} #{I18n.t("#{copy_scope}.remove")}",
-          "#{I18n.t("#{copy_scope}.withdrawn")} (S) #{I18n.t("#{copy_scope}.certified_after_start", count: 1)} #{I18n.t("#{copy_scope}.remove")}",
-          "#{I18n.t("components.enrollment_term_table_component.status.leave_of_absence")} (A) #{I18n.t("#{copy_scope}.certified_after_start", count: 2)} #{keep}"
-        ])
+        expect(rows.size).to eq(6)
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.earlier_reporting_term"), count: 2)
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.later_reporting_term"), count: 4)
+        expect(details.find("table", visible: :all)).to have_text(:all, "(Y)", count: 3)
+        expect(details).to have_text(:all, "(W)")
+        expect(details).to have_text(:all, "(S)")
+        expect(details).to have_text(:all, "(A)")
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.remove"), count: 2)
       end
 
       it "provides collapsed instructions for the browser check and its limit" do
@@ -88,11 +87,9 @@ RSpec.describe LauncherController, type: :controller do
         expect(details).to have_text(:all, I18n.t("#{copy_scope}.records", school_name: profile.terms.first.fetch(:school_name)))
         expect(details).to have_text(:all, I18n.t("#{copy_scope}.browser_check",
           school_name: profile.terms.first.fetch(:school_name),
-          full_time_status: I18n.t("components.enrollment_term_table_component.status.full_time"),
           withdrawn_status: I18n.t("components.enrollment_term_table_component.status.withdrawn"),
           leave_of_absence_status: I18n.t("components.enrollment_term_table_component.status.leave_of_absence")))
-        expect(details).to have_text(:all, I18n.t("#{copy_scope}.certification_check",
-          full_time_status: I18n.t("components.enrollment_term_table_component.status.full_time")))
+        expect(details).to have_text(:all, I18n.t("#{copy_scope}.certification_check"))
       end
     end
 
@@ -746,6 +743,126 @@ RSpec.describe LauncherController, type: :controller do
 
       expect(response).to have_http_status(:success)
       expect(ActivityFlowInvitation.last.employment_focused).to be(false)
+    end
+  end
+
+  context "with a CE flow variant radio selection" do
+    let(:variant) { "standard" }
+    let(:launch_params) do
+      { flow_type: "activity", client_agency_id: "sandbox", launch_type: "tokenized", ce_flow_variant: variant }
+    end
+
+    it "creates standard CE without either flag" do
+      post :create, params: launch_params, format: :json
+
+      expect(response).to be_successful
+      expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: false)
+    end
+
+    context "with Employment-focused selected" do
+      let(:variant) { "employment_focused" }
+
+      it "sets only the Employment-focused flag" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: true, unpaid_work_only: false)
+      end
+    end
+
+    context "with unpaid work selected" do
+      let(:variant) { "unpaid_work_only" }
+
+      it "sets only the unpaid-work-only flag" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: true)
+      end
+    end
+
+    context "with multiple selections" do
+      let(:variant) { %w[standard employment_focused] }
+
+      it "rejects the request with the single-option error" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+
+    context "with an invalid selection" do
+      let(:variant) { "invalid" }
+
+      it "rejects the request before creating an invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+  end
+
+  context "when flow_type is omitted" do
+    let(:launch_params) { { client_agency_id: "sandbox", launch_type: "tokenized" } }
+
+    context "with conflicting legacy flags" do
+      let(:launch_params) { super().merge(employment_focused: "true", unpaid_work_only: "true") }
+
+      it "rejects the request before creating an activity invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+
+    context "with an invalid CE flow variant" do
+      let(:launch_params) { super().merge(ce_flow_variant: "invalid") }
+
+      it "rejects the request before creating an activity invitation" do
+        expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+      end
+    end
+  end
+
+  context "with incompatible activity flow options" do
+    let(:launch_params) do
+      { flow_type: "activity", client_agency_id: "sandbox", launch_type: "tokenized",
+        employment_focused: "true", unpaid_work_only: "true" }
+    end
+
+    it "rejects JSON requests before creating an invitation" do
+      expect { post :create, params: launch_params, format: :json }.not_to change(ActivityFlowInvitation, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to eq("error" => I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+    end
+
+    it "rejects nested launcher parameters" do
+      post :create, params: { launcher: launch_params }, format: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "redirects HTML requests with an explanation" do
+      post :create, params: launch_params
+
+      expect(response).to redirect_to("/launcher/advanced")
+      expect(flash[:alert]).to eq(I18n.t("launcher.advanced.invalid_ce_flow_variant"))
+    end
+
+    context "when Employment-focused is explicitly false" do
+      let(:launch_params) { super().merge(employment_focused: "false") }
+
+      it "allows unpaid-work-only invitations" do
+        post :create, params: launch_params, format: :json
+
+        expect(response).to be_successful
+        expect(ActivityFlowInvitation.last).to have_attributes(employment_focused: false, unpaid_work_only: true)
+      end
     end
   end
 end
