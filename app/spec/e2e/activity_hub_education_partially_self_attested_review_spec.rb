@@ -89,6 +89,11 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     # --- Step 2: Save and continue to review and submit ---
     click_button I18n.t("activities.education.review.save")
     verify_page(page, title: I18n.t("activities.summary.title"))
+    within("table", text: I18n.t("activities.summary.education.term_details")) do
+      expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
+          status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(Date.new(2026, 9, 15), format: :long)))
+      expect(page).to have_selector("em", exact_text: "(as of September 15, 2026)")
+    end
   end
 
   it "shows same-school less-than-half-time enrollments in one collapsed table on review and submit" do
