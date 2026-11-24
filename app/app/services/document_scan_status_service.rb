@@ -68,7 +68,8 @@ class DocumentScanStatusService
     ).tag_set
 
     tags.find { |tag| tag.key == REJECTION_TAG_KEY }&.value
-  rescue Aws::S3::Errors::NoSuchKey
+  rescue Aws::Errors::ServiceError => e
+    Rails.logger.warn("DocumentScanStatusService: could not check RejectionReason tag (#{e.class}: #{e.message})")
     nil
   end
 end
