@@ -38,11 +38,16 @@ module ActivitiesHelper
       to_date: reporting_range.end
     )
 
-    payroll_accounts.map do |account|
-      account_report = aggregator_report.find_account_report(account.aggregator_account_id)
-      employer_name = account_report&.employment&.employer_name || t("activities.employment.title")
-      account_report_identifier = "#{account.aggregator_account_id}_#{account_report.employment_matching_id}"
-      account_months = monthly_summaries[account_report_identifier] || monthly_summaries[account.aggregator_account_id] || {}
+    payroll_accounts.flat_map do |account|
+      account_reports = aggregator_report.find_account_reports(account.aggregator_account_id)
+      account_reports.map do |account_report|
+        employer_name = account_report&.employment&.employer_name || t("activities.employment.title")
+        account_report_identifier = if account_reports.size > 1 && account_report.employment_matching_id.present?
+                                      "#{account.aggregator_account_id}_#{account_report.employment_matching_id}"
+                                    else
+                                      account.aggregator_account_id
+                                    end
+        account_months = monthly_summaries[account_report_identifier] || {}
       months = account_months
         .sort_by { |month_key, _| month_key }
         .filter_map do |month_key, month_data|
@@ -63,6 +68,7 @@ module ActivitiesHelper
       }
     end
   end
+end
 
   def employment_activity_cards(activities)
     activities.map do |activity|

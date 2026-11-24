@@ -651,11 +651,11 @@ RSpec.describe ActivitiesHelper do
     let(:month_key) { first_month.strftime("%Y-%m") }
     let(:account_id) { "test-account-123" }
 
-    let(:mock_employment) { double(employer_name: "ACME Corp") }
-    let(:mock_account_report) { double(employment: mock_employment) }
+    let(:mock_employment) { double(employer_name: "ACME Corp", employment_matching_id: "emp-123") }
+    let(:mock_account_report) { double(employment: mock_employment, employment_matching_id: "emp-123") }
     let(:mock_report) do
       instance_double(Aggregators::AggregatorReports::AggregatorReport).tap do |report|
-        allow(report).to receive(:find_account_report).with(account_id).and_return(mock_account_report)
+        allow(report).to receive(:find_account_reports).with(account_id).and_return([ mock_account_report ])
         allow(report).to receive(:summarize_by_month).and_return({
           account_id => {
             month_key => { accrued_gross_earnings: 2500_00, total_w2_hours: 80.0, total_gig_hours: 5.0 }
@@ -714,11 +714,11 @@ RSpec.describe ActivitiesHelper do
     end
 
     it "falls back to N/A when employer name is unavailable" do
-      allow(mock_report).to receive(:find_account_report).with(account_id).and_return(nil)
+      allow(mock_report).to receive(:find_account_reports).with(account_id).and_return([])
 
       result = helper.employment_cards([ payroll_account ], mock_report, reporting_range)
 
-      expect(result.first[:name]).to eq(I18n.t("activities.employment.title"))
+      expect(result).to be_empty
     end
 
     it "handles accounts with no monthly data" do
@@ -727,6 +727,36 @@ RSpec.describe ActivitiesHelper do
       result = helper.employment_cards([ payroll_account ], mock_report, reporting_range)
 
       expect(result.first[:months]).to be_empty
+    end
+
+    context "with multiple employments for a single account" do
+      let(:mock_employment_2) { double(employer_name: "Globex Corp", employment_matching_id: "emp-456") }
+      let(:mock_account_report_2) { double(employment: mock_employment_2, employment_matching_id: "emp-456") }
+
+      before do
+        allow(mock_report).to receive(:find_account_reports).with(account_id).and_return([ mock_account_report, mock_account_report_2 ])
+        allow(mock_report).to receive(:summarize_by_month).and_return({
+          "#{account_id}_emp-123" => {
+            month_key => { accrued_gross_earnings: 1000_00, total_w2_hours: 40.0, total_gig_hours: 0.0 }
+          },
+          "#{account_id}_emp-456" => {
+            month_key => { accrued_gross_earnings: 2000_00, total_w2_hours: 80.0, total_gig_hours: 0.0 }
+          }
+        })
+      end
+
+      it "returns one card per employment" do
+        result = helper.employment_cards([ payroll_account ], mock_report, reporting_range)
+
+        expect(result.size).to eq(2)
+        expect(result.map { |r| r[:name] }).to contain_exactly("ACME Corp", "Globex Corp")
+
+        acme_card = result.find { |r| r[:name] == "ACME Corp" }
+        expect(acme_card[:months].first[:gross_earnings]).to eq(1000_00)
+
+        globex_card = result.find { |r| r[:name] == "Globex Corp" }
+        expect(globex_card[:months].first[:gross_earnings]).to eq(2000_00)
+      end
     end
   end
 
@@ -780,8 +810,8 @@ RSpec.describe ActivitiesHelper do
     let(:employment_activity) { create(:employment_activity, activity_flow: flow, employer_name: "Gainesville Wrecking") }
     let(:mock_report) do
       instance_double(Aggregators::AggregatorReports::AggregatorReport).tap do |report|
-        account_report = double(employment: double(employer_name: "ACME Corp"))
-        allow(report).to receive(:find_account_report).with(account_id).and_return(account_report)
+        account_report = double(employment: double(employer_name: "ACME Corp"), employment_matching_id: "emp-123")
+        allow(report).to receive(:find_account_reports).with(account_id).and_return([ account_report ])
         allow(report).to receive(:summarize_by_month).and_return({ account_id => {} })
       end
     end

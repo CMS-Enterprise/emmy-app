@@ -11,28 +11,34 @@ class PersistedReportAdapter
   end
 
   def find_account_report(account_id)
-    source = @employment_data[account_id]
-    return nil unless source
+    find_account_reports(account_id).first
+  end
 
-    AccountReport.new(
-      paystubs: [],
-      income: Income.new(
-        pay_frequency: source[:pay_frequency],
-        compensation_amount: source[:compensation_amount],
-        compensation_unit: source[:compensation_unit]
-      ),
-      employment_matching_id: source[:employer_id],
-      identity: nil,
-      employment: Employment.new(
-        employer_name: source[:employer_name],
-        employment_type: (source[:employment_type] || "w2").to_sym,
-        employer_phone_number: source[:employer_phone_number],
-        employer_address: source[:employer_address],
-        status: source[:employment_status],
-        start_date: source[:employment_start_date],
-        termination_date: source[:employment_termination_date],
+  def find_account_reports(account_id)
+    sources = Array.wrap(@employment_data[account_id])
+    return [] if sources.empty?
+
+    sources.map do |source|
+      AccountReport.new(
+        paystubs: [],
+        income: Income.new(
+          pay_frequency: source[:pay_frequency],
+          compensation_amount: source[:compensation_amount],
+          compensation_unit: source[:compensation_unit]
+        ),
+        employment_matching_id: source[:employer_id],
+        identity: nil,
+        employment: Employment.new(
+          employer_name: source[:employer_name],
+          employment_type: (source[:employment_type] || "w2").to_sym,
+          employer_phone_number: source[:employer_phone_number],
+          employer_address: source[:employer_address],
+          status: source[:employment_status],
+          start_date: source[:employment_start_date],
+          termination_date: source[:employment_termination_date],
+        )
       )
-    )
+    end
   end
 
   def summarize_by_month(from_date: nil, to_date: nil)
