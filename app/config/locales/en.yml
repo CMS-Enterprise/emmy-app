@@ -256,8 +256,8 @@ en:
         additional_information_label: Share any additional information that you’d like %{agency_name} to know. This will be included in your community engagement report.
         continue: Save and continue
         description: We have gathered your student enrollment details from %{reporting_window}.
-        enrollment_history: View enrollment history
-        enrollment_history_description: Below is your most recent enrollment status. If it changed during a term, you can view your full enrollment history.
+        enrollment_history: Enrollment status history (%{count})
+        enrollment_history_description: All statuses listed in the term count toward your eligibility.
         enrollment_information_numbered: 'Enrollment #%{number} information'
         header: Review your student enrollment details
         status_as_of: "(As of %{date})"
@@ -1310,8 +1310,10 @@ en:
         fetching_payroll_description: This may take a few minutes. Please keep this window open while we work on this.
   components:
     enrollment_term_table_component:
+      enrollment_history_status: Enrollment status
       enrollment_status: Enrollment status
       enrollment_term: Enrollment term
+      most_recent_enrollment_status: Most recent enrollment status
       school_or_program: School or program
       status:
         deceased: Deceased

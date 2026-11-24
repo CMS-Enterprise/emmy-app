@@ -16,16 +16,19 @@
   <% if history.any? %>
     <div class="maxw-table">
       <%= render AccordionComponent.new(id: "enrollment-history-#{latest.id}", expanded: expanded) do |accordion| %>
-        <% accordion.with_title { t("activities.education.edit.enrollment_history") } %>
+        <% accordion.with_title { t("activities.education.edit.enrollment_history", count: history.size) } %>
         <% accordion.with_body do %>
+          <p>
+            <%= t("activities.education.edit.enrollment_history_description") %>
+          </p>
           <%= render TableComponent.new(
-            caption: t("activities.education.edit.enrollment_history"),
+            caption: t("activities.education.edit.enrollment_history", count: history.size),
             class_names: "details-table"
           ) do |table| %>
             <% history.each do |term| %>
               <%= table.with_row do |row| %>
-                <%= row.with_data_cell(is_header: true, scope: "row").with_content(t("components.enrollment_term_table_component.enrollment_status")) %>
-                <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_status")) do %>
+                <%= row.with_data_cell(is_header: true, scope: "row").with_content(t("components.enrollment_term_table_component.enrollment_history_status")) %>
+                <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_history_status")) do %>
                   <%= render partial: "activities/education/enrollment_status", locals: { term: term } %>
                 <% end %>
               <% end %>
