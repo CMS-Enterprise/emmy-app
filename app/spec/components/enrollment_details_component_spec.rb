@@ -15,7 +15,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
   let(:terms) { [ latest, older ] }
 
   it "shows the latest certified status in the main enrollment table" do
-    expect(rendered.css("table").first).to have_text("Withdrawn (As of September 15, 2026)", normalize_ws: true)
+    expect(rendered.css("table").first).to have_text("Withdrawn (as of September 15, 2026)", normalize_ws: true)
     expect(rendered.css("table").first).to have_no_text("Full-time")
   end
 
@@ -26,7 +26,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
   it "puts previous statuses in a collapsed history accordion" do
     expect(rendered).to have_selector("button[aria-expanded='false']", text: "View enrollment history")
-    expect(rendered.css(".usa-accordion__content")).to have_text("Full-time (As of September 1, 2026)", normalize_ws: true)
+    expect(rendered.css(".usa-accordion__content")).to have_text("Full-time (as of September 1, 2026)", normalize_ws: true)
     expect(rendered.css(".usa-accordion__content")).to have_no_text("Withdrawn")
   end
 
@@ -35,8 +35,8 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
   end
 
   it "italicizes the parenthesized certification dates in the current status and history" do
-    expect(rendered.css("table").first).to have_selector("em", text: "(As of September 15, 2026)")
-    expect(rendered.css(".usa-accordion__content")).to have_selector("em", text: "(As of September 1, 2026)")
+    expect(rendered.css("table").first).to have_selector("em", text: "(as of September 15, 2026)")
+    expect(rendered.css(".usa-accordion__content")).to have_selector("em", text: "(as of September 1, 2026)")
   end
 
   context "when creation order differs from certification order" do
@@ -61,8 +61,8 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
 
     it "orders history by certification date, newest first" do
       rows = rendered.css(".usa-accordion__content tbody tr")
-      expect(rows.first).to have_text("Half-time (As of September 8, 2026)", normalize_ws: true)
-      expect(rows.last).to have_text("Full-time (As of September 1, 2026)", normalize_ws: true)
+      expect(rows.first).to have_text("Half-time (as of September 8, 2026)", normalize_ws: true)
+      expect(rows.last).to have_text("Full-time (as of September 1, 2026)", normalize_ws: true)
     end
   end
 
@@ -199,7 +199,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     before { older.update!(enrollment_status: :withdrawn) }
 
     it "keeps the earlier certification in history" do
-      expect(rendered.css(".usa-accordion__content")).to have_text("Withdrawn (As of September 1, 2026)", normalize_ws: true)
+      expect(rendered.css(".usa-accordion__content")).to have_text("Withdrawn (as of September 1, 2026)", normalize_ws: true)
     end
   end
 
@@ -209,7 +209,7 @@ RSpec.describe EnrollmentDetailsComponent, type: :component do
     it "prefers the dated record without inventing a historical certification date" do
       expect(rendered.css("table").first).to have_text("Withdrawn")
       expect(rendered.css(".usa-accordion__content")).to have_text("Full-time")
-      expect(rendered.css(".usa-accordion__content")).to have_no_text("As of")
+      expect(rendered.css(".usa-accordion__content")).to have_no_text("as of")
     end
   end
 end

@@ -200,6 +200,54 @@ RSpec.describe Activities::SummaryController, type: :controller do
       expect(response.body).to include(ActiveSupport::NumberHelper.number_to_rounded(second_month.hours, precision: 2, strip_insignificant_zeros: true))
     end
 
+    context "with tokenized supplemental education details" do
+      let(:activity_flow) { create(:activity_flow, activity_flow_invitation: create(:activity_flow_invitation), education_activities_count: 0) }
+      let(:nsc_status) { :enrolled }
+      let(:supplemental_status) { "less_than_half_time" }
+      let(:certified_on) { Date.new(2026, 9, 15) }
+      let!(:education) { create(:education_activity, activity_flow: activity_flow, data_source: :partially_self_attested, status: :succeeded) }
+      let!(:term) do
+        create(:nsc_enrollment_term, education_activity: education, enrollment_status: nsc_status,
+          supplemental_enrollment_status: supplemental_status, school_certified_on: certified_on, credit_hours: 3.5)
+      end
+      let(:document) { Capybara.string(response.body) }
+      let(:status_label) { I18n.t("components.enrollment_term_table_component.enrollment_status") }
+      let(:self_attested_status_label) { I18n.t("activities.summary.education.enrollment_status_self_attested") }
+      let(:credit_hours_label) { I18n.t("activities.summary.education.credit_hours_self_attested") }
+      let(:details) { document.find("table", text: I18n.t("activities.summary.education.term_details")) }
+
+      before { get :show }
+
+      it "separates the certified status from self-attested status and credits" do
+        school_table = document.find("table", text: I18n.t("components.enrollment_term_table_component.student_name_label"))
+        expect(school_table).to have_no_text(status_label)
+        expect(details).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
+          status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(certified_on, format: :long)))
+        expect(details).to have_selector("em", exact_text: "(as of September 15, 2026)")
+        expect(details).to have_selector("td[data-label='#{self_attested_status_label}']", text: term.supplemental_enrollment_status_display)
+        expect(details).to have_selector("td[data-label='#{credit_hours_label}']", text: "3.5", exact_text: true)
+      end
+
+      context "without a certification date" do
+        let(:certified_on) { nil }
+
+        it "shows Enrolled without an empty date" do
+          expect(details).to have_selector("td[data-label='#{status_label}']", text: I18n.t("activities.submit.pdf.enrolled"), exact_text: true, normalize_ws: true)
+        end
+      end
+
+      context "with an NSC-reported less-than-half-time status" do
+        let(:nsc_status) { :less_than_half_time }
+        let(:supplemental_status) { nil }
+
+        it "labels only the manually entered credits as self-attested" do
+          expect(details).to have_no_text(self_attested_status_label)
+          expect(details).to have_text(term.enrollment_status_display)
+          expect(details).to have_selector("td[data-label='#{credit_hours_label}']", text: "3.5", exact_text: true)
+        end
+      end
+    end
+
     context "with a self-attested education term" do
       let(:enrollment_status) { "less_than_half_time" }
       let(:credit_hours) { 3.5 }
@@ -339,7 +387,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       }.size).to eq(2)
       expect(contact_info_rows.filter_map { |row|
         row if row.first("th")&.text&.strip == I18n.t("components.enrollment_term_table_component.enrollment_status")
-      }.size).to eq(2)
+      }.size).to eq(0)
 
       monthly_details_headers = doc.all("table").last.all("thead th").map { |cell| cell.text.strip }
       expect(monthly_details_headers).to include(I18n.t("components.enrollment_term_table_component.enrollment_status"))
@@ -467,7 +515,7 @@ RSpec.describe Activities::SummaryController, type: :controller do
       get :show
       doc = Capybara.string(response.body)
 
-      enrollment_table = doc.all("table").find { |table| table.has_text?(I18n.t("activities.summary.education.enrollment_details")) }
+      enrollment_table = doc.all("table").find { |table| table.has_text?(I18n.t("activities.summary.education.term_details")) }
       term_row = enrollment_table.all("tbody tr").first
 
       expect(term_row).to have_text(I18n.t("components.enrollment_term_table_component.status.full_time"), normalize_ws: true)
