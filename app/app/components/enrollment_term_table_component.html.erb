@@ -1,3 +1,4 @@
+<h3><%= t("activities.summary.education.enrollment_details") %></h3>
 <% education_information = t("shared.table_headers.education_information") %>
 <%= render(TableComponent.new(caption: education_information, class_names: @class_names)) do |table| %>
   <%= table.with_header_cell(scope: "col") { education_information } %>
@@ -28,26 +29,32 @@
       <%= @nsc_enrollment_term.school_name.titlecase %>
     <% end %>
   <% end %>
+<% end %>
 
-  <%= table.with_row do |row| %>
-    <%= row.with_data_cell(is_header: true) do %>
-      <%= t("components.enrollment_term_table_component.enrollment_term") %>
+<h3><%= t("activities.summary.education.term_details") %></h3>
+<% if term_details.present? %>
+  <%= term_details %>
+<% else %>
+  <% columns = [ t("activities.education.review.term") ] %>
+  <% columns << t("components.enrollment_term_table_component.enrollment_status") if @show_enrollment_status %>
+  <% columns += [ t("activities.summary.education.term_credit_hours"), t("activities.summary.education.community_engagement_hours") ] %>
+  <%= render TableComponent.new(caption: t("activities.summary.education.term_details"), class_names: @class_names, activity_hours_review: true) do |table| %>
+    <% columns.each do |label| %>
+      <%= table.with_header_cell(scope: "col").with_content(label) %>
     <% end %>
-    <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_term")) do %>
-      <%= helpers.format_date(@nsc_enrollment_term.term_begin) %>
-      &dash;
-      <%= helpers.format_date(@nsc_enrollment_term.term_end) %>
-    <% end %>
-  <% end %>
-
-  <% if @show_enrollment_status %>
     <%= table.with_row do |row| %>
-      <%= row.with_data_cell(is_header: true) do %>
-        <%= t("components.enrollment_term_table_component.enrollment_status") %>
+      <%= row.with_data_cell(is_header: true, data_label: columns.first) do %>
+        <%= helpers.format_date(@nsc_enrollment_term.term_begin) %>
+        &dash;
+        <%= helpers.format_date(@nsc_enrollment_term.term_end) %>
       <% end %>
-      <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_status")) do %>
-        <%= enrollment_status.presence || enrollment_status_text(@nsc_enrollment_term.enrollment_status) %>
+      <% if @show_enrollment_status %>
+        <%= row.with_data_cell(data_label: t("components.enrollment_term_table_component.enrollment_status")) do %>
+          <%= enrollment_status.presence || enrollment_status_text(@nsc_enrollment_term.enrollment_status) %>
+        <% end %>
       <% end %>
+      <%= row.with_data_cell(data_label: t("activities.summary.education.term_credit_hours")).with_content(t("shared.not_applicable")) %>
+      <%= row.with_data_cell(data_label: t("activities.summary.education.community_engagement_hours")).with_content(t("shared.not_applicable")) %>
     <% end %>
   <% end %>
 <% end %>

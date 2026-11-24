@@ -57,7 +57,7 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     expect(page).to have_content(
       I18n.t("activities.education.review.enrollment_information_numbered", number: 2)
     )
-    expect(page).to have_selector("h3", text: I18n.t("activities.education.review.additional_details"), count: 1)
+    expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), count: 2)
     expect(page).to have_text(I18n.t("activities.education.review.enrolled"))
     expect(page).to have_text(I18n.t("activities.education.edit.status_as_of", date: I18n.l(Date.new(2026, 9, 15), format: :long)))
     expect(page).to have_text(I18n.t("activities.education.review.enrollment_status_self_attested"))
@@ -65,7 +65,7 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     original_size = page.current_window.size
     begin
       page.current_window.resize_to(768, 1024)
-      details = page.find("table", text: I18n.t("activities.education.review.additional_details"))
+      details = page.find("table", text: I18n.t("activities.education.review.enrollment_status_self_attested"))
       expect(details.evaluate_script("this.getBoundingClientRect().right <= window.innerWidth")).to be(true)
       edit_link = details.find(".desktop-edit-link a")
       expect(edit_link.evaluate_script("this.getBoundingClientRect().right <= window.innerWidth")).to be(true)
@@ -89,6 +89,11 @@ RSpec.describe "e2e Education mixed enrollment review flow", :js, type: :feature
     # --- Step 2: Save and continue to review and submit ---
     click_button I18n.t("activities.education.review.save")
     verify_page(page, title: I18n.t("activities.summary.title"))
+    expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+    details = page.find("table", text: I18n.t("activities.summary.education.term_details"))
+    expect(details.find("tbody tr", text: "Riverside Community College")).to have_text(I18n.t("activities.submit.pdf.enrolled"))
+    expect(details.find("tbody tr", text: "Pine Valley College")).to have_text(I18n.t("components.enrollment_term_table_component.status.half_time"))
+    expect(details).to have_text(I18n.t("activities.summary.education.community_engagement_hours"))
     within("table", text: I18n.t("activities.summary.education.term_details")) do
       expect(page).to have_text(I18n.t("components.enrollment_term_table_component.status_as_of_date",
           status: I18n.t("activities.submit.pdf.enrolled"), date: I18n.l(Date.new(2026, 9, 15), format: :long)))

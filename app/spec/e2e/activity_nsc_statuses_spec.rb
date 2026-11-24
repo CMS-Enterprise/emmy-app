@@ -197,10 +197,16 @@ RSpec.describe "NSC enrollment statuses", :js, type: :feature do
     let(:enrollment_codes) { %w[Y] }
     let(:term) { education.nsc_enrollment_terms.sole }
 
-    it "shows the enrollment details without a status row" do
+    it "separates enrollment and term details without a status row" do
+      expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.enrollment_details"), exact_text: true)
+      expect(page).to have_selector("h3", text: I18n.t("activities.summary.education.term_details"), exact_text: true)
       expect(page).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.student_name_label"))
       expect(page).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.school_or_program"))
-      expect(page).to have_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_term"))
+      within("table", text: I18n.t("activities.summary.education.term_details")) do
+        expect(page).to have_text(I18n.l(term.term_begin, format: :long))
+        expect(page).to have_text(I18n.l(term.term_end, format: :long))
+        expect(page).to have_no_text(term.school_name.titlecase)
+      end
       expect(page).to have_no_selector("tr", text: I18n.t("components.enrollment_term_table_component.enrollment_status"))
     end
 
