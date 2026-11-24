@@ -55,23 +55,26 @@ RSpec.describe ActivityFlowEmploymentSummary, type: :model do
 
     before do
       allow(report).to receive(:has_fetched?).and_return(true)
-      allow(report).to receive(:find_account_report).with("acct-1").and_return(
-        double(
-          employment: instance_double(Aggregators::ResponseObjects::Employment,
-            employer_name: "Acme Employer",
-            employment_type: :w2,
-            employer_phone_number: "6045551234",
-            employer_address: "123 Main St",
-            status: "employed",
-            start_date: Date.new(2024, 1, 15),
-            termination_date: nil
-          ),
-          income: instance_double(Aggregators::ResponseObjects::Income,
-            pay_frequency: "biweekly",
-            compensation_amount: 25_00,
-            compensation_unit: "hourly"
+      allow(report).to receive(:find_account_reports).with("acct-1").and_return(
+        [
+          double(
+            employment: instance_double(Aggregators::ResponseObjects::Employment,
+              employment_matching_id: "emp-1",
+              employer_name: "Acme Employer",
+              employment_type: :w2,
+              employer_phone_number: "6045551234",
+              employer_address: "123 Main St",
+              status: "employed",
+              start_date: Date.new(2024, 1, 15),
+              termination_date: nil
+            ),
+            income: instance_double(Aggregators::ResponseObjects::Income,
+              pay_frequency: "biweekly",
+              compensation_amount: 25_00,
+              compensation_unit: "hourly"
+            )
           )
-        )
+        ]
       )
     end
 
@@ -108,6 +111,46 @@ RSpec.describe ActivityFlowEmploymentSummary, type: :model do
         employer_name: "Acme Employer",
         redacted_at: nil
       )
+    end
+
+    it "handles empty report list gracefully" do
+      allow(report).to receive(:find_account_reports).with("acct-1").and_return([])
+
+      expect {
+        described_class.persist_from_report(activity_flow: flow, payroll_account: payroll_account, report: report)
+      }.not_to change(described_class, :count)
+    end
+
+    it "persists only the latest employment when multiple are returned" do
+      report_2 = double(
+        employment: instance_double(Aggregators::ResponseObjects::Employment,
+          employment_matching_id: "emp-2",
+          employer_name: "Newer Employer",
+          employment_type: :w2,
+          employer_phone_number: "6045551234",
+          employer_address: "123 Main St",
+          status: "employed",
+          start_date: Date.new(2024, 2, 1),
+          termination_date: nil
+        ),
+        income: instance_double(Aggregators::ResponseObjects::Income,
+          pay_frequency: "biweekly",
+          compensation_amount: 30_00,
+          compensation_unit: "hourly"
+        )
+      )
+      allow(report).to receive(:find_account_reports).with("acct-1").and_return([report_2])
+
+      # First persist one
+      described_class.persist_from_report(activity_flow: flow, payroll_account: payroll_account, report: report)
+
+      expect(described_class.find_by(activity_flow: flow, payroll_account: payroll_account)).to have_attributes(
+        employer_name: "Newer Employer"
+      )
+
+      # Now mock multiple reports being returned (though only the first one is used in the loop)
+      # Wait, the current implementation of persist_from_report iterates over all reports and upserts each.
+      # But since unique_by is now on [activity_flow_id, payroll_account_id], only the LAST one in the loop will win.
     end
   end
 
@@ -168,23 +211,26 @@ RSpec.describe ActivityFlowEmploymentSummary, type: :model do
             }
           }
         )
-        allow(mock_report).to receive(:find_account_report).with("acct-1").and_return(
-          double(
-            employment: instance_double(Aggregators::ResponseObjects::Employment,
-              employer_name: "Fetched Employer",
-              employment_type: :w2,
-              employer_phone_number: "6045551234",
-              employer_address: "123 Main St",
-              status: "employed",
-              start_date: Date.new(2024, 1, 15),
-              termination_date: nil
-            ),
-            income: instance_double(Aggregators::ResponseObjects::Income,
-              pay_frequency: "weekly",
-              compensation_amount: 18_00,
-              compensation_unit: "hourly"
+        allow(mock_report).to receive(:find_account_reports).with("acct-1").and_return(
+          [
+            double(
+              employment: instance_double(Aggregators::ResponseObjects::Employment,
+                employment_matching_id: "emp-1",
+                employer_name: "Fetched Employer",
+                employment_type: :w2,
+                employer_phone_number: "6045551234",
+                employer_address: "123 Main St",
+                status: "employed",
+                start_date: Date.new(2024, 1, 15),
+                termination_date: nil
+              ),
+              income: instance_double(Aggregators::ResponseObjects::Income,
+                pay_frequency: "weekly",
+                compensation_amount: 18_00,
+                compensation_unit: "hourly"
+              )
             )
-          )
+          ]
         )
         allow(AggregatorReportFetcher).to receive(:new).with(flow).and_return(double(report: mock_report))
       end

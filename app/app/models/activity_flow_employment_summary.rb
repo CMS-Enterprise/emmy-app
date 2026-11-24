@@ -95,7 +95,7 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
           selected: true,
           redacted_at: nil
         },
-        unique_by: :index_activity_flow_employment_summaries_on_flow_acc_emp,
+        unique_by: :index_activity_flow_employment_summaries_on_flow_account,
         update_only: %i[
           employer_name employment_type employer_phone_number employer_address
           employment_status employment_start_date employment_termination_date
