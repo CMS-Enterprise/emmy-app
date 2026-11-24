@@ -139,7 +139,7 @@ RSpec.describe ActivityFlowEmploymentSummary, type: :model do
           compensation_unit: "hourly"
         )
       )
-      allow(report).to receive(:find_account_reports).with("acct-1").and_return([report_2])
+      allow(report).to receive(:find_account_reports).with("acct-1").and_return([ report_2 ])
 
       # First persist one
       described_class.persist_from_report(activity_flow: flow, payroll_account: payroll_account, report: report)
