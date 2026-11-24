@@ -8,10 +8,10 @@
     "@hotwired/turbo-rails": "^8.0.23",
     "@rails/actioncable": "^8.1.401",
     "@uswds/uswds": "^3.14.0",
-    "autoprefixer": "^10.6.2",
+    "autoprefixer": "^10.7.0",
     "esbuild": "^0.28.2",
     "load-script": "^2.0.0",
-    "postcss": "^8.5.32",
+    "postcss": "^8.5.33",
     "postcss-cli": "^12.0.0",
     "postcss-import": "^17.0.1",
     "postcss-minify": "^1.2.0",
@@ -30,10 +30,10 @@
   "devDependencies": {
     "@scalar/api-reference": "^1.78.1",
     "happy-dom": "^21.0.4",
-    "jsdom": "^31.0.0",
+    "jsdom": "^31.0.1",
     "prettier": "^3.10.1",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "resolutions": {
     "@csstools/postcss-sass/@csstools/sass-import-resolve": "https://github.com/rahearn/sass-import-resolve",
