@@ -150,7 +150,7 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     expect(page).to have_content "601 E John St, Champaign, IL"
 
     # Edit the term from review
-    within(".activity-review-edit-header", text: I18n.t("activities.education.review.additional_details")) do
+    within(".activity-review-edit-header", text: I18n.t("activities.summary.education.term_details")) do
       click_link I18n.t("activities.hub.edit")
     end
     verify_page(page, title: I18n.t("activities.education.add_your_term.edit.title", school_name: "Updated University of Illinois"))
@@ -171,10 +171,11 @@ RSpec.describe "e2e Education self-attestation review flow", :js, type: :feature
     visit activities_flow_summary_path
     verify_page(page, title: I18n.t("activities.summary.title"))
     expect(page).to have_selector("tr", text: "#{I18n.t('activities.summary.education.contact_title')} Academic advisor", normalize_ws: true)
-    within("table", text: I18n.t("activities.education.add_your_term.edit.term_start")) do
-      expect(page).to have_text(I18n.l(education_activity.self_attested_term_start, format: :month_year))
-      expect(page).to have_text(I18n.l(education_activity.self_attested_term_end, format: :month_year))
-      expect(page).to have_selector("tr", text: "#{I18n.t('activities.education.review.credit_hours')} #{ApplicationHelper.format_decimal_amount(education_activity.credit_hours)}", normalize_ws: true)
+    within("table", text: I18n.t("activities.summary.education.term_details")) do
+      expect(page).to have_text(I18n.l(education_activity.self_attested_term_start, format: :long))
+      expect(page).to have_text(I18n.l(education_activity.self_attested_term_end, format: :long))
+      expect(page).to have_selector("td[data-label='#{I18n.t('activities.summary.education.credit_hours_self_attested')}']",
+        text: ApplicationHelper.format_decimal_amount(education_activity.credit_hours).to_s, exact_text: true)
     end
   end
 end

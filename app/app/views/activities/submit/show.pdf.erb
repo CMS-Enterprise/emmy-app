@@ -212,14 +212,7 @@
           <% end %>
           <% rows = term_groups.map do |terms_for_range|
             status_lines = terms_for_range.map do |term|
-              enrollment_status = term.enrollment_enrolled? ? t("activities.submit.pdf.enrolled") : term.enrollment_status_display
-              if term.school_certified_on.present?
-                t("components.enrollment_term_table_component.status_as_of_date",
-                  status: enrollment_status,
-                  date: format_date(term.school_certified_on))
-              else
-                enrollment_status
-              end
+              education_summary_enrollment_status(term)
             end
 
             row = [
