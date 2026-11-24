@@ -29,6 +29,10 @@ class DocumentScanStatusService
     def rejected?
       status == REJECTED
     end
+
+    def clean?
+      status == CLEAN
+    end
   end
 
   def self.call(blob)

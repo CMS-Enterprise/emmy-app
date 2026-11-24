@@ -127,16 +127,20 @@ class ActivityPdfReport
   end
 
   def document_names_for(activity)
-    activity.document_uploads_attachments.includes(:blob).order(:id).map do |attachment|
-      if caseworker?
-        caseworker_documents_by_attachment_id.fetch(attachment.id).file_name
-      else
-        attachment.filename.to_s
-      end
+    documents_for(activity).map do |document|
+      caseworker? ? document.file_name : document.attachment.filename.to_s
     end
   end
 
   private
+
+  def documents_for(activity)
+    documents_by_activity.fetch(activity, [])
+  end
+
+  def documents_by_activity
+    @documents_by_activity ||= activity_documents.group_by(&:activity)
+  end
 
   def grouped_enrollment_terms(activity)
     terms = activity.nsc_enrollment_terms
@@ -181,9 +185,7 @@ class ActivityPdfReport
     @monthly_income_summaries ||= flow.monthly_summaries_by_account_with_fallback
   end
 
-  def caseworker_documents_by_attachment_id
-    @caseworker_documents_by_attachment_id ||= ActivityDocumentsService.new(flow).all.index_by do |document|
-      document.attachment.id
-    end
+  def activity_documents
+    @activity_documents ||= ActivityDocumentsService.new(flow).all
   end
 end

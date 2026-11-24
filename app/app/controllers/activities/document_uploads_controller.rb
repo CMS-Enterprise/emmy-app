@@ -14,7 +14,7 @@ class Activities::DocumentUploadsController < Activities::BaseController
   after_action :track_viewed_event, only: :new
   after_action :track_submitted_event, only: :create
 
-  helper_method :upload_path, :remove_document_upload_path, :track_event_prefix
+  helper_method :upload_path, :remove_document_upload_path, :track_event_prefix, :document_upload_track_attributes
 
   def new
   end
@@ -33,6 +33,7 @@ class Activities::DocumentUploadsController < Activities::BaseController
           "activities.document_uploads.new.errors.scan_rejected_summary",
           filenames: @document_upload_scan_rejected_filenames.map { |name| ERB::Util.html_escape(name) }.to_sentence
         )
+        @activity.reload
         return render :new
       end
 
@@ -231,6 +232,15 @@ class Activities::DocumentUploadsController < Activities::BaseController
     tracking_config&.first
   end
 
+  # Attributes identifying which activity a document was attached to, for the
+  # Mixpanel events tracked client-side (see document_upload_controller.js's
+  # #trackScanRejected) and server-side (#track_submitted_event below).
+  def document_upload_track_attributes
+    return {} unless tracking_config
+
+    { tracking_config.last => @activity.id }
+  end
+
   def track_viewed_event
     return unless response.successful? && tracking_config
 
@@ -240,8 +250,14 @@ class Activities::DocumentUploadsController < Activities::BaseController
     )
   end
 
+  # Purges any attachment whose scan hasn't resolved to "clean" -- not just
+  # ones explicitly rejected. A document still "pending" at submission time
+  # was never confirmed safe, so we treat it the same as a rejection rather
+  # than silently letting it through (the client polls for a resolution
+  # before this point, but can't guarantee one arrives in time -- see
+  # #watchScanStatus in document_upload_controller.js).
   def purge_rejected_uploads!
-    @activity.document_uploads_attachments.includes(:blob).select { |attachment| DocumentScanStatusService.call(attachment.blob).rejected? }.map do |attachment|
+    @activity.document_uploads_attachments.includes(:blob).reject { |attachment| DocumentScanStatusService.call(attachment.blob).clean? }.map do |attachment|
       filename = attachment.blob.filename.to_s
       blob = attachment.blob
       attachment.delete
@@ -260,6 +276,11 @@ class Activities::DocumentUploadsController < Activities::BaseController
         document_count: @activity.document_uploads.count
       )
     elsif @document_upload_scan_rejected_filenames.present?
+      # Fallback for rejections the client never saw (JS disabled, the user
+      # submitted before a poll resolved, etc). The normal path fires this
+      # same event from #watchScanStatus in document_upload_controller.js as
+      # soon as a rejection is detected, before the upload is ever removed
+      # from the form. See document_upload_track_attributes above.
       track_event(
         TrackEvent.const_get("#{track_event_prefix}DocumentUploadScanRejected"),
         tracking_config.last => @activity.id,

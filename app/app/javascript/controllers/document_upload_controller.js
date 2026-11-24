@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import CSRF from "../utilities/csrf"
 import fileChecksum from "../utilities/file_checksum"
+import { trackUserAction } from "../utilities/api"
 
 export default class extends Controller {
   static targets = [
@@ -26,15 +27,19 @@ export default class extends Controller {
     errorUnsupportedType: String,
     errorUploadFailed: String,
     errorMultipleFiles: String,
+    errorScanTimedOut: String,
     scanStatusPath: String,
     scanPollInterval: Number,
     scanTimeout: Number,
+    trackEventPrefix: String,
+    trackAttributes: Object,
   }
 
   connect() {
     this.clearing = false
     this.uploading = false
     this.pendingScans = new Set()
+    this.trackedRejectedSignedIds = new Set()
   }
 
   confirmEmptyUpload(event) {
@@ -122,9 +127,16 @@ export default class extends Controller {
 
   // Polls the scan-status endpoint for a single upload until it resolves to
   // "clean" or "rejected", or until scanTimeoutValue elapses. "Continue" stays
-  // disabled the whole time (see #updateSubmitState). Activities::DocumentUploadsController#create
-  // re-checks and purges any rejected document server-side regardless
-  // of whether the client polled long enough to see the result.
+  // disabled the whole time (see #updateSubmitState).
+  //
+  // If the scan never resolves in time -- the loop exhausts scanTimeoutValue,
+  // or fetch keeps failing (e.g. the user went offline) -- we can't leave the
+  // upload in the form: the server independently refuses to accept a
+  // document that was never confirmed clean (see
+  // Activities::DocumentUploadsController#purge_rejected_uploads!), so
+  // leaving it there would only delay the same rejection until after the
+  // user clicks Continue, with no explanation. Remove it now instead, with a
+  // message asking them to retry.
   async #watchScanStatus(upload) {
     const signedId = upload.signed_id
     const url = this.scanStatusPathValue.replace("SIGNED_ID_PLACEHOLDER", encodeURIComponent(signedId))
@@ -132,26 +144,55 @@ export default class extends Controller {
 
     try {
       while (Date.now() < deadline) {
-        const response = await fetch(url, { headers: { Accept: "application/json" } })
+        try {
+          const response = await fetch(url, { headers: { Accept: "application/json" } })
 
-        if (response.ok) {
-          const body = await this.#json(response)
+          if (response.ok) {
+            const body = await this.#json(response)
 
-          if (body?.status === "rejected") {
-            this.#removeUpload(signedId)
-            this.#showError(body.error || this.errorUploadFailedValue)
-            return
+            if (body?.status === "rejected") {
+              this.#removeUpload(signedId)
+              this.#showError(body.error || this.errorUploadFailedValue)
+              this.#trackScanRejected(signedId)
+              return
+            }
+
+            if (body?.status === "clean") return
           }
-
-          if (body?.status === "clean") return
+        } catch {
+          // Transient network error while polling, keep retrying until the
+          // timeout below gives up for good
         }
 
         await new Promise((resolve) => setTimeout(resolve, this.scanPollIntervalValue))
+      }
+
+      // Only declare an unresolved scan a failure when a real timeout window
+      // was actually configured (scanTimeoutValue > 0). A value of 0 means no
+      // deadline was set at all, e.g. in tests that don't exercise scanning,
+      // and should stay a no-op exactly like before this method started
+      // handling unresolved scans explicitly.
+      if (this.scanTimeoutValue > 0) {
+        this.#removeUpload(signedId)
+        this.#showError(this.errorScanTimedOutValue || this.errorUploadFailedValue)
       }
     } finally {
       this.pendingScans.delete(signedId)
       this.#updateSubmitState()
     }
+  }
+
+  // Fires once per rejected upload, regardless of how many times the poll
+  // loop observes the same rejection, so a batch of files that are all
+  // rejected (or a flaky poll response) can't inflate rejected_count.
+  #trackScanRejected(signedId) {
+    if (!this.trackEventPrefixValue || this.trackedRejectedSignedIds.has(signedId)) return
+    this.trackedRejectedSignedIds.add(signedId)
+
+    trackUserAction(`${this.trackEventPrefixValue}DocumentUploadScanRejected`, {
+      ...this.trackAttributesValue,
+      rejected_count: 1,
+    })
   }
 
   #removeUpload(signedId) {
@@ -160,7 +201,9 @@ export default class extends Controller {
       .forEach((input) => input.remove())
 
     this.listTarget.querySelector(`[data-signed-id="${CSS.escape(signedId)}"]`)?.remove()
+    this.pendingScans.delete(signedId)
     this.#refreshList()
+    this.#updateSubmitState()
   }
 
   #updateSubmitState() {
