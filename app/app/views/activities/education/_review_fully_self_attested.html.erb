@@ -5,6 +5,7 @@
         class: "usa-link",
         aria: { label: t("activities.education.review.edit_school_information", school_name: @education_activity.school_name) } %>
 </div>
+<h3><%= t("activities.summary.education.enrollment_details") %></h3>
 <%= render(ContactInfoReviewTableComponent.new(field_header: t("shared.table_headers.education_information"), value_header: t("shared.table_headers.your_details"), rows: [
   { label: t("activities.education.review.school_name"), value: @education_activity.school_name },
   { label: t("activities.education.review.address"), value: @education_activity.formatted_address },
@@ -15,7 +16,7 @@
 ])) %>
 
 <div class="display-flex flex-justify activity-review-edit-header">
-  <h3 class="margin-y-0"><%= t("activities.education.review.additional_details") %></h3>
+  <h3 class="margin-y-0"><%= t("activities.summary.education.term_details") %></h3>
   <%= link_to t("activities.hub.edit"),
         edit_activities_flow_education_add_your_term_path(education_id: @education_activity, from_review: 1, from_edit: params[:from_edit].presence),
         class: "usa-link",
