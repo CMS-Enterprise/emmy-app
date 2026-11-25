@@ -1,5 +1,6 @@
 class EnrollmentDetailsComponent < ViewComponent::Base
-  def initialize(enrollment_terms:)
+  def initialize(enrollment_terms:, starting_number: 1)
+    @starting_number = starting_number
     @enrollment_groups = NscEnrollmentTerm.enrollment_histories(enrollment_terms)
       .map do |latest, *history|
         # NSC W and S both map to withdrawn. Only a prior Y (enrolled) opens history.

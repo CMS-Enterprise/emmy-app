@@ -1,7 +1,12 @@
-<% enrollment_terms = @education_activity.nsc_enrollment_terms.order(:term_begin, :term_end, :school_name) %>
-<% has_multiple_enrollments = enrollment_terms.length > 1 %>
+<% enrollment_groups = @education_activity.review_enrollment_groups %>
+<% has_multiple_enrollments = enrollment_groups.length > 1 %>
 
-<% enrollment_terms.each_with_index do |enrollment_term, index| %>
+<% enrollment_groups.each_with_index do |history, index| %>
+  <% enrollment_term = history.first %>
+  <% if enrollment_term.non_enrolled? %>
+    <%= render EnrollmentDetailsComponent.new(enrollment_terms: history, starting_number: index + 1) %>
+    <% next %>
+  <% end %>
   <h2>
     <% if has_multiple_enrollments %>
       <%= t("activities.education.review.enrollment_information_numbered", number: index + 1) %>

@@ -1,6 +1,38 @@
 require "rails_helper"
 
 RSpec.describe EducationActivity do
+  describe "#review_enrollment_groups" do
+    let(:activity) { create(:education_activity) }
+    let(:term_attributes) do
+      { education_activity: activity, school_name: "Harborview College",
+        term_begin: Date.new(2026, 9, 1), term_end: Date.new(2026, 10, 31) }
+    end
+    let!(:enrolled) { create(:nsc_enrollment_term, **term_attributes, enrollment_status: :enrolled, school_certified_on: Date.new(2026, 9, 1)) }
+    let!(:withdrawn) { create(:nsc_enrollment_term, **term_attributes, enrollment_status: :withdrawn, school_certified_on: Date.new(2026, 9, 2)) }
+    let!(:leave) { create(:nsc_enrollment_term, **term_attributes, enrollment_status: :leave_of_absence, school_certified_on: Date.new(2026, 9, 3)) }
+
+    it "keeps the latest non-enrolled status and its history together" do
+      expect(activity.review_enrollment_groups).to eq([ [ leave, withdrawn, enrolled ] ])
+    end
+
+    context "with a different school and a different term" do
+      let!(:other_school) { create(:nsc_enrollment_term, **term_attributes.merge(school_name: "Pine College"), enrollment_status: :withdrawn) }
+      let!(:other_term) { create(:nsc_enrollment_term, **term_attributes.merge(term_begin: Date.new(2026, 8, 1)), enrollment_status: :less_than_half_time) }
+
+      it "keeps different schools and term dates separate" do
+        expect(activity.review_enrollment_groups).to eq([ [ other_term ], [ leave, withdrawn, enrolled ], [ other_school ] ])
+      end
+    end
+
+    context "when the latest status is active" do
+      before { leave.update!(enrollment_status: :less_than_half_time) }
+
+      it "keeps individual records available for supplemental review" do
+        expect(activity.review_enrollment_groups).to contain_exactly([ leave ], [ withdrawn ], [ enrolled ])
+      end
+    end
+  end
+
   include ActiveSupport::Testing::TimeHelpers
 
   describe "#manual_education_upload?" do

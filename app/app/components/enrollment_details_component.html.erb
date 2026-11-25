@@ -1,6 +1,6 @@
 <% @enrollment_groups.each_with_index do |(latest, history, expanded), index| %>
   <h2>
-    <%= t("activities.education.edit.enrollment_information_numbered", number: index + 1) %>
+    <%= t("activities.education.edit.enrollment_information_numbered", number: index + @starting_number) %>
   </h2>
 
   <%= render EnrollmentTermTableComponent.new(
