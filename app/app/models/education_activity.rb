@@ -137,6 +137,15 @@ class EducationActivity < Activity
     less_than_half_time_terms_in_reporting_window.any?
   end
 
+  def review_enrollment_groups
+    terms = nsc_enrollment_terms.order(:term_begin, :term_end, :school_name)
+    NscEnrollmentTerm.enrollment_histories(terms).flat_map do |history|
+      # Non-enrolled terms retain their history; active records keep their
+      # individual supplemental details and edit links.
+      history.first.non_enrolled? ? [ history ] : history.map { |term| [ term ] }
+    end
+  end
+
   def review_header_school_name
     school_name.presence || nsc_enrollment_terms.first&.school_name
   end
