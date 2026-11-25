@@ -62,6 +62,8 @@ RUN apt-get update -qq && \
       libnghttp2-dev \
       libopenexr-3-1-30 \
       libopenexr-dev \
+      libzstd-dev \
+      libzstd1 \
       linux-libc-dev \
       mariadb-common \
       patch \
