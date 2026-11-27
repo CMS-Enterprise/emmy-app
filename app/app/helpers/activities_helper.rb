@@ -12,11 +12,26 @@ module ActivitiesHelper
   # i18n-tasks-use t('activities.document_uploads.new.errors.too_large')
   # i18n-tasks-use t('activities.document_uploads.new.errors.unsupported_type')
   # i18n-tasks-use t('activities.document_uploads.new.errors.upload_failed')
+  # i18n-tasks-use t('activities.document_uploads.new.errors.unsupported')
+  # i18n-tasks-use t('activities.document_uploads.new.errors.guardduty_threat_found')
+  # i18n-tasks-use t('activities.document_uploads.new.errors.scan_rejected')
   def document_upload_error_message(client_agency, reason)
-    t(
-      "activities.document_uploads.new.errors.#{reason}",
+    interpolations = {
       limit: number_to_human_size(client_agency.max_document_upload_size_bytes),
       types: document_upload_allowed_types_sentence(client_agency)
+    }
+
+    # Falls back to the generic scan_rejected message for any rejection
+    # reason that doesn't have its own copy yet, so the infra's lambda
+    # (see emmy-infra's upload_processing module) can introduce new
+    # RejectionReason tag values without requiring a matching app release.
+    # Downcased because AWS-native reasons like "UNSUPPORTED" arrive
+    # upper-cased, but our translation keys follow this file's existing
+    # lowercase convention.
+    t(
+      "activities.document_uploads.new.errors.#{reason.to_s.downcase}",
+      **interpolations,
+      default: t("activities.document_uploads.new.errors.scan_rejected", **interpolations)
     )
   end
 

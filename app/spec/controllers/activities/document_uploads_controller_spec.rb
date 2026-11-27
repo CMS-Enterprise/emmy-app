@@ -145,6 +145,20 @@ RSpec.describe Activities::DocumentUploadsController, type: :controller do
         .to eq(I18n.t("activities.document_uploads.new.errors.multiple_files"))
     end
 
+    it "gives the client-side scan-rejection tracking its event prefix and activity context" do
+      volunteering_activity = create(:volunteering_activity, activity_flow: activity_flow)
+      create(:volunteering_activity_month, volunteering_activity: volunteering_activity, hours: 6)
+
+      get :new, params: { community_service_id: volunteering_activity.id }
+
+      rendered = Capybara.string(response.body)
+      upload_form = rendered.find("form[data-controller='document-upload']", visible: :all)
+
+      expect(upload_form[:"data-document-upload-track-event-prefix-value"]).to eq("CommunityService")
+      expect(JSON.parse(upload_form[:"data-document-upload-track-attributes-value"]))
+        .to eq({ "volunteering_activity_id" => volunteering_activity.id })
+    end
+
     it "uses the current agency's document upload configuration" do
       volunteering_activity = create(:volunteering_activity, activity_flow: activity_flow)
       create(:volunteering_activity_month, volunteering_activity: volunteering_activity, hours: 6)
@@ -730,6 +744,49 @@ RSpec.describe Activities::DocumentUploadsController, type: :controller do
         extra_attributes: -> { { volunteering_activity_id: kind_of(Integer), document_count: 0 } }
     end
 
+    context "when an attached document failed the security scan" do
+      let(:volunteering_activity) { create(:volunteering_activity, activity_flow: activity_flow) }
+      let(:blob) do
+        ActiveStorage::Blob.create_and_upload!(
+          io: StringIO.new("%PDF-1.4"),
+          filename: "encrypted.pdf",
+          content_type: "application/pdf",
+          service_name: PresignedUploadService::SERVICE_NAME
+        )
+      end
+
+      before do
+        allow(DocumentScanStatusService).to receive(:call)
+          .and_return(DocumentScanStatusService::Result.new(DocumentScanStatusService::REJECTED, "encrypted"))
+      end
+
+      it "purges the rejected upload and re-renders with an error" do
+        expect {
+          post :create, params: {
+            community_service_id: volunteering_activity.id,
+            activity: { document_uploads: [ blob.signed_id ] }
+          }
+        }.not_to change(ActiveStorage::Blob, :count)
+
+        expect(response).to render_template(:new)
+        expect(flash.now[:alert]).to include("encrypted.pdf")
+        expect(volunteering_activity.reload.document_uploads).to be_empty
+      end
+
+      context "scan rejection tracking" do
+        let(:tracked_flow) { activity_flow }
+        let(:perform_tracked_action) do
+          post :create, params: {
+            community_service_id: volunteering_activity.id,
+            activity: { document_uploads: [ blob.signed_id ] }
+          }
+        end
+
+        it_behaves_like "tracks an event", TrackEvent::CommunityServiceDocumentUploadScanRejected,
+          extra_attributes: -> { { volunteering_activity_id: kind_of(Integer), rejected_count: 1 } }
+      end
+    end
+
     it "does not track EducationDocumentUploadSubmitted when the update fails" do
       education_activity = create(
         :education_activity,
@@ -797,9 +854,16 @@ RSpec.describe Activities::DocumentUploadsController, type: :controller do
 
       let(:signed_id) do
         client_agency = Rails.application.config.client_agencies[activity_flow.cbv_applicant.client_agency_id]
-        PresignedUploadService.new(client_agency: client_agency).call([
+        upload = PresignedUploadService.new(client_agency: client_agency).call([
           { filename: "verification.pdf", content_type: "application/pdf", byte_size: 8, checksum: checksum }
-        ]).first[:signed_id]
+        ]).first
+        # Simulate the browser's direct-to-S3 PUT that would have already
+        # completed by the time a signed_id reaches this action, so this
+        # upload's scan status resolves (clean, locally) instead of staying
+        # "pending" and getting purged by purge_rejected_uploads!.
+        ActiveStorage::Blob.services.fetch(PresignedUploadService::SERVICE_NAME)
+          .upload(ActiveStorage::Blob.find_signed!(upload[:signed_id]).key, StringIO.new("%PDF-1.4"))
+        upload[:signed_id]
       end
 
       it "attaches the blob the policy endpoint already created" do
@@ -974,6 +1038,36 @@ RSpec.describe Activities::DocumentUploadsController, type: :controller do
 
       expect(ActiveStorage::Blob.where(id: blob.id)).to be_empty
       expect(volunteering_activity.reload.document_uploads).to be_empty
+    end
+
+    context "when an attached document's scan is still pending at submission" do
+      let(:volunteering_activity) { create(:volunteering_activity, activity_flow: activity_flow) }
+      let(:blob) do
+        ActiveStorage::Blob.create_and_upload!(
+          io: StringIO.new("%PDF-1.4"),
+          filename: "still-scanning.pdf",
+          content_type: "application/pdf",
+          service_name: PresignedUploadService::SERVICE_NAME
+        )
+      end
+
+      before do
+        allow(DocumentScanStatusService).to receive(:call)
+          .and_return(DocumentScanStatusService::Result.new(DocumentScanStatusService::PENDING, nil))
+      end
+
+      it "purges the unresolved upload and re-renders with an error, same as a rejection" do
+        expect {
+          post :create, params: {
+            community_service_id: volunteering_activity.id,
+            activity: { document_uploads: [ blob.signed_id ] }
+          }
+        }.not_to change(ActiveStorage::Blob, :count)
+
+        expect(response).to render_template(:new)
+        expect(flash.now[:alert]).to include("still-scanning.pdf")
+        expect(volunteering_activity.reload.document_uploads).to be_empty
+      end
     end
   end
 end

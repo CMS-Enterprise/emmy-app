@@ -23,7 +23,9 @@ class ActivityDocumentsService
 
     ACTIVITY_ASSOCIATIONS.flat_map do |association|
       @activity_flow.public_send(association).published.order(:id).flat_map do |activity|
-        activity.document_uploads_attachments.includes(:blob).order(:id).map do |attachment|
+        activity.document_uploads_attachments.includes(:blob).order(:id).filter_map do |attachment|
+          next if !DocumentScanStatusService.call(attachment.blob).clean?
+
           document_name, extension = document_name_and_extension(attachment)
           prefix = [ @activity_flow.confirmation_code, activity.class.activity_type, document_name ].join("_")
 

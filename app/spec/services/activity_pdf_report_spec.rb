@@ -185,6 +185,34 @@ RSpec.describe ActivityPdfReport do
         "SANDBOX123_employment_pay_stub_final.pdf"
       ])
     end
+
+    it "excludes a rejected attachment instead of raising, in both the client and caseworker reports" do
+      activity = create(:employment_activity, activity_flow: activity_flow)
+      activity.document_uploads.attach(
+        io: StringIO.new("synthetic document"),
+        filename: "Rejected.pdf",
+        content_type: "application/pdf"
+      )
+      rejected = activity.document_uploads_attachments.order(:id).last
+      activity.document_uploads.attach(
+        io: StringIO.new("synthetic document"),
+        filename: "Clean.pdf",
+        content_type: "application/pdf"
+      )
+
+      allow(DocumentScanStatusService).to receive(:call) do |blob|
+        status = blob == rejected.blob ? DocumentScanStatusService::REJECTED : DocumentScanStatusService::CLEAN
+        DocumentScanStatusService::Result.new(status, "UNSUPPORTED")
+      end
+
+      client_report = described_class.new(flow: activity_flow, caseworker: false)
+      caseworker_report = described_class.new(flow: activity_flow, caseworker: true)
+
+      expect(client_report.document_names_for(activity)).to eq([ "Clean.pdf" ])
+      expect(caseworker_report.document_names_for(activity)).to eq([
+        "SANDBOX123_employment_clean.pdf"
+      ])
+    end
   end
 
   describe "#employment_entries" do

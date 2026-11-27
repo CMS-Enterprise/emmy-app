@@ -202,12 +202,18 @@ en:
           warning: Without documents, confirming your eligibility may take longer.
         errors:
           empty: That file is empty. Choose a different file.
+          guardduty_threat_found: That file did not pass a security scan. Try a different file.
           multiple_files: We could not upload one or more files. Check the files and try again.
+          scan_rejected: We could not process that file. Try a different file and upload it again.
+          scan_rejected_summary: We could not process %{filenames} because it may be encrypted or didn't pass a security check. Remove any password protection, or try a different file, and upload it again.
+          scan_timed_out: We could not confirm that this file passed a security check in time. Try uploading it again.
           too_large: Each file must be smaller than %{limit}.
+          unsupported: We could not process that file. It may be encrypted, password protected, or in a format we do not support. Remove any password protection, or try a different file, and upload it again.
           unsupported_type: Select a %{types} file.
           upload_failed: We could not upload that file. Check your connection and try again.
         input_hint: Select %{types} files
         input_label: Add documents
+        scanning_status: We're checking your documents for security issues. This may take a moment.
         suggestion_text_html: "<ul><li>Document Type Placeholder 1</li><li>Document Type Placeholder 2</li><li>Document Type Placeholder 3</li></ul>"
         suggestion_title: Suggested documents
         title: Upload supporting documents for %{name}

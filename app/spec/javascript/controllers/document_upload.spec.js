@@ -1,6 +1,7 @@
 import { describe, beforeEach, afterEach, it, expect, vi } from "vitest"
 import DocumentUploadController from "@js/controllers/document_upload_controller"
 import fileChecksum from "@js/utilities/file_checksum"
+import { trackUserAction } from "@js/utilities/api"
 
 const CHECKSUM = "n4bQgYhMfWWaL+qgxVrQFaO/TxsrC4Is0V1sFbDwCgg="
 
@@ -12,6 +13,10 @@ const TOO_LARGE = "Each file must be smaller than 40 MB."
 const UNSUPPORTED = "Select a PDF, PNG, JPEG, BMP, or TIFF file."
 const FAILED = "We could not upload that file."
 const MULTIPLE_FAILED = "We could not upload one or more files. Check the files and try again."
+const SCAN_TIMED_OUT = "We could not confirm that this file passed a security check in time."
+const REJECTED_MESSAGE =
+  "We could not process that file. It may be encrypted, password protected, or in a format we do not support."
+const SCANNING_STATUS = "Scanning for security threats..."
 
 const setFiles = (input, files) =>
   Object.defineProperty(input, "files", { value: files, configurable: true })
@@ -75,6 +80,7 @@ describe("DocumentUploadController", () => {
                data-document-upload-target="input"
                data-action="change->document-upload#select">
         <div class="usa-error-message" hidden data-document-upload-target="error"></div>
+        <p hidden data-document-upload-target="scanningStatus">${SCANNING_STATUS}</p>
         <input type="submit" id="upload-continue" value="Continue" data-document-upload-target="submit">
       </form>
     `
@@ -102,6 +108,7 @@ describe("DocumentUploadController", () => {
     )
   const listItems = () => document.querySelectorAll("[data-document-upload-target=list] li")
   const submitButton = () => document.querySelector("input[type=submit]")
+  const scanningStatus = () => document.querySelector("[data-document-upload-target=scanningStatus]")
 
   describe("empty upload confirmation", () => {
     let controller
@@ -255,6 +262,39 @@ describe("DocumentUploadController", () => {
     expect(submitDisabledDuringUpload).toBe(true)
     expect(submitButton().disabled).toBe(false)
     expect(signedIdValues()).toEqual(["signed-id-1"])
+  })
+
+  it("keeps Continue disabled while the uploaded file's scan is still pending", async () => {
+    expect(scanningStatus().hidden).toBe(true)
+
+    const form = document.querySelector("form")
+    form.dataset.documentUploadScanStatusPathValue = "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
+    form.dataset.documentUploadScanPollIntervalValue = "10"
+    form.dataset.documentUploadScanTimeoutValue = "5000"
+
+    let resolveScanStatus
+    const pendingScanStatus = new Promise((resolve) => {
+      resolveScanStatus = resolve
+    })
+
+    fetch
+      .mockResolvedValueOnce(
+        jsonResponse({ uploads: [presignedUploadFor("verification.pdf", "signed-id-1")] })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockImplementationOnce(() => pendingScanStatus)
+
+    await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
+
+    expect(submitButton().disabled).toBe(true)
+    expect(scanningStatus().hidden).toBe(false)
+    expect(scanningStatus().textContent).toBe(SCANNING_STATUS)
+
+    resolveScanStatus(jsonResponse({ status: "clean", error: null }))
+    await flush()
+
+    expect(submitButton().disabled).toBe(false)
+    expect(scanningStatus().hidden).toBe(true)
   })
 
   it("re-enables Continue when the upload fails", async () => {
@@ -526,5 +566,84 @@ describe("DocumentUploadController", () => {
     expect(signedIdValues()).toEqual([])
     expect(listItems()).toHaveLength(0)
     expect(document.querySelector("[data-document-upload-target=listSection]").hidden).toBe(true)
+  })
+
+  it("removes the upload and shows a retry message when the scan never resolves in time", async () => {
+    const form = document.querySelector("form")
+    form.dataset.documentUploadScanStatusPathValue =
+      "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
+    form.dataset.documentUploadScanPollIntervalValue = "5"
+    form.dataset.documentUploadScanTimeoutValue = "20"
+    form.dataset.documentUploadErrorScanTimedOutValue = SCAN_TIMED_OUT
+
+    fetch
+      .mockResolvedValueOnce(
+        jsonResponse({ uploads: [presignedUploadFor("verification.pdf", "signed-id-1")] })
+    )
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockResolvedValue(jsonResponse({ status: "pending", error: null }))
+
+    await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
+
+    expect(submitButton().disabled).toBe(true)
+    expect(signedIdValues()).toEqual(["signed-id-1"])
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    expect(signedIdValues()).toEqual([])
+    expect(listItems()).toHaveLength(0)
+    expect(errorText()).toBe(SCAN_TIMED_OUT)
+    expect(submitButton().disabled).toBe(false)
+  })
+
+  it("tracks the scan rejection, with activity context, as soon as it's detected", async () => {
+    const form = document.querySelector("form")
+    form.dataset.documentUploadScanStatusPathValue =
+      "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
+    form.dataset.documentUploadScanPollIntervalValue = "5"
+    form.dataset.documentUploadScanTimeoutValue = "20000"
+    form.dataset.documentUploadTrackEventPrefixValue = "Employment"
+    form.dataset.documentUploadTrackAttributesValue = JSON.stringify({
+      employment_activity_id: 42,
+    })
+
+    fetch
+      .mockResolvedValueOnce(
+        jsonResponse({ uploads: [presignedUploadFor("verification.pdf", "signed-id-1")] })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockResolvedValue(jsonResponse({ status: "rejected", error: REJECTED_MESSAGE }))
+
+    await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(errorText()).toBe(REJECTED_MESSAGE)
+    expect(signedIdValues()).toEqual([])
+    expect(trackUserAction).toHaveBeenCalledOnce()
+    expect(trackUserAction).toHaveBeenCalledWith("EmploymentDocumentUploadScanRejected", {
+      employment_activity_id: 42,
+      rejected_count: 1,
+    })
+  })
+
+  it("does not track a rejection when no activity flow is tracked", async () => {
+    fetch
+      .mockResolvedValueOnce(
+        jsonResponse({ uploads: [presignedUploadFor("verification.pdf", "signed-id-1")] })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+      .mockResolvedValue(jsonResponse({ status: "rejected", error: REJECTED_MESSAGE }))
+
+    const form = document.querySelector("form")
+    form.dataset.documentUploadScanStatusPathValue =
+      "/activities/document_scan_statuses/SIGNED_ID_PLACEHOLDER"
+    form.dataset.documentUploadScanPollIntervalValue = "5"
+    form.dataset.documentUploadScanTimeoutValue = "20000"
+
+    await selectFiles(buildFile("verification.pdf", "application/pdf", 1024))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(errorText()).toBe(REJECTED_MESSAGE)
+    expect(trackUserAction).not.toHaveBeenCalled()
   })
 })
