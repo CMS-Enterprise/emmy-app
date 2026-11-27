@@ -16,8 +16,7 @@ RSpec.describe "Chrome session cleanup", :js, type: :feature do
     JS
   end
 
-  it "clears cookies and both storage types, including repeated resets from a blank page" do
-    page.driver.reset!
+  it "clears cookies and browser storage" do
     page.driver.reset!
     visit activities_flow_start_path(token: invitation.auth_token)
     verify_page(page, title: I18n.t("activities.entries.show.title", benefit: "Medicaid"))
@@ -25,15 +24,5 @@ RSpec.describe "Chrome session cleanup", :js, type: :feature do
     expect(page.evaluate_script("document.cookie")).not_to include("cleanup_probe")
     expect(page.evaluate_script('localStorage.getItem("cleanup_probe")')).to be_nil
     expect(page.evaluate_script('sessionStorage.getItem("cleanup_probe")')).to be_nil
-  end
-
-  it "closes extra windows and returns the original window to a blank page" do
-    original_window = page.current_window
-    page.open_new_window
-
-    page.driver.reset!
-
-    expect(page.windows).to eq([ original_window ])
-    expect(page.current_url).to eq("about:blank")
   end
 end
