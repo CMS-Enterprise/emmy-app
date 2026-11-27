@@ -1,14 +1,15 @@
+<% search_results_page = @query.present? && @employers.any? %>
+
 <% unless @flow.employment_focused? %>
   <% content_for :activity_flow_header do %>
     <%= render ActivityFlowHeaderComponent.new(
       title: t("activities.employment.title_singular"),
       exit_url: activities_flow_root_path,
+      back_url: search_results_page ? @search_path : nil,
       track_event_prefix: "Employment"
     ) %>
   <% end %>
 <% end %>
-
-<% search_results_page = @query.present? && @employers.any? %>
 
 <%= render "application/aggregator_outage_alert" %>
 

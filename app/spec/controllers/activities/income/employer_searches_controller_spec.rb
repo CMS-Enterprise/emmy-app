@@ -101,7 +101,7 @@ RSpec.describe Activities::Income::EmployerSearchesController do
       expect(response.body).to include("exit-confirmation-modal")
     end
 
-    it "does not render a back link" do
+    it "does not render a back link on the initial search page" do
       get :show
       expect(Capybara.string(response.body)).not_to have_link("Back")
     end
@@ -172,6 +172,12 @@ RSpec.describe Activities::Income::EmployerSearchesController do
         )
 
         get :show, params: { query: "results" }
+      end
+
+      it "links back to employer search without a query" do
+        get :show, params: { query: "results" }
+
+        expect(Capybara.string(response.body)).to have_link("Back", href: activities_flow_income_employer_search_path)
       end
 
       it "renders the search results page" do
