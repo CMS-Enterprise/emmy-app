@@ -164,7 +164,7 @@ html {
 }
 
 .cbv-footer__item {
-  @include u-margin-y(2);
+  @include u-margin-bottom(2);
 }
 
 .cbv-footer__logo-text {
@@ -186,8 +186,8 @@ html {
   display: flex;
   flex-direction: column;
   gap: units(0.5);
-  padding-block: units(2);
-  border-top: 1px solid color("primary");
+  padding-block: units(3);
+  margin-top: 0;
 }
 
 .cbv-footer__logos {
@@ -216,6 +216,17 @@ html {
   margin: units(1) 0 0;
   font-size: 12px;
   line-height: 1.2;
+}
+
+.cbv-footer__links {
+  @include u-font("sans", 3);
+  padding-top: units(0);
+  padding-bottom: units(1);
+  border-bottom: 1px solid var(--theme-color-primary-dark, #1A4480);
+
+  li a {
+    text-decoration: underline;
+  }
 }
 
 .cbv-row-highlight td,
