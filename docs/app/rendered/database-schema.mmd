@@ -43,6 +43,7 @@ erDiagram
 		string compensation_unit
 		datetime created_at
 		string employer_address
+		string employer_id
 		string employer_name
 		string employer_phone_number
 		date employment_start_date
@@ -51,6 +52,7 @@ erDiagram
 		string employment_type
 		string pay_frequency
 		datetime redacted_at
+		boolean selected
 		datetime updated_at
 	}
 	ActivityFlowInvitation {
@@ -69,6 +71,7 @@ erDiagram
 	ActivityFlowMonthlySummary {
 		integer accrued_gross_earnings_cents
 		datetime created_at
+		string employer_id
 		date month
 		integer paychecks_count
 		datetime redacted_at

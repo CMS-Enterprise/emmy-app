@@ -392,19 +392,22 @@ RSpec.describe ActivityFlow, type: :model do
         has_fetched?: true,
         summarize_by_month: { "acct-1" => {} }
       )
-      allow(report).to receive(:find_account_report).with("acct-1").and_return(
-        double(
-          employment: instance_double(Aggregators::ResponseObjects::Employment,
-            employer_name: "Test Employer",
-            employment_type: :w2,
-            employer_phone_number: nil,
-            employer_address: nil,
-            status: nil,
-            start_date: nil,
-            termination_date: nil
-          ),
-          income: nil
-        )
+      allow(report).to receive(:find_account_reports).with("acct-1").and_return(
+        [
+          double(
+            employment: instance_double(Aggregators::ResponseObjects::Employment,
+              employment_matching_id: "emp-1",
+              employer_name: "Test Employer",
+              employment_type: :w2,
+              employer_phone_number: nil,
+              employer_address: nil,
+              status: nil,
+              start_date: nil,
+              termination_date: nil
+            ),
+            income: nil
+          )
+        ]
       )
     end
 
@@ -414,6 +417,72 @@ RSpec.describe ActivityFlow, type: :model do
       }
         .to change { flow.activity_flow_monthly_summaries.count }.by(flow.reporting_months.size)
         .and change { flow.activity_flow_employment_summaries.count }.by(1)
+
+      expect(payroll_account.flow).to eq(flow)
+    end
+  end
+
+  describe "#monthly_summaries_by_account_employer_with_fallback" do
+    let(:flow) { create(:activity_flow, reporting_window_months: 1) }
+    let!(:payroll_account) { create(:payroll_account, :pinwheel_fully_synced, flow: flow, aggregator_account_id: "acct-1", draft: false) }
+    let(:month_string) { flow.reporting_months.first.strftime("%Y-%m") }
+    let(:mock_report) { instance_double(Aggregators::AggregatorReports::AggregatorReport) }
+
+    before do
+      allow(mock_report).to receive_messages(
+        has_fetched?: true,
+        summarize_by_month: {
+          "acct-1_emp-1" => {
+            month_string => {
+              total_w2_hours: 40.0,
+              total_gig_hours: 0.0,
+              accrued_gross_earnings: 1000_00,
+              total_mileage: 0.0,
+              paystubs: [ double ]
+            }
+          }
+        }
+      )
+      allow(mock_report).to receive(:find_account_reports).with("acct-1").and_return(
+        [
+          double(
+            employment: instance_double(Aggregators::ResponseObjects::Employment,
+              employment_matching_id: "emp-1",
+              employer_name: "Fetched Employer",
+              employment_type: :w2,
+              employer_phone_number: nil,
+              employer_address: nil,
+              status: nil,
+              start_date: nil,
+              termination_date: nil
+            ),
+            income: nil
+          )
+        ]
+      )
+      allow(AggregatorReportFetcher).to receive(:new).with(flow).and_return(double(report: mock_report))
+    end
+
+    it "returns summaries grouped by account and employer" do
+      summary = flow.monthly_summaries_by_account_employer_with_fallback
+
+      expect(payroll_account.aggregator_account_id).to eq("acct-1")
+      expect(summary).to have_key("acct-1")
+      expect(summary["acct-1"]).to have_key(month_string)
+      expect(summary["acct-1"][month_string]).to include(
+        total_w2_hours: 40.0,
+        accrued_gross_earnings: 1000_00,
+        paychecks_count: 1
+      )
+    end
+
+    it "persists summaries to the database" do
+      expect {
+        flow.monthly_summaries_by_account_employer_with_fallback
+      }.to change { flow.activity_flow_monthly_summaries.count }.by(1)
+
+      persisted = flow.activity_flow_monthly_summaries.first
+      expect(persisted.employer_id).to eq("emp-1")
     end
   end
 

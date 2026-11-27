@@ -118,19 +118,22 @@ RSpec.describe ActivityFlowMonthlySummary, type: :model do
             }
           }
         )
-        allow(mock_report).to receive(:find_account_report).with("acct-1").and_return(
-          double(
-            employment: instance_double(Aggregators::ResponseObjects::Employment,
-              employer_name: "Fetched Employer",
-              employment_type: :w2,
-              employer_phone_number: nil,
-              employer_address: nil,
-              status: nil,
-              start_date: nil,
-              termination_date: nil
-            ),
-            income: nil
-          )
+        allow(mock_report).to receive(:find_account_reports).with("acct-1").and_return(
+          [
+            double(
+              employment: instance_double(Aggregators::ResponseObjects::Employment,
+                employment_matching_id: "emp-1",
+                employer_name: "Fetched Employer",
+                employment_type: :w2,
+                employer_phone_number: nil,
+                employer_address: nil,
+                status: nil,
+                start_date: nil,
+                termination_date: nil
+              ),
+              income: nil
+            )
+          ]
         )
         allow(AggregatorReportFetcher).to receive(:new).with(flow).and_return(double(report: mock_report))
       end
@@ -164,19 +167,22 @@ RSpec.describe ActivityFlowMonthlySummary, type: :model do
           has_fetched?: true,
           summarize_by_month: { "acct-1" => month_data, "acct-2" => month_data }
         )
-        allow(mock_report).to receive(:find_account_report) do
-          double(
-            employment: instance_double(Aggregators::ResponseObjects::Employment,
-              employer_name: "Employer",
-              employment_type: :w2,
-              employer_phone_number: nil,
-              employer_address: nil,
-              status: nil,
-              start_date: nil,
-              termination_date: nil
-            ),
-            income: nil
-          )
+        allow(mock_report).to receive(:find_account_reports) do
+          [
+            double(
+              employment: instance_double(Aggregators::ResponseObjects::Employment,
+                employment_matching_id: "emp-1",
+                employer_name: "Employer",
+                employment_type: :w2,
+                employer_phone_number: nil,
+                employer_address: nil,
+                status: nil,
+                start_date: nil,
+                termination_date: nil
+              ),
+              income: nil
+            )
+          ]
         end
         allow(AggregatorReportFetcher).to receive(:new).with(flow).and_return(double(report: mock_report))
       end

@@ -4,7 +4,7 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
   belongs_to :activity_flow
   belongs_to :payroll_account
 
-  validates :activity_flow_id, uniqueness: { scope: :payroll_account_id }
+  validates :activity_flow_id, uniqueness: { scope: [ :payroll_account_id, :employer_id ] }
 
   has_redactable_fields(
     employer_name: :string,
@@ -17,6 +17,7 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
     pay_frequency: :string,
     compensation_amount: :integer,
     compensation_unit: :string,
+    employer_id: :unique_string,
   )
 
   # Redactable doesn't support integer fields, so compensation_amount (cents)
@@ -31,10 +32,10 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
     return nil if payroll_accounts.empty?
 
     rows = activity_flow.activity_flow_employment_summaries
-      .unredacted
-      .where(payroll_account_id: payroll_accounts.map(&:id))
-      .includes(:payroll_account)
-    return nil unless rows.size == payroll_accounts.size
+                        .unredacted
+                        .where(payroll_account_id: payroll_accounts.map(&:id))
+                        .includes(:payroll_account)
+    return nil unless rows.size >= payroll_accounts.size
 
     rows.index_by { |row| row.payroll_account.aggregator_account_id }.transform_values do |row|
       {
@@ -47,7 +48,8 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
         employment_termination_date: row.employment_termination_date,
         pay_frequency: row.pay_frequency,
         compensation_amount: row.compensation_amount,
-        compensation_unit: row.compensation_unit
+        compensation_unit: row.compensation_unit,
+        employer_id: row.employer_id
       }
     end
   end
@@ -70,32 +72,37 @@ class ActivityFlowEmploymentSummary < ApplicationRecord
   def self.persist_from_report(activity_flow:, payroll_account:, report:)
     return unless report.has_fetched?
 
-    account_report = report.find_account_report(payroll_account.aggregator_account_id)
-    employment = account_report&.employment
-    income = account_report&.income
+    account_reports = report.find_account_reports(payroll_account.aggregator_account_id)
 
-    upsert(
-      {
-        activity_flow_id: activity_flow.id,
-        payroll_account_id: payroll_account.id,
-        employer_name: employment&.employer_name,
-        employment_type: employment&.employment_type&.to_s,
-        employer_phone_number: employment&.employer_phone_number,
-        employer_address: employment&.employer_address,
-        employment_status: employment&.status,
-        employment_start_date: employment&.start_date,
-        employment_termination_date: employment&.termination_date,
-        pay_frequency: income&.pay_frequency,
-        compensation_amount: income&.compensation_amount,
-        compensation_unit: income&.compensation_unit,
-        redacted_at: nil
-      },
-      unique_by: :index_activity_flow_employment_summaries_on_flow_account,
-      update_only: %i[
-        employer_name employment_type employer_phone_number employer_address
-        employment_status employment_start_date employment_termination_date
-        pay_frequency compensation_amount compensation_unit redacted_at
-      ]
-    )
+    account_reports.each do |account_report|
+      employment = account_report.employment
+      income = account_report.income
+
+      upsert(
+        {
+          activity_flow_id: activity_flow.id,
+          payroll_account_id: payroll_account.id,
+          employer_id: employment&.employment_matching_id,
+          employer_name: employment&.employer_name,
+          employment_type: employment&.employment_type&.to_s,
+          employer_phone_number: employment&.employer_phone_number,
+          employer_address: employment&.employer_address,
+          employment_status: employment&.status,
+          employment_start_date: employment&.start_date,
+          employment_termination_date: employment&.termination_date,
+          pay_frequency: income&.pay_frequency,
+          compensation_amount: income&.compensation_amount,
+          compensation_unit: income&.compensation_unit,
+          selected: true,
+          redacted_at: nil
+        },
+        unique_by: :index_activity_flow_employment_summaries_on_flow_acc_emp,
+        update_only: %i[
+          employer_name employment_type employer_phone_number employer_address
+          employment_status employment_start_date employment_termination_date
+          pay_frequency compensation_amount compensation_unit redacted_at
+        ]
+      )
+    end
   end
 end

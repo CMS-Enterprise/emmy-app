@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_17_181655) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_222041) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -59,7 +59,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_181655) do
     t.string "pay_frequency"
     t.integer "compensation_amount"
     t.string "compensation_unit"
-    t.index ["activity_flow_id", "payroll_account_id"], name: "index_activity_flow_employment_summaries_on_flow_account", unique: true
+    t.string "employer_id"
+    t.boolean "selected", default: true, null: false
+    t.index ["activity_flow_id", "payroll_account_id", "employer_id"], name: "index_activity_flow_employment_summaries_on_flow_acc_emp", unique: true
     t.index ["activity_flow_id"], name: "index_activity_flow_employment_summaries_on_activity_flow_id"
     t.index ["payroll_account_id"], name: "index_activity_flow_employment_summaries_on_payroll_account_id"
   end
@@ -93,8 +95,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_17_181655) do
     t.decimal "total_mileage", precision: 10, scale: 2, default: "0.0"
     t.decimal "total_w2_hours", precision: 10, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
+    t.string "employer_id"
     t.index ["activity_flow_id", "month"], name: "idx_on_activity_flow_id_month_abd2e2f25a"
-    t.index ["activity_flow_id", "payroll_account_id", "month"], name: "index_activity_flow_monthly_summaries_on_flow_account_month", unique: true
+    t.index ["activity_flow_id", "payroll_account_id", "employer_id", "month"], name: "index_activity_flow_monthly_summaries_on_flow_acc_emp_month", unique: true
     t.index ["activity_flow_id"], name: "index_activity_flow_monthly_summaries_on_activity_flow_id"
     t.index ["payroll_account_id"], name: "index_activity_flow_monthly_summaries_on_payroll_account_id"
   end

@@ -102,7 +102,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           argyle_report.fetch
 
           expect {
-            argyle_report.send(:pick_employment, argyle_report.employments, argyle_report.paystubs, account)
+            argyle_report.send(:pick_employment, argyle_report.employments, account)
           }.to raise_error(Aggregators::AggregatorReports::AggregatorReport::NoMatchingEmploymentError, /No employments found that match account_id/)
 
           # income_report should not crash and should return valid data
@@ -144,6 +144,27 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         end
       end
 
+      context "when there are multiple employers for an account" do
+        let(:activity_flow) { create(:activity_flow) }
+
+        before do
+          payroll_account.update!(flow: activity_flow)
+          argyle_report.fetch
+        end
+
+        it "summarize_by_month returns data keyed by account and employer" do
+          summary = argyle_report.summarize_by_month
+          expect(summary.keys).to be_all { |k| k.start_with?("#{account}_") }
+          expect(summary.keys.size).to eq(2)
+        end
+
+        it "summarize_by_employer returns data keyed by account and employer" do
+          summary = argyle_report.summarize_by_employer
+          expect(summary.keys).to be_all { |k| k.start_with?("#{account}_") }
+          expect(summary.keys.size).to eq(2)
+        end
+      end
+
       context "when a paystub has a nil pay date" do
         let(:paystubs_json) do
           paystubs = argyle_load_relative_json_file('busy_joe', 'request_paystubs.json').deep_dup
@@ -163,6 +184,64 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           summary = argyle_report.summarize_by_employer
           expect(summary[account][:employment].employer_name).to eq("Aramark")
         end
+      end
+    end
+
+    describe "#pick_employments" do
+      let(:argyle_report) do
+        Aggregators::AggregatorReports::ArgyleReport.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+      end
+
+      let(:employment_early) { { account_id: account, employment_matching_id: 'emp1', start_date: '2020-01-01', termination_date: nil } }
+      let(:employment_late) { { account_id: account, employment_matching_id: 'emp2', start_date: '2021-01-01', termination_date: nil } }
+      let(:employments) { [ employment_early, employment_late ] }
+
+      before do
+        # Use allow_any_instance_of or just pass them to the method since it's private but we use send
+        argyle_report.instance_variable_set(:@paystubs, [])
+      end
+
+      it "picks the employment with the latest date (start_date)" do
+        picked = argyle_report.send(:pick_employments, employments, account)
+        expect(picked).to eq([ employment_late ])
+      end
+
+      context "when it is an activity flow" do
+        let(:activity_flow) { create(:activity_flow) }
+
+        before do
+          payroll_account.update!(flow: activity_flow)
+        end
+
+        it "returns all matching employments" do
+          picked = argyle_report.send(:pick_employments, employments, account)
+          expect(picked).to contain_exactly(employment_early, employment_late)
+        end
+      end
+
+      it "picks the employment with the latest paystub date" do
+        paystub1 = { employment_id: 'emp1', pay_date: '2022-01-01' }
+        argyle_report.instance_variable_set(:@paystubs, [ paystub1 ])
+
+        picked = argyle_report.send(:pick_employments, employments, account)
+        expect(picked).to eq([ employment_early ])
+      end
+
+      it "handles nil dates by defaulting to an early date" do
+        emp3 = { account_id: account, employment_matching_id: 'emp3', start_date: nil, termination_date: nil }
+        picked = argyle_report.send(:pick_employments, [ emp3 ], account)
+        expect(picked).to eq([ emp3 ])
+      end
+
+      it "raises NoMatchingEmploymentError if no employments match account_id" do
+        expect {
+          argyle_report.send(:pick_employments, employments, 'other-account')
+        }.to raise_error(Aggregators::AggregatorReports::AggregatorReport::NoMatchingEmploymentError)
       end
     end
   end
