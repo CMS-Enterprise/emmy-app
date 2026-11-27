@@ -110,9 +110,9 @@ RSpec.describe UswdsFormBuilder do
     context 'with required set to true' do
       let(:result) { builder.text_field(:first_name, label: 'Name', required: true) }
 
-      it 'identifies the field as required in its label' do
-        expect(result).to have_element(:label, text: 'Name*')
-        expect(result).to have_selector("span.usa-hint--required[aria-hidden='true']", text: '*', exact_text: true)
+      it 'defers the visual indicator while keeping the input required' do
+        expect(result).to have_element(:label, text: 'Name')
+        expect(result).to have_no_selector("span.usa-hint--required")
         expect(result).to have_element(:input, required: 'required')
       end
     end

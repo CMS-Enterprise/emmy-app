@@ -59,6 +59,8 @@ RSpec.describe "Unpaid employment information", :js, type: :feature do
     expect(page).to have_no_selector('input[type="checkbox"]')
     expect(page).to have_no_selector(".usa-alert--info")
     expect(page).to have_selector('input[name="employment_activity_month[hours]"][required]')
+    expect(page).to have_no_selector(".usa-hint--required")
+    expect(page).to have_no_text(I18n.t("us_form_with.required_fields_notice_html", asterisk: "*"))
 
     fill_in I18n.t("activities.employment.hours_input.hours_label", month: I18n.l(first_month, format: :month)), with: "0"
     click_button I18n.t("activities.employment.hours_input.continue")

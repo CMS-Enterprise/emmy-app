@@ -6,6 +6,8 @@
 #
 # Copied from https://github.com/navapbc/pfml-starter-kit-app/blob/main/pfml/app/helpers/uswds_form_builder.rb @ 28a569a
 class UswdsFormBuilder < ActionView::Helpers::FormBuilder
+  REQUIRED_FIELD_INDICATOR_PLACEHOLDER = "<!-- uswds-required-field-indicator -->".freeze
+
   standard_helpers = %i[email_field file_field password_field text_area text_field]
 
   def initialize(*args)
@@ -170,6 +172,13 @@ class UswdsFormBuilder < ActionView::Helpers::FormBuilder
 
   def required_fields_notice?
     @rendered_fields.size >= 2 && @rendered_fields.values.any?
+  end
+
+  # The helper decides whether to show guidance after all fields are captured.
+  # Replace only our placeholder so input validation attributes stay untouched.
+  def render_required_field_indicators(content, show:)
+    indicator = show ? @template.content_tag(:span, "*", class: "usa-hint--required", "aria-hidden": true) : ""
+    content.gsub(REQUIRED_FIELD_INDICATOR_PLACEHOLDER, indicator).html_safe
   end
 
   def tax_id_field(attribute, options = {})
@@ -405,7 +414,7 @@ class UswdsFormBuilder < ActionView::Helpers::FormBuilder
     end
 
     if options[:required]
-      text += @template.content_tag(:span, "*", class: "usa-hint--required", "aria-hidden": true)
+      text += REQUIRED_FIELD_INDICATOR_PLACEHOLDER.html_safe
     end
 
     if hint_option
